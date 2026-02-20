@@ -6,15 +6,20 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { TableSkeleton } from '@/components/loaders/TableSkeleton';
+import { QueryError } from '@/components/errors/QueryError';
 import { PageTransition } from '@/components/animations/PageTransition';
 import { adminService } from '@/services/admin.service';
 import { formatDate } from '@/utils/format';
 
 export default function RecruiterShortlistPage() {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['admin', 'recruiter-shortlist'],
     queryFn: adminService.getRecruiterShortlist,
   });
+
+  if (isError) {
+    return <QueryError error={error} onRetry={refetch} />;
+  }
 
   return (
     <PageTransition>

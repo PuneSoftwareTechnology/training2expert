@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CardSkeleton } from '@/components/loaders/CardSkeleton';
+import { QueryError } from '@/components/errors/QueryError';
 import { PageTransition } from '@/components/animations/PageTransition';
 import { adminService } from '@/services/admin.service';
 import { getErrorMessage } from '@/services/api';
@@ -21,7 +22,7 @@ export default function QrManagementPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { data: qrCodes, isLoading } = useQuery({
+  const { data: qrCodes, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['admin', 'qr-codes'],
     queryFn: adminService.getAllQrCodes,
   });
@@ -54,6 +55,10 @@ export default function QrManagementPage() {
 
   if (isLoading) {
     return <div className="space-y-4"><CardSkeleton /><CardSkeleton /></div>;
+  }
+
+  if (isError) {
+    return <QueryError error={error} onRetry={refetch} />;
   }
 
   return (
@@ -96,13 +101,14 @@ export default function QrManagementPage() {
                     size="sm"
                     className="w-full"
                     onClick={() => toggleMutation.mutate(qr.id)}
-                    disabled={toggleMutation.isPending}
+                    loading={toggleMutation.isPending}
                   >
-                    {qr.isActive ? (
-                      <><ToggleRight className="mr-1 h-4 w-4" /> Deactivate</>
+                    {!toggleMutation.isPending && (qr.isActive ? (
+                      <ToggleRight className="mr-1 h-4 w-4" />
                     ) : (
-                      <><ToggleLeft className="mr-1 h-4 w-4" /> Set Active</>
-                    )}
+                      <ToggleLeft className="mr-1 h-4 w-4" />
+                    ))}
+                    {toggleMutation.isPending ? 'Updating...' : qr.isActive ? 'Deactivate' : 'Set Active'}
                   </Button>
                 </CardContent>
               </Card>
@@ -141,7 +147,8 @@ export default function QrManagementPage() {
                 <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
                 <Button
                   onClick={() => uploadMutation.mutate()}
-                  disabled={!bankName || !selectedFile || uploadMutation.isPending}
+                  disabled={!bankName || !selectedFile}
+                  loading={uploadMutation.isPending}
                 >
                   {uploadMutation.isPending ? 'Uploading...' : 'Upload'}
                 </Button>

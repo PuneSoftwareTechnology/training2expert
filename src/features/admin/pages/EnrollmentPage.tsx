@@ -26,6 +26,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
 import { TableSkeleton } from '@/components/loaders/TableSkeleton';
+import { QueryError } from '@/components/errors/QueryError';
 import { PageTransition } from '@/components/animations/PageTransition';
 
 import { adminService } from '@/services/admin.service';
@@ -223,9 +224,9 @@ function InstallmentRow({
           variant="ghost"
           size="xs"
           onClick={() => sendReceiptMutation.mutate()}
-          disabled={sendReceiptMutation.isPending}
+          loading={sendReceiptMutation.isPending}
         >
-          <Send className="h-3 w-3" />
+          {!sendReceiptMutation.isPending && <Send className="h-3 w-3" />}
           {sendReceiptMutation.isPending ? 'Sending...' : 'Send Receipt'}
         </Button>
       </TableCell>
@@ -341,7 +342,7 @@ export default function EnrollmentPage() {
   // Queries & Mutations
   // ---------------------------------------------------------------------------
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['admin', 'enrollments', { filterStatus, filterInstitute, filterCourse }],
     queryFn: () =>
       adminService.getEnrollments({
@@ -478,6 +479,10 @@ export default function EnrollmentPage() {
   // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
+
+  if (isError) {
+    return <QueryError error={error} onRetry={refetch} />;
+  }
 
   return (
     <PageTransition>
@@ -656,7 +661,8 @@ export default function EnrollmentPage() {
                 <Label>Phone *</Label>
                 <Input
                   value={newCandidate.phone}
-                  onChange={(e) => updateNewField('phone', e.target.value)}
+                  maxLength={10}
+                  onChange={(e) => updateNewField('phone', e.target.value.replace(/\D/g, ''))}
                 />
               </div>
               <div className="space-y-1">
@@ -740,7 +746,8 @@ export default function EnrollmentPage() {
               </Button>
               <Button
                 onClick={handleAddCandidate}
-                disabled={createMutation.isPending || !newCandidate.name || !newCandidate.email || !newCandidate.phone}
+                disabled={!newCandidate.name || !newCandidate.email || !newCandidate.phone}
+                loading={createMutation.isPending}
               >
                 {createMutation.isPending ? 'Creating...' : 'Create'}
               </Button>
@@ -851,7 +858,8 @@ function EnrollmentTableRows({
           {isEditing && editFields ? (
             <Input
               value={editFields.phone}
-              onChange={(e) => onUpdateField('phone', e.target.value)}
+              maxLength={10}
+              onChange={(e) => onUpdateField('phone', e.target.value.replace(/\D/g, ''))}
               className="h-8 w-28"
             />
           ) : (
@@ -1005,11 +1013,11 @@ function EnrollmentTableRows({
                   variant="ghost"
                   size="xs"
                   onClick={onSaveEdit}
-                  disabled={isSaving}
+                  loading={isSaving}
                   className="text-green-600 hover:text-green-700"
                 >
-                  <Save className="h-3.5 w-3.5" />
-                  Save
+                  {!isSaving && <Save className="h-3.5 w-3.5" />}
+                  {isSaving ? 'Saving...' : 'Save'}
                 </Button>
                 <Button variant="ghost" size="xs" onClick={onCancelEdit}>
                   <X className="h-3.5 w-3.5" />

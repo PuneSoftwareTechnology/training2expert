@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { motion } from 'framer-motion';
@@ -22,6 +23,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth.store';
 import { useUiStore } from '@/store/ui.store';
@@ -60,6 +65,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const user = useAuthStore((s) => s.user);
   const { sidebarCollapsed, toggleSidebar } = useUiStore();
   const { isSuperAdmin } = useRole();
+  const [showLogout, setShowLogout] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -131,7 +137,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           )}
           <Button
             variant="ghost"
-            onClick={handleLogout}
+            onClick={() => setShowLogout(true)}
             className={cn(
               'w-full text-muted-foreground hover:text-destructive',
               sidebarCollapsed ? 'justify-center px-2' : 'justify-start gap-3 px-3',
@@ -148,6 +154,22 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           {children}
         </div>
       </main>
+
+      {/* Logout confirmation */}
+      <AlertDialog open={showLogout} onOpenChange={setShowLogout}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to logout?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You will need to sign in again to access your account.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLogout}>Logout</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

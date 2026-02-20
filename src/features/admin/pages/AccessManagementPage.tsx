@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -19,6 +20,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { TableSkeleton } from '@/components/loaders/TableSkeleton';
+import { QueryError } from '@/components/errors/QueryError';
 import { PageTransition } from '@/components/animations/PageTransition';
 import { adminService } from '@/services/admin.service';
 import { getErrorMessage } from '@/services/api';
@@ -28,7 +30,12 @@ const recruiterSchema = z.object({
   name: z.string().min(2, 'Name is required'),
   username: z.string().min(3, 'Username must be at least 3 characters'),
   email: z.string().email('Invalid email').optional().or(z.literal('')),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  password: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(/[A-Z]/, 'Must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'Must contain at least one lowercase letter')
+    .regex(/\d/, 'Must contain at least one number'),
 });
 
 type RecruiterFormValues = z.infer<typeof recruiterSchema>;
@@ -38,7 +45,7 @@ export default function AccessManagementPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const { data: recruiters, isLoading } = useQuery({
+  const { data: recruiters, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['admin', 'recruiters'],
     queryFn: adminService.getRecruiters,
   });
@@ -71,6 +78,10 @@ export default function AccessManagementPage() {
   const onSubmit = (data: RecruiterFormValues) => {
     createMutation.mutate(data);
   };
+
+  if (isError) {
+    return <QueryError error={error} onRetry={refetch} />;
+  }
 
   return (
     <PageTransition>
@@ -144,15 +155,18 @@ export default function AccessManagementPage() {
               <div className="space-y-2">
                 <Label>Email</Label>
                 <Input type="email" {...form.register('email')} />
+                {form.formState.errors.email && <p className="text-xs text-destructive">{form.formState.errors.email.message}</p>}
               </div>
               <div className="space-y-2">
                 <Label>Password *</Label>
-                <Input type="password" {...form.register('password')} />
+                <PasswordInput {...form.register('password')} />
                 {form.formState.errors.password && <p className="text-xs text-destructive">{form.formState.errors.password.message}</p>}
               </div>
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-                <Button type="submit" disabled={createMutation.isPending}>Create</Button>
+                <Button type="submit" loading={createMutation.isPending}>
+                  {createMutation.isPending ? 'Creating...' : 'Create'}
+                </Button>
               </div>
             </form>
           </DialogContent>
@@ -166,7 +180,9 @@ export default function AccessManagementPage() {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={() => deleteId && deleteMutation.mutate(deleteId)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+              <AlertDialogAction onClick={() => deleteId && deleteMutation.mutate(deleteId)} disabled={deleteMutation.isPending} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+              </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

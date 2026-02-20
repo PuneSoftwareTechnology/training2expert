@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -82,6 +83,8 @@ export default function SignupPage() {
                 <Input
                   id="phone"
                   placeholder="9876543210"
+                  maxLength={10}
+                  onInput={(e) => { e.currentTarget.value = e.currentTarget.value.replace(/\D/g, ''); }}
                   {...register('phone')}
                 />
                 {errors.phone && (
@@ -91,9 +94,8 @@ export default function SignupPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input
+                <PasswordInput
                   id="password"
-                  type="password"
                   placeholder="Min 8 characters"
                   {...register('password')}
                 />
@@ -105,16 +107,10 @@ export default function SignupPage() {
               <Button
                 type="submit"
                 className="w-full"
-                disabled={signupMutation.isPending}
+                loading={signupMutation.isPending}
               >
-                {signupMutation.isPending ? (
-                  'Creating account...'
-                ) : (
-                  <>
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    Sign Up
-                  </>
-                )}
+                {!signupMutation.isPending && <UserPlus className="mr-2 h-4 w-4" />}
+                {signupMutation.isPending ? 'Creating account...' : 'Sign Up'}
               </Button>
 
               <p className="text-center text-sm text-muted-foreground">

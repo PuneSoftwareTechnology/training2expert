@@ -16,6 +16,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { PageLoader } from '@/components/loaders/PageLoader';
+import { QueryError } from '@/components/errors/QueryError';
 import { PageTransition } from '@/components/animations/PageTransition';
 import { QuestionCard } from '@/features/tests/components/QuestionCard';
 import { TestTimer } from '@/features/tests/components/TestTimer';
@@ -29,7 +30,7 @@ export default function TestAttemptPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const submittedRef = useRef(false);
 
-  const { data: test, isLoading } = useQuery({
+  const { data: test, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['student', 'test', testId],
     queryFn: () => studentService.getTestById(testId!),
     enabled: !!testId,
@@ -71,6 +72,10 @@ export default function TestAttemptPage() {
     return <PageLoader />;
   }
 
+  if (isError) {
+    return <QueryError error={error} onRetry={refetch} />;
+  }
+
   const answeredCount = Object.keys(answers).length;
   const totalQuestions = test.questions.length;
 
@@ -87,9 +92,9 @@ export default function TestAttemptPage() {
           </div>
           <div className="flex items-center gap-3">
             <TestTimer durationMinutes={test.durationMinutes} onTimeUp={handleTimeUp} />
-            <Button onClick={handleManualSubmit} disabled={submitMutation.isPending}>
-              <Send className="mr-2 h-4 w-4" />
-              Submit
+            <Button onClick={handleManualSubmit} loading={submitMutation.isPending}>
+              {!submitMutation.isPending && <Send className="mr-2 h-4 w-4" />}
+              {submitMutation.isPending ? 'Submitting...' : 'Submit'}
             </Button>
           </div>
         </div>
@@ -113,9 +118,9 @@ export default function TestAttemptPage() {
           <Button
             size="lg"
             onClick={handleManualSubmit}
-            disabled={submitMutation.isPending}
+            loading={submitMutation.isPending}
           >
-            <Send className="mr-2 h-4 w-4" />
+            {!submitMutation.isPending && <Send className="mr-2 h-4 w-4" />}
             {submitMutation.isPending ? 'Submitting...' : 'Submit Test'}
           </Button>
         </div>

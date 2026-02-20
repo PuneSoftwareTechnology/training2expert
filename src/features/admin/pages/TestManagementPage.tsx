@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
 import { CardSkeleton } from '@/components/loaders/CardSkeleton';
+import { QueryError } from '@/components/errors/QueryError';
 import { PageTransition } from '@/components/animations/PageTransition';
 import { adminService } from '@/services/admin.service';
 import { getErrorMessage } from '@/services/api';
@@ -40,7 +41,7 @@ export default function TestManagementPage() {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const { data: tests, isLoading } = useQuery({
+  const { data: tests, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['admin', 'tests'],
     queryFn: adminService.getTests,
   });
@@ -94,6 +95,10 @@ export default function TestManagementPage() {
     return <div className="space-y-4"><CardSkeleton /><CardSkeleton /></div>;
   }
 
+  if (isError) {
+    return <QueryError error={error} onRetry={refetch} />;
+  }
+
   return (
     <PageTransition>
       <div className="space-y-6">
@@ -134,17 +139,19 @@ export default function TestManagementPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => toggleMutation.mutate(test.id)}
+                      loading={toggleMutation.isPending}
                     >
-                      <Power className="mr-1 h-3.5 w-3.5" />
+                      {!toggleMutation.isPending && <Power className="mr-1 h-3.5 w-3.5" />}
                       {test.isActive ? 'Deactivate' : 'Activate'}
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => deleteMutation.mutate(test.id)}
+                      loading={deleteMutation.isPending}
                       className="text-destructive hover:text-destructive"
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
+                      {!deleteMutation.isPending && <Trash2 className="h-3.5 w-3.5" />}
                     </Button>
                   </div>
                 </CardContent>
@@ -233,7 +240,7 @@ export default function TestManagementPage() {
 
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-                <Button type="submit" disabled={createMutation.isPending}>
+                <Button type="submit" loading={createMutation.isPending}>
                   {createMutation.isPending ? 'Creating...' : 'Create Test'}
                 </Button>
               </div>

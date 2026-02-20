@@ -4,11 +4,12 @@ import { BarChart3, MessageSquare, FileText, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CardSkeleton } from '@/components/loaders/CardSkeleton';
+import { QueryError } from '@/components/errors/QueryError';
 import { PageTransition } from '@/components/animations/PageTransition';
 import { studentService } from '@/services/student.service';
 
 export default function EvaluationsPage() {
-  const { data: evaluations, isLoading } = useQuery({
+  const { data: evaluations, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['student', 'evaluations'],
     queryFn: studentService.getEvaluations,
   });
@@ -20,6 +21,10 @@ export default function EvaluationsPage() {
         <CardSkeleton />
       </div>
     );
+  }
+
+  if (isError) {
+    return <QueryError error={error} onRetry={refetch} />;
   }
 
   if (!evaluations || evaluations.length === 0) {

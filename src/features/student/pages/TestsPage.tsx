@@ -6,13 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CardSkeleton } from '@/components/loaders/CardSkeleton';
+import { QueryError } from '@/components/errors/QueryError';
 import { PageTransition } from '@/components/animations/PageTransition';
 import { studentService } from '@/services/student.service';
 
 export default function TestsPage() {
   const navigate = useNavigate();
 
-  const { data: tests, isLoading } = useQuery({
+  const { data: tests, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['student', 'tests'],
     queryFn: studentService.getAvailableTests,
   });
@@ -24,6 +25,10 @@ export default function TestsPage() {
         <CardSkeleton />
       </div>
     );
+  }
+
+  if (isError) {
+    return <QueryError error={error} onRetry={refetch} />;
   }
 
   return (

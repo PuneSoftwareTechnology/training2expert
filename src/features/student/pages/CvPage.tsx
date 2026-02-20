@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CardSkeleton } from '@/components/loaders/CardSkeleton';
+import { QueryError } from '@/components/errors/QueryError';
 import { PageTransition } from '@/components/animations/PageTransition';
 import { studentService } from '@/services/student.service';
 import { getErrorMessage } from '@/services/api';
@@ -15,7 +16,7 @@ export default function CvPage() {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { data: templates, isLoading: templatesLoading } = useQuery({
+  const { data: templates, isLoading: templatesLoading, isError, error, refetch } = useQuery({
     queryKey: ['student', 'cv-templates'],
     queryFn: studentService.getCvTemplates,
   });
@@ -53,6 +54,10 @@ export default function CvPage() {
         <CardSkeleton />
       </div>
     );
+  }
+
+  if (isError) {
+    return <QueryError error={error} onRetry={refetch} />;
   }
 
   return (
@@ -142,7 +147,7 @@ export default function CvPage() {
               <Button
                 variant="outline"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={uploadMutation.isPending}
+                loading={uploadMutation.isPending}
               >
                 {uploadMutation.isPending ? 'Uploading...' : 'Choose File'}
               </Button>

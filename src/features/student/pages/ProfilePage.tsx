@@ -7,6 +7,7 @@ import { useState, useRef } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -14,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { CardSkeleton } from '@/components/loaders/CardSkeleton';
+import { QueryError } from '@/components/errors/QueryError';
 import { PageTransition } from '@/components/animations/PageTransition';
 import { ApprovalOverlay } from '../components/ApprovalOverlay';
 
@@ -38,7 +40,7 @@ export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [certInput, setCertInput] = useState('');
 
-  const { data: profile, isLoading } = useQuery({
+  const { data: profile, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['student', 'profile'],
     queryFn: studentService.getProfile,
   });
@@ -150,6 +152,10 @@ export default function ProfilePage() {
     );
   }
 
+  if (isError) {
+    return <QueryError error={error} onRetry={refetch} />;
+  }
+
   return (
     <PageTransition>
       <div className="space-y-6">
@@ -181,9 +187,9 @@ export default function ProfilePage() {
                     variant="outline"
                     size="sm"
                     onClick={() => fileInputRef.current?.click()}
-                    disabled={photoMutation.isPending}
+                    loading={photoMutation.isPending}
                   >
-                    <Upload className="mr-2 h-3.5 w-3.5" />
+                    {!photoMutation.isPending && <Upload className="mr-2 h-3.5 w-3.5" />}
                     {photoMutation.isPending ? 'Uploading...' : 'Change Photo'}
                   </Button>
                 </div>
@@ -205,7 +211,7 @@ export default function ProfilePage() {
                 </div>
                 <div className="space-y-2">
                   <Label>Phone</Label>
-                  <Input {...basicForm.register('phone')} disabled={!isApproved} />
+                  <Input maxLength={10} onInput={(e) => { e.currentTarget.value = e.currentTarget.value.replace(/\D/g, ''); }} {...basicForm.register('phone')} disabled={!isApproved} />
                   {basicForm.formState.errors.phone && (
                     <p className="text-sm text-destructive">{basicForm.formState.errors.phone.message}</p>
                   )}
@@ -220,9 +226,9 @@ export default function ProfilePage() {
                 </div>
               </div>
               {isApproved && (
-                <Button type="submit" disabled={updateMutation.isPending}>
-                  <Save className="mr-2 h-4 w-4" />
-                  Save Basic Details
+                <Button type="submit" loading={updateMutation.isPending}>
+                  {!updateMutation.isPending && <Save className="mr-2 h-4 w-4" />}
+                  {updateMutation.isPending ? 'Saving...' : 'Save Basic Details'}
                 </Button>
               )}
             </form>
@@ -289,9 +295,9 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                <Button type="submit" disabled={updateMutation.isPending}>
-                  <Save className="mr-2 h-4 w-4" />
-                  Save Education
+                <Button type="submit" loading={updateMutation.isPending}>
+                  {!updateMutation.isPending && <Save className="mr-2 h-4 w-4" />}
+                  {updateMutation.isPending ? 'Saving...' : 'Save Education'}
                 </Button>
               </form>
             </CardContent>
@@ -355,9 +361,9 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                <Button type="submit" disabled={updateMutation.isPending}>
-                  <Save className="mr-2 h-4 w-4" />
-                  Save Experience
+                <Button type="submit" loading={updateMutation.isPending}>
+                  {!updateMutation.isPending && <Save className="mr-2 h-4 w-4" />}
+                  {updateMutation.isPending ? 'Saving...' : 'Save Experience'}
                 </Button>
               </form>
             </CardContent>
@@ -374,27 +380,27 @@ export default function ProfilePage() {
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <div className="space-y-2">
                   <Label>Current Password</Label>
-                  <Input type="password" {...passwordForm.register('oldPassword')} />
+                  <PasswordInput {...passwordForm.register('oldPassword')} />
                   {passwordForm.formState.errors.oldPassword && (
                     <p className="text-sm text-destructive">{passwordForm.formState.errors.oldPassword.message}</p>
                   )}
                 </div>
                 <div className="space-y-2">
                   <Label>New Password</Label>
-                  <Input type="password" {...passwordForm.register('newPassword')} />
+                  <PasswordInput {...passwordForm.register('newPassword')} />
                   {passwordForm.formState.errors.newPassword && (
                     <p className="text-sm text-destructive">{passwordForm.formState.errors.newPassword.message}</p>
                   )}
                 </div>
                 <div className="space-y-2">
                   <Label>Confirm Password</Label>
-                  <Input type="password" {...passwordForm.register('confirmPassword')} />
+                  <PasswordInput {...passwordForm.register('confirmPassword')} />
                   {passwordForm.formState.errors.confirmPassword && (
                     <p className="text-sm text-destructive">{passwordForm.formState.errors.confirmPassword.message}</p>
                   )}
                 </div>
               </div>
-              <Button type="submit" disabled={passwordMutation.isPending}>
+              <Button type="submit" loading={passwordMutation.isPending}>
                 {passwordMutation.isPending ? 'Changing...' : 'Change Password'}
               </Button>
             </form>

@@ -3,12 +3,13 @@ import { DollarSign, CheckCircle2, Clock } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CardSkeleton } from '@/components/loaders/CardSkeleton';
+import { QueryError } from '@/components/errors/QueryError';
 import { PageTransition } from '@/components/animations/PageTransition';
 import { studentService } from '@/services/student.service';
 import { formatCurrency } from '@/utils/format';
 
 export default function PaymentsPage() {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['student', 'payments'],
     queryFn: studentService.getPaymentSummary,
   });
@@ -24,6 +25,10 @@ export default function PaymentsPage() {
         <CardSkeleton />
       </div>
     );
+  }
+
+  if (isError) {
+    return <QueryError error={error} onRetry={refetch} />;
   }
 
   return (

@@ -68,16 +68,10 @@ export default function ForgotPasswordPage() {
               <Button
                 type="submit"
                 className="w-full"
-                disabled={mutation.isPending}
+                loading={mutation.isPending}
               >
-                {mutation.isPending ? (
-                  'Sending...'
-                ) : (
-                  <>
-                    <Mail className="mr-2 h-4 w-4" />
-                    Send Reset Code
-                  </>
-                )}
+                {!mutation.isPending && <Mail className="mr-2 h-4 w-4" />}
+                {mutation.isPending ? 'Sending...' : 'Send Reset Code'}
               </Button>
 
               <p className="text-center text-sm text-muted-foreground">

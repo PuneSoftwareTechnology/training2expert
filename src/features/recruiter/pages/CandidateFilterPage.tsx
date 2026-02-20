@@ -13,6 +13,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { TableSkeleton } from '@/components/loaders/TableSkeleton';
+import { QueryError } from '@/components/errors/QueryError';
 import { PageTransition } from '@/components/animations/PageTransition';
 import { recruiterService } from '@/services/recruiter.service';
 import { getErrorMessage } from '@/services/api';
@@ -27,7 +28,7 @@ export default function CandidateFilterPage() {
   const [minTech, setMinTech] = useState('');
   const [minComm, setMinComm] = useState('');
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['recruiter', 'candidates', { course, city, minExp, minTech, minComm }],
     queryFn: () =>
       recruiterService.getCandidates({
@@ -74,6 +75,10 @@ export default function CandidateFilterPage() {
       toast.error(getErrorMessage(error));
     }
   };
+
+  if (isError) {
+    return <QueryError error={error} onRetry={refetch} />;
+  }
 
   return (
     <PageTransition>
@@ -174,9 +179,9 @@ export default function CandidateFilterPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() => shortlistMutation.mutate(candidate.id)}
-                              disabled={shortlistMutation.isPending}
+                              loading={shortlistMutation.isPending}
                             >
-                              <Star className="h-3.5 w-3.5" />
+                              {!shortlistMutation.isPending && <Star className="h-3.5 w-3.5" />}
                             </Button>
                           ) : (
                             <Badge variant="outline" className="text-xs">Shortlisted</Badge>

@@ -20,6 +20,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { TableSkeleton } from '@/components/loaders/TableSkeleton';
+import { QueryError } from '@/components/errors/QueryError';
 import { PageTransition } from '@/components/animations/PageTransition';
 
 import { enquirySchema, type EnquiryFormValues } from '../schemas/enquiry.schema';
@@ -41,7 +42,7 @@ export default function EnquiryPage() {
   const [filterLead, setFilterLead] = useState<string>('');
   const [filterDemo, setFilterDemo] = useState<string>('');
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['admin', 'enquiries', { fromDate, toDate, filterLead, filterDemo }],
     queryFn: () =>
       adminService.getEnquiries({
@@ -138,6 +139,10 @@ export default function EnquiryPage() {
       case 'ENROLLED': return 'outline' as const;
     }
   };
+
+  if (isError) {
+    return <QueryError error={error} onRetry={refetch} />;
+  }
 
   return (
     <PageTransition>
@@ -262,7 +267,7 @@ export default function EnquiryPage() {
             <DialogHeader>
               <DialogTitle>{editingEnquiry ? 'Edit Enquiry' : 'Add Enquiry'}</DialogTitle>
             </DialogHeader>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit(onSubmit)(e); }} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <Label>Date</Label>
@@ -275,12 +280,13 @@ export default function EnquiryPage() {
                 </div>
                 <div className="space-y-1">
                   <Label>Phone *</Label>
-                  <Input {...form.register('phone')} />
+                  <Input maxLength={10} onInput={(e) => { e.currentTarget.value = e.currentTarget.value.replace(/\D/g, ''); }} {...form.register('phone')} />
                   {form.formState.errors.phone && <p className="text-xs text-destructive">{form.formState.errors.phone.message}</p>}
                 </div>
                 <div className="space-y-1">
                   <Label>Email</Label>
                   <Input type="email" {...form.register('email')} />
+                  {form.formState.errors.email && <p className="text-xs text-destructive">{form.formState.errors.email.message}</p>}
                 </div>
                 <div className="space-y-1">
                   <Label>Course</Label>
@@ -321,8 +327,8 @@ export default function EnquiryPage() {
               </div>
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-                <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
-                  {editingEnquiry ? 'Update' : 'Create'}
+                <Button type="submit" loading={createMutation.isPending || updateMutation.isPending}>
+                  {editingEnquiry ? (updateMutation.isPending ? 'Updating...' : 'Update') : (createMutation.isPending ? 'Creating...' : 'Create')}
                 </Button>
               </div>
             </form>
@@ -340,8 +346,8 @@ export default function EnquiryPage() {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={() => convertId && convertMutation.mutate(convertId)}>
-                Convert
+              <AlertDialogAction onClick={() => convertId && convertMutation.mutate(convertId)} disabled={convertMutation.isPending}>
+                {convertMutation.isPending ? 'Converting...' : 'Convert'}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

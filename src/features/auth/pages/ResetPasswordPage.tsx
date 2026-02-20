@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -55,7 +56,7 @@ export default function ResetPasswordPage() {
             <CardDescription>Enter the code sent to your email</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={(e) => { e.preventDefault(); handleSubmit(onSubmit)(e); }} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -83,9 +84,8 @@ export default function ResetPasswordPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="newPassword">New Password</Label>
-                <Input
+                <PasswordInput
                   id="newPassword"
-                  type="password"
                   placeholder="Min 8 characters"
                   {...register('newPassword')}
                 />
@@ -96,9 +96,8 @@ export default function ResetPasswordPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <Input
+                <PasswordInput
                   id="confirmPassword"
-                  type="password"
                   placeholder="Re-enter password"
                   {...register('confirmPassword')}
                 />
@@ -110,16 +109,10 @@ export default function ResetPasswordPage() {
               <Button
                 type="submit"
                 className="w-full"
-                disabled={mutation.isPending}
+                loading={mutation.isPending}
               >
-                {mutation.isPending ? (
-                  'Resetting...'
-                ) : (
-                  <>
-                    <KeyRound className="mr-2 h-4 w-4" />
-                    Reset Password
-                  </>
-                )}
+                {!mutation.isPending && <KeyRound className="mr-2 h-4 w-4" />}
+                {mutation.isPending ? 'Resetting...' : 'Reset Password'}
               </Button>
 
               <p className="text-center text-sm text-muted-foreground">

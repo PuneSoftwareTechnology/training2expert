@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import {
@@ -11,6 +12,10 @@ import {
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth.store';
 import { ROUTES } from '@/constants/routes';
@@ -39,6 +44,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
   const logout = useAuthStore((s) => s.logout);
   const user = useAuthStore((s) => s.user);
   const isApproved = user?.isApproved ?? false;
+  const [showLogout, setShowLogout] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -85,7 +91,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
             <span className="hidden text-sm text-muted-foreground lg:inline">
               {user?.name}
             </span>
-            <Button variant="ghost" size="sm" onClick={handleLogout}>
+            <Button variant="ghost" size="sm" onClick={() => setShowLogout(true)}>
               <LogOut className="mr-1 h-4 w-4" />
               <span className="hidden sm:inline">Logout</span>
             </Button>
@@ -131,6 +137,22 @@ export function StudentLayout({ children }: StudentLayoutProps) {
 
       {/* Bottom spacer for mobile nav */}
       <div className="h-16 md:hidden" />
+
+      {/* Logout confirmation */}
+      <AlertDialog open={showLogout} onOpenChange={setShowLogout}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to logout?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You will need to sign in again to access your account.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLogout}>Logout</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

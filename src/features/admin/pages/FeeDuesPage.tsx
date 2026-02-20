@@ -8,6 +8,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { TableSkeleton } from '@/components/loaders/TableSkeleton';
+import { QueryError } from '@/components/errors/QueryError';
 import { PageTransition } from '@/components/animations/PageTransition';
 
 import { adminService } from '@/services/admin.service';
@@ -18,10 +19,14 @@ import { cn } from '@/lib/utils';
 export default function FeeDuesPage() {
   const [daysFilter, setDaysFilter] = useState(30);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['admin', 'reports', 'fee-dues', daysFilter],
     queryFn: () => adminService.getFeeDuesReport(daysFilter),
   });
+
+  if (isError) {
+    return <QueryError error={error} onRetry={refetch} />;
+  }
 
   return (
     <PageTransition>

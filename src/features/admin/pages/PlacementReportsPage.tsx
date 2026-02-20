@@ -9,6 +9,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { TableSkeleton } from '@/components/loaders/TableSkeleton';
+import { QueryError } from '@/components/errors/QueryError';
 import { PageTransition } from '@/components/animations/PageTransition';
 
 import { adminService } from '@/services/admin.service';
@@ -18,13 +19,17 @@ export default function PlacementReportsPage() {
   const [course, setCourse] = useState('');
   const [status, setStatus] = useState('');
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['admin', 'reports', 'placement', { course, status }],
     queryFn: () => adminService.getPlacementReport({
       course: course || undefined,
       status: status || undefined,
     }),
   });
+
+  if (isError) {
+    return <QueryError error={error} onRetry={refetch} />;
+  }
 
   return (
     <PageTransition>

@@ -3,16 +3,21 @@ import { QrCode } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CardSkeleton } from '@/components/loaders/CardSkeleton';
+import { QueryError } from '@/components/errors/QueryError';
 import { PageTransition } from '@/components/animations/PageTransition';
 import { adminService } from '@/services/admin.service';
 
 export default function QrCodePage() {
-  const { data: qrCode, isLoading } = useQuery({
+  const { data: qrCode, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['admin', 'qr-code'],
     queryFn: adminService.getActiveQrCode,
   });
 
   if (isLoading) return <CardSkeleton />;
+
+  if (isError) {
+    return <QueryError error={error} onRetry={refetch} />;
+  }
 
   return (
     <PageTransition>

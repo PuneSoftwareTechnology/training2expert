@@ -17,6 +17,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import { TableSkeleton } from '@/components/loaders/TableSkeleton';
+import { QueryError } from '@/components/errors/QueryError';
 import { PageTransition } from '@/components/animations/PageTransition';
 
 import { adminService } from '@/services/admin.service';
@@ -37,7 +38,7 @@ export default function CandidateFilterPage() {
   const [emailBody, setEmailBody] = useState('');
   const [comment, setComment] = useState('');
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['admin', 'reports', 'candidates', { course, city, minExp, minTech, minComm }],
     queryFn: () =>
       adminService.getCandidateReport({
@@ -114,6 +115,10 @@ export default function CandidateFilterPage() {
     }
   };
 
+  if (isError) {
+    return <QueryError error={error} onRetry={refetch} />;
+  }
+
   return (
     <PageTransition>
       <div className="space-y-6">
@@ -158,8 +163,9 @@ export default function CandidateFilterPage() {
         {selectedIds.length > 0 && (
           <div className="flex items-center gap-3 rounded-lg border bg-primary/5 p-3">
             <span className="text-sm font-medium">{selectedIds.length} selected</span>
-            <Button size="sm" variant="outline" onClick={() => downloadBulkMutation.mutate()} disabled={downloadBulkMutation.isPending}>
-              <Download className="mr-1 h-3.5 w-3.5" /> Download CVs
+            <Button size="sm" variant="outline" onClick={() => downloadBulkMutation.mutate()} loading={downloadBulkMutation.isPending}>
+              {!downloadBulkMutation.isPending && <Download className="mr-1 h-3.5 w-3.5" />}
+              {downloadBulkMutation.isPending ? 'Downloading...' : 'Download CVs'}
             </Button>
             <Button size="sm" variant="outline" onClick={() => setEmailDialog(true)}>
               <Mail className="mr-1 h-3.5 w-3.5" /> Send Email
@@ -234,7 +240,9 @@ export default function CandidateFilterPage() {
               <div className="space-y-1"><Label>Body</Label><Textarea value={emailBody} onChange={(e) => setEmailBody(e.target.value)} rows={4} /></div>
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setEmailDialog(false)}>Cancel</Button>
-                <Button onClick={() => sendEmailMutation.mutate()} disabled={sendEmailMutation.isPending}>Send</Button>
+                <Button onClick={() => sendEmailMutation.mutate()} loading={sendEmailMutation.isPending}>
+                  {sendEmailMutation.isPending ? 'Sending...' : 'Send'}
+                </Button>
               </div>
             </div>
           </DialogContent>
@@ -248,7 +256,9 @@ export default function CandidateFilterPage() {
               <Textarea value={comment} onChange={(e) => setComment(e.target.value)} rows={3} placeholder="Enter comment..." />
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setCommentDialog(false)}>Cancel</Button>
-                <Button onClick={() => addCommentMutation.mutate()} disabled={addCommentMutation.isPending}>Add</Button>
+                <Button onClick={() => addCommentMutation.mutate()} loading={addCommentMutation.isPending}>
+                  {addCommentMutation.isPending ? 'Adding...' : 'Add'}
+                </Button>
               </div>
             </div>
           </DialogContent>
