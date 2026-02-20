@@ -1,0 +1,153 @@
+import { NavLink, useNavigate } from 'react-router-dom';
+import type { ReactNode } from 'react';
+import { motion } from 'framer-motion';
+import {
+  ClipboardList,
+  Users,
+  BarChart3,
+  QrCode,
+  ListChecks,
+  DollarSign,
+  TrendingUp,
+  Briefcase,
+  ShieldCheck,
+  FileText,
+  LogOut,
+  Menu,
+  ChevronLeft,
+  UserCog,
+  Settings,
+} from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
+import { useAuthStore } from '@/store/auth.store';
+import { useUiStore } from '@/store/ui.store';
+import { useRole } from '@/hooks/useRole';
+import { ROUTES } from '@/constants/routes';
+
+interface NavItem {
+  label: string;
+  path: string;
+  icon: React.ReactNode;
+  superAdminOnly?: boolean;
+}
+
+const NAV_ITEMS: NavItem[] = [
+  { label: 'Enquiry', path: ROUTES.ADMIN_ENQUIRY, icon: <ClipboardList className="h-4 w-4" /> },
+  { label: 'Enrollment', path: ROUTES.ADMIN_ENROLLMENT, icon: <Users className="h-4 w-4" /> },
+  { label: 'Candidate Reports', path: ROUTES.ADMIN_CANDIDATE_FILTER, icon: <BarChart3 className="h-4 w-4" /> },
+  { label: 'Fee Dues', path: ROUTES.ADMIN_FEE_DUES, icon: <DollarSign className="h-4 w-4" /> },
+  { label: 'Enrollment Figures', path: ROUTES.ADMIN_ENROLLMENT_FIGURES, icon: <TrendingUp className="h-4 w-4" /> },
+  { label: 'Placement Reports', path: ROUTES.ADMIN_PLACEMENT_REPORTS, icon: <Briefcase className="h-4 w-4" /> },
+  { label: 'QR Code', path: ROUTES.ADMIN_QR_CODE, icon: <QrCode className="h-4 w-4" /> },
+  { label: 'Recruiter Shortlist', path: ROUTES.ADMIN_RECRUITER_SHORTLIST, icon: <ListChecks className="h-4 w-4" /> },
+  { label: 'Access Management', path: ROUTES.ADMIN_ACCESS_MANAGEMENT, icon: <ShieldCheck className="h-4 w-4" /> },
+  { label: 'Tests', path: ROUTES.ADMIN_TESTS, icon: <FileText className="h-4 w-4" /> },
+  { label: 'Manage Admins', path: ROUTES.ADMIN_MANAGE_ADMINS, icon: <UserCog className="h-4 w-4" />, superAdminOnly: true },
+  { label: 'QR Management', path: ROUTES.ADMIN_QR_MANAGEMENT, icon: <Settings className="h-4 w-4" />, superAdminOnly: true },
+];
+
+interface AdminLayoutProps {
+  children: ReactNode;
+}
+
+export function AdminLayout({ children }: AdminLayoutProps) {
+  const navigate = useNavigate();
+  const logout = useAuthStore((s) => s.logout);
+  const user = useAuthStore((s) => s.user);
+  const { sidebarCollapsed, toggleSidebar } = useUiStore();
+  const { isSuperAdmin } = useRole();
+
+  const handleLogout = () => {
+    logout();
+    navigate(ROUTES.LOGIN, { replace: true });
+  };
+
+  const filteredItems = NAV_ITEMS.filter(
+    (item) => !item.superAdminOnly || isSuperAdmin,
+  );
+
+  return (
+    <div className="flex h-screen overflow-hidden bg-background">
+      <motion.aside
+        animate={{ width: sidebarCollapsed ? 64 : 256 }}
+        transition={{ duration: 0.2, ease: 'easeInOut' }}
+        className="flex flex-col border-r bg-card"
+      >
+        <div className="flex h-14 items-center justify-between px-4">
+          {!sidebarCollapsed && (
+            <h1 className="text-lg font-bold text-primary">SMS Admin</h1>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleSidebar}
+            className="h-8 w-8"
+          >
+            {sidebarCollapsed ? (
+              <Menu className="h-4 w-4" />
+            ) : (
+              <ChevronLeft className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+
+        <Separator />
+
+        <ScrollArea className="flex-1 px-2 py-2">
+          <nav className="flex flex-col gap-1">
+            {filteredItems.map((item) => (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                className={({ isActive }) =>
+                  cn(
+                    'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                    isActive
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                    sidebarCollapsed && 'justify-center px-2',
+                  )
+                }
+                title={sidebarCollapsed ? item.label : undefined}
+              >
+                {item.icon}
+                {!sidebarCollapsed && <span>{item.label}</span>}
+              </NavLink>
+            ))}
+          </nav>
+        </ScrollArea>
+
+        <Separator />
+
+        <div className="p-2">
+          {!sidebarCollapsed && user && (
+            <p className="mb-2 truncate px-3 text-xs text-muted-foreground">
+              {user.name} ({user.role.replace('_', ' ')})
+            </p>
+          )}
+          <Button
+            variant="ghost"
+            onClick={handleLogout}
+            className={cn(
+              'w-full text-muted-foreground hover:text-destructive',
+              sidebarCollapsed ? 'justify-center px-2' : 'justify-start gap-3 px-3',
+            )}
+          >
+            <LogOut className="h-4 w-4" />
+            {!sidebarCollapsed && <span>Logout</span>}
+          </Button>
+        </div>
+      </motion.aside>
+
+      <main className="flex-1 overflow-auto">
+        <div className="p-6">
+          {children}
+        </div>
+      </main>
+    </div>
+  );
+}

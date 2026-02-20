@@ -1,0 +1,33 @@
+export const ROUTES = {
+  LOGIN: "/login",
+  SIGNUP: "/signup",
+  FORGOT_PASSWORD: "/forgot-password",
+  RESET_PASSWORD: "/reset-password",
+  VERIFY_EMAIL: "/verify-email",
+
+  STUDENT_DASHBOARD: "/student",
+  STUDENT_PROFILE: "/student/profile",
+  STUDENT_PAYMENTS: "/student/payments",
+  STUDENT_EVALUATIONS: "/student/evaluations",
+  STUDENT_CV: "/student/cv",
+  STUDENT_TESTS: "/student/tests",
+
+  ADMIN_DASHBOARD: "/admin",
+  ADMIN_ENQUIRY: "/admin/enquiry",
+  ADMIN_ENROLLMENT: "/admin/enrollment",
+  ADMIN_REPORTS: "/admin/reports",
+  ADMIN_CANDIDATE_FILTER: "/admin/reports/candidates",
+  ADMIN_FEE_DUES: "/admin/reports/fee-dues",
+  ADMIN_ENROLLMENT_FIGURES: "/admin/reports/enrollment-figures",
+  ADMIN_PLACEMENT_REPORTS: "/admin/reports/placement",
+  ADMIN_QR_CODE: "/admin/qr-code",
+  ADMIN_RECRUITER_SHORTLIST: "/admin/recruiter-shortlist",
+  ADMIN_ACCESS_MANAGEMENT: "/admin/access-management",
+  ADMIN_TESTS: "/admin/tests",
+  ADMIN_MANAGE_ADMINS: "/admin/manage-admins",
+  ADMIN_QR_MANAGEMENT: "/admin/qr-management",
+
+  RECRUITER_DASHBOARD: "/recruiter",
+  RECRUITER_CANDIDATES: "/recruiter/candidates",
+  RECRUITER_SHORTLIST: "/recruiter/shortlist",
+} as const;
