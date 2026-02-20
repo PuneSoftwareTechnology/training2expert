@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { authService } from '@/services/auth.service';
 import { getErrorMessage } from '@/services/api';
 import { ROUTES } from '@/constants/routes';
-import { PageTransition } from '@/components/animations/PageTransition';
+import { AuthLayout } from '@/layouts/AuthLayout';
 
 export default function VerifyEmailPage() {
   const [searchParams] = useSearchParams();
@@ -37,9 +37,8 @@ export default function VerifyEmailPage() {
   }, [token]);
 
   return (
-    <PageTransition>
-      <div className="flex min-h-screen items-center justify-center bg-background px-4">
-        <Card className="w-full max-w-md">
+    <AuthLayout>
+        <Card className="shadow-lg shadow-primary/[0.04]">
           <CardContent className="flex flex-col items-center gap-4 pt-8 text-center">
             {status === 'loading' && (
               <>
@@ -69,7 +68,6 @@ export default function VerifyEmailPage() {
             )}
           </CardContent>
         </Card>
-      </div>
-    </PageTransition>
+    </AuthLayout>
   );
 }

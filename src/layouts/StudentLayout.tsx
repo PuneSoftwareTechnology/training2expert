@@ -54,7 +54,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       {/* Desktop top nav */}
-      <header className="sticky top-0 z-30 border-b bg-card shadow-sm">
+      <header className="sticky top-0 z-30 border-b border-border/70 bg-card/80 shadow-sm backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
           <h1 className="text-lg font-bold text-primary">SMS Student</h1>
 
@@ -105,7 +105,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
       </main>
 
       {/* Mobile bottom tab bar */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t bg-card shadow-lg md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-border/70 bg-card/80 shadow-lg backdrop-blur-md md:hidden">
         <div className="flex items-center justify-around py-2">
           {TABS.map((tab) => {
             const isLocked = tab.requiresApproval && !isApproved;

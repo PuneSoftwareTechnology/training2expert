@@ -23,7 +23,7 @@ import { useAuthStore } from "@/store/auth.store";
 import { getErrorMessage } from "@/services/api";
 import { ROUTES } from "@/constants/routes";
 import { ROLES } from "@/constants/roles";
-import { PageTransition } from "@/components/animations/PageTransition";
+import { AuthLayout } from "@/layouts/AuthLayout";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -77,9 +77,8 @@ export default function LoginPage() {
   };
 
   return (
-    <PageTransition>
-      <div className="flex min-h-screen items-center justify-center bg-background px-4">
-        <Card className="w-full max-w-md">
+    <AuthLayout>
+        <Card className="shadow-lg shadow-primary/[0.04]">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
             <CardDescription>Sign in to your account</CardDescription>
@@ -151,7 +150,6 @@ export default function LoginPage() {
             </form>
           </CardContent>
         </Card>
-      </div>
-    </PageTransition>
+    </AuthLayout>
   );
 }

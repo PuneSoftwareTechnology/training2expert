@@ -14,7 +14,7 @@ import { forgotPasswordSchema, type ForgotPasswordFormValues } from '../schemas/
 import { authService } from '@/services/auth.service';
 import { getErrorMessage } from '@/services/api';
 import { ROUTES } from '@/constants/routes';
-import { PageTransition } from '@/components/animations/PageTransition';
+import { AuthLayout } from '@/layouts/AuthLayout';
 
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
@@ -43,9 +43,8 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <PageTransition>
-      <div className="flex min-h-screen items-center justify-center bg-background px-4">
-        <Card className="w-full max-w-md">
+    <AuthLayout>
+        <Card className="shadow-lg shadow-primary/[0.04]">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold">Forgot Password</CardTitle>
             <CardDescription>Enter your email to receive a reset code</CardDescription>
@@ -82,7 +81,6 @@ export default function ForgotPasswordPage() {
             </form>
           </CardContent>
         </Card>
-      </div>
-    </PageTransition>
+    </AuthLayout>
   );
 }

@@ -15,7 +15,7 @@ import { signupSchema, type SignupFormValues } from '../schemas/auth.schemas';
 import { authService } from '@/services/auth.service';
 import { getErrorMessage } from '@/services/api';
 import { ROUTES } from '@/constants/routes';
-import { PageTransition } from '@/components/animations/PageTransition';
+import { AuthLayout } from '@/layouts/AuthLayout';
 
 export default function SignupPage() {
   const navigate = useNavigate();
@@ -44,9 +44,8 @@ export default function SignupPage() {
   };
 
   return (
-    <PageTransition>
-      <div className="flex min-h-screen items-center justify-center bg-background px-4">
-        <Card className="w-full max-w-md">
+    <AuthLayout>
+        <Card className="shadow-lg shadow-primary/[0.04]">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold">Create Account</CardTitle>
             <CardDescription>Sign up as a student</CardDescription>
@@ -122,7 +121,6 @@ export default function SignupPage() {
             </form>
           </CardContent>
         </Card>
-      </div>
-    </PageTransition>
+    </AuthLayout>
   );
 }

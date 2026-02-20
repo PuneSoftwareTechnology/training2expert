@@ -81,17 +81,17 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       <motion.aside
         animate={{ width: sidebarCollapsed ? 64 : 256 }}
         transition={{ duration: 0.2, ease: 'easeInOut' }}
-        className="flex flex-col border-r bg-card"
+        className="flex flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground"
       >
         <div className="flex h-14 items-center justify-between px-4">
           {!sidebarCollapsed && (
-            <h1 className="text-lg font-bold text-primary">SMS Admin</h1>
+            <h1 className="text-lg font-bold text-sidebar-primary">SMS Admin</h1>
           )}
           <Button
             variant="ghost"
             size="icon"
             onClick={toggleSidebar}
-            className="h-8 w-8"
+            className="h-8 w-8 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           >
             {sidebarCollapsed ? (
               <Menu className="h-4 w-4" />
@@ -101,7 +101,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           </Button>
         </div>
 
-        <Separator />
+        <Separator className="bg-sidebar-border" />
 
         <ScrollArea className="flex-1 px-2 py-2">
           <nav className="flex flex-col gap-1">
@@ -113,8 +113,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                   cn(
                     'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                     isActive
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                      ? 'bg-sidebar-accent text-sidebar-primary'
+                      : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
                     sidebarCollapsed && 'justify-center px-2',
                   )
                 }
@@ -127,11 +127,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           </nav>
         </ScrollArea>
 
-        <Separator />
+        <Separator className="bg-sidebar-border" />
 
         <div className="p-2">
           {!sidebarCollapsed && user && (
-            <p className="mb-2 truncate px-3 text-xs text-muted-foreground">
+            <p className="mb-2 truncate px-3 text-xs text-sidebar-foreground/60">
               {user.name} ({user.role.replace('_', ' ')})
             </p>
           )}
@@ -139,7 +139,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             variant="ghost"
             onClick={() => setShowLogout(true)}
             className={cn(
-              'w-full text-muted-foreground hover:text-destructive',
+              'w-full text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-destructive',
               sidebarCollapsed ? 'justify-center px-2' : 'justify-start gap-3 px-3',
             )}
           >

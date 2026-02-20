@@ -15,7 +15,7 @@ import { resetPasswordSchema, type ResetPasswordFormValues } from '../schemas/au
 import { authService } from '@/services/auth.service';
 import { getErrorMessage } from '@/services/api';
 import { ROUTES } from '@/constants/routes';
-import { PageTransition } from '@/components/animations/PageTransition';
+import { AuthLayout } from '@/layouts/AuthLayout';
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
@@ -48,9 +48,8 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <PageTransition>
-      <div className="flex min-h-screen items-center justify-center bg-background px-4">
-        <Card className="w-full max-w-md">
+    <AuthLayout>
+        <Card className="shadow-lg shadow-primary/[0.04]">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold">Reset Password</CardTitle>
             <CardDescription>Enter the code sent to your email</CardDescription>
@@ -123,7 +122,6 @@ export default function ResetPasswordPage() {
             </form>
           </CardContent>
         </Card>
-      </div>
-    </PageTransition>
+    </AuthLayout>
   );
 }
