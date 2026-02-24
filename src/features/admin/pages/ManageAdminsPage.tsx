@@ -1,44 +1,67 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Plus, Trash2, UserCog } from 'lucide-react';
-import { toast } from 'sonner';
-import type { ColumnDef } from '@tanstack/react-table';
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Plus, Trash2, UserCog } from "lucide-react";
+import { toast } from "sonner";
+import type { ColumnDef } from "@tanstack/react-table";
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { PasswordInput } from '@/components/ui/password-input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { DataTable, SortableHeader } from '@/components/ui/data-table';
-import { TableSkeleton } from '@/components/loaders/TableSkeleton';
-import { QueryError } from '@/components/errors/QueryError';
-import { PageTransition } from '@/components/animations/PageTransition';
-import { adminSchema, type AdminFormValues } from '../schemas/admin.schema';
-import { adminService } from '@/services/admin.service';
-import { getErrorMessage } from '@/services/api';
-import { formatDate } from '@/utils/format';
-import type { AdminAccount } from '@/types/student.types';
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { DataTable, SortableHeader } from "@/components/ui/data-table";
+import { TableSkeleton } from "@/components/loaders/TableSkeleton";
+import { QueryError } from "@/components/errors/QueryError";
+import { PageTransition } from "@/components/animations/PageTransition";
+import { adminSchema, type AdminFormValues } from "../schemas/admin.schema";
+import { adminService } from "@/services/admin.service";
+import { getErrorMessage } from "@/services/api";
+import { formatDate } from "@/utils/format";
+import { useRole } from "@/hooks/useRole";
+import type { AdminAccount } from "@/types/student.types";
 
-const FORM_FIELDS: { name: keyof AdminFormValues; label: string; type?: 'email' | 'password' }[] = [
-  { name: 'name', label: 'Name *' },
-  { name: 'email', label: 'Email *', type: 'email' },
-  { name: 'password', label: 'Password *', type: 'password' },
+const FORM_FIELDS: {
+  name: keyof AdminFormValues;
+  label: string;
+  type?: "email" | "password";
+}[] = [
+  { name: "name", label: "Name *" },
+  { name: "email", label: "Email *", type: "email" },
+  { name: "password", label: "Password *", type: "password" },
 ];
 
 export default function ManageAdminsPage() {
+  const { isSuperAdmin } = useRole();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const { data: admins, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['admin', 'admins'],
+  const {
+    data: admins,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["admin", "admins"],
     queryFn: adminService.getAdmins,
   });
 
@@ -47,8 +70,8 @@ export default function ManageAdminsPage() {
   const createMutation = useMutation({
     mutationFn: adminService.createAdmin,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'admins'] });
-      toast.success('Admin created');
+      queryClient.invalidateQueries({ queryKey: ["admin", "admins"] });
+      toast.success("Admin created");
       setDialogOpen(false);
       form.reset();
     },
@@ -58,8 +81,8 @@ export default function ManageAdminsPage() {
   const deleteMutation = useMutation({
     mutationFn: adminService.deleteAdmin,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'admins'] });
-      toast.success('Admin deleted');
+      queryClient.invalidateQueries({ queryKey: ["admin", "admins"] });
+      toast.success("Admin deleted");
       setDeleteId(null);
     },
     onError: (err) => toast.error(getErrorMessage(err)),
@@ -67,21 +90,32 @@ export default function ManageAdminsPage() {
 
   const columns: ColumnDef<AdminAccount>[] = [
     {
-      accessorKey: 'name',
+      accessorKey: "name",
       header: ({ column }) => <SortableHeader column={column} title="Name" />,
-      cell: ({ getValue }) => <span className="font-medium">{getValue<string>()}</span>,
+      cell: ({ getValue }) => (
+        <span className="font-medium">{getValue<string>()}</span>
+      ),
     },
-    { accessorKey: 'email', header: 'Email' },
-    { accessorKey: 'role', header: 'Role' },
+    { accessorKey: "email", header: "Email" },
+    { accessorKey: "role", header: "Role" },
     {
-      accessorKey: 'createdAt',
-      header: ({ column }) => <SortableHeader column={column} title="Created" />,
+      accessorKey: "createdAt",
+      header: ({ column }) => (
+        <SortableHeader column={column} title="Created" />
+      ),
       cell: ({ getValue }) => formatDate(getValue<string>()),
     },
     {
-      id: 'actions', header: 'Actions', enableSorting: false,
+      id: "actions",
+      header: "Actions",
+      enableSorting: false,
       cell: ({ row }) => (
-        <Button variant="ghost" size="sm" onClick={() => setDeleteId(row.original.id)} className="text-destructive hover:text-destructive">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setDeleteId(row.original.id)}
+          className="text-destructive hover:text-destructive"
+        >
           <Trash2 className="h-4 w-4" />
         </Button>
       ),
@@ -94,8 +128,15 @@ export default function ManageAdminsPage() {
     <PageTransition>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">Manage Admins</h2>
-          <Button onClick={() => { form.reset(); setDialogOpen(true); }}>
+          <h2 className="text-2xl font-bold">
+            {isSuperAdmin ? "Manage Administrators" : "Manage Admins"}
+          </h2>
+          <Button
+            onClick={() => {
+              form.reset();
+              setDialogOpen(true);
+            }}
+          >
             <Plus className="mr-2 h-4 w-4" /> Create Admin
           </Button>
         </div>
@@ -112,30 +153,54 @@ export default function ManageAdminsPage() {
         ) : (
           <Card>
             <CardContent className="p-0">
-              <DataTable columns={columns} data={admins} emptyMessage="No admin accounts" />
+              <DataTable
+                columns={columns}
+                data={admins}
+                emptyMessage="No admin accounts"
+              />
             </CardContent>
           </Card>
         )}
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent>
-            <DialogHeader><DialogTitle>Create Admin</DialogTitle></DialogHeader>
-            <form onSubmit={form.handleSubmit((data) => createMutation.mutate(data))} className="space-y-4">
+            <DialogHeader>
+              <DialogTitle>Create Admin</DialogTitle>
+            </DialogHeader>
+            <form
+              onSubmit={form.handleSubmit((data) =>
+                createMutation.mutate(data),
+              )}
+              className="space-y-4"
+            >
               {FORM_FIELDS.map(({ name, label, type }) => (
                 <div key={name} className="space-y-2">
                   <Label>{label}</Label>
-                  {type === 'password' ? (
+                  {type === "password" ? (
                     <PasswordInput {...form.register(name)} />
                   ) : (
-                    <Input {...(type ? { type } : {})} {...form.register(name)} />
+                    <Input
+                      {...(type ? { type } : {})}
+                      {...form.register(name)}
+                    />
                   )}
-                  {form.formState.errors[name] && <p className="text-xs text-destructive">{form.formState.errors[name]?.message}</p>}
+                  {form.formState.errors[name] && (
+                    <p className="text-xs text-destructive">
+                      {form.formState.errors[name]?.message}
+                    </p>
+                  )}
                 </div>
               ))}
               <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
                 <Button type="submit" loading={createMutation.isPending}>
-                  {createMutation.isPending ? 'Creating...' : 'Create'}
+                  {createMutation.isPending ? "Creating..." : "Create"}
                 </Button>
               </div>
             </form>
@@ -146,12 +211,18 @@ export default function ManageAdminsPage() {
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Delete Admin?</AlertDialogTitle>
-              <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+              <AlertDialogDescription>
+                This action cannot be undone.
+              </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={() => deleteId && deleteMutation.mutate(deleteId)} disabled={deleteMutation.isPending} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+              <AlertDialogAction
+                onClick={() => deleteId && deleteMutation.mutate(deleteId)}
+                disabled={deleteMutation.isPending}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {deleteMutation.isPending ? "Deleting..." : "Delete"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

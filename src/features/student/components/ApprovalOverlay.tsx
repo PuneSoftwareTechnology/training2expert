@@ -1,4 +1,4 @@
-import { Lock } from 'lucide-react';
+import { Lock } from "lucide-react";
 
 export function ApprovalOverlay() {
   return (
@@ -6,7 +6,7 @@ export function ApprovalOverlay() {
       <div className="flex flex-col items-center gap-2 text-center">
         <Lock className="h-8 w-8 text-muted-foreground" />
         <p className="text-sm font-medium text-muted-foreground">
-          Waiting for Admin Approval
+          Waiting for Administrator Approval
         </p>
         <p className="text-xs text-muted-foreground/70">
           This section will be available once your account is approved.

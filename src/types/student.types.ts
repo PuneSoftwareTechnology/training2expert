@@ -146,8 +146,10 @@ export interface QrCode {
 export interface RecruiterAccount {
   id: string;
   name: string;
-  username: string;
-  email?: string;
+  email: string;
+  phone: string;
+  companyName: string;
+  designation: string;
   role: string;
   createdAt: string;
 }

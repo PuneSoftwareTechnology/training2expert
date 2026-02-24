@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
-import type { ReactNode } from 'react';
-import { motion } from 'framer-motion';
+import { useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
+import type { ReactNode } from "react";
+import { motion } from "framer-motion";
 import {
   ClipboardList,
   Users,
@@ -16,43 +16,94 @@ import {
   LogOut,
   Menu,
   ChevronLeft,
-  UserCog,
   Settings,
-} from 'lucide-react';
+} from "lucide-react";
 
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { cn } from '@/lib/utils';
-import { useAuthStore } from '@/store/auth.store';
-import { useUiStore } from '@/store/ui.store';
-import { useRole } from '@/hooks/useRole';
-import { ROUTES } from '@/constants/routes';
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/store/auth.store";
+import { useUiStore } from "@/store/ui.store";
+import { useRole } from "@/hooks/useRole";
+import { ROUTES } from "@/constants/routes";
 
 interface NavItem {
   label: string;
   path: string;
   icon: React.ReactNode;
   superAdminOnly?: boolean;
+  adminOnly?: boolean;
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: 'Enquiry', path: ROUTES.ADMIN_ENQUIRY, icon: <ClipboardList className="h-4 w-4" /> },
-  { label: 'Enrollment', path: ROUTES.ADMIN_ENROLLMENT, icon: <Users className="h-4 w-4" /> },
-  { label: 'Candidate Reports', path: ROUTES.ADMIN_CANDIDATE_FILTER, icon: <BarChart3 className="h-4 w-4" /> },
-  { label: 'Fee Dues', path: ROUTES.ADMIN_FEE_DUES, icon: <DollarSign className="h-4 w-4" /> },
-  { label: 'Enrollment Figures', path: ROUTES.ADMIN_ENROLLMENT_FIGURES, icon: <TrendingUp className="h-4 w-4" /> },
-  { label: 'Placement Reports', path: ROUTES.ADMIN_PLACEMENT_REPORTS, icon: <Briefcase className="h-4 w-4" /> },
-  { label: 'QR Code', path: ROUTES.ADMIN_QR_CODE, icon: <QrCode className="h-4 w-4" /> },
-  { label: 'Recruiter Shortlist', path: ROUTES.ADMIN_RECRUITER_SHORTLIST, icon: <ListChecks className="h-4 w-4" /> },
-  { label: 'Access Management', path: ROUTES.ADMIN_ACCESS_MANAGEMENT, icon: <ShieldCheck className="h-4 w-4" /> },
-  { label: 'Tests', path: ROUTES.ADMIN_TESTS, icon: <FileText className="h-4 w-4" /> },
-  { label: 'Manage Admins', path: ROUTES.ADMIN_MANAGE_ADMINS, icon: <UserCog className="h-4 w-4" />, superAdminOnly: true },
-  { label: 'QR Management', path: ROUTES.ADMIN_QR_MANAGEMENT, icon: <Settings className="h-4 w-4" />, superAdminOnly: true },
+  {
+    label: "Enquiry",
+    path: ROUTES.ADMIN_ENQUIRY,
+    icon: <ClipboardList className="h-4 w-4" />,
+  },
+  {
+    label: "Enrollment",
+    path: ROUTES.ADMIN_ENROLLMENT,
+    icon: <Users className="h-4 w-4" />,
+  },
+  {
+    label: "Candidate Reports",
+    path: ROUTES.ADMIN_CANDIDATE_FILTER,
+    icon: <BarChart3 className="h-4 w-4" />,
+  },
+  {
+    label: "Fee Dues",
+    path: ROUTES.ADMIN_FEE_DUES,
+    icon: <DollarSign className="h-4 w-4" />,
+  },
+  {
+    label: "Enrollment Figures",
+    path: ROUTES.ADMIN_ENROLLMENT_FIGURES,
+    icon: <TrendingUp className="h-4 w-4" />,
+  },
+  {
+    label: "Placement Reports",
+    path: ROUTES.ADMIN_PLACEMENT_REPORTS,
+    icon: <Briefcase className="h-4 w-4" />,
+  },
+  {
+    label: "QR Code",
+    path: ROUTES.ADMIN_QR_CODE,
+    icon: <QrCode className="h-4 w-4" />,
+    adminOnly: true, // Custom flag to hide for super admin
+  },
+  {
+    label: "Recruiter Shortlist",
+    path: ROUTES.ADMIN_RECRUITER_SHORTLIST,
+    icon: <ListChecks className="h-4 w-4" />,
+  },
+  {
+    label: "Access Management",
+    path: ROUTES.ADMIN_ACCESS_MANAGEMENT,
+    icon: <ShieldCheck className="h-4 w-4" />,
+  },
+  {
+    label: "Tests",
+    path: ROUTES.ADMIN_TESTS,
+    icon: <FileText className="h-4 w-4" />,
+  },
+  {
+    label: "QR Management",
+    path: ROUTES.ADMIN_QR_MANAGEMENT,
+    icon: <Settings className="h-4 w-4" />,
+    superAdminOnly: true,
+  },
 ];
 
 interface AdminLayoutProps {
@@ -72,20 +123,24 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     navigate(ROUTES.LOGIN, { replace: true });
   };
 
-  const filteredItems = NAV_ITEMS.filter(
-    (item) => !item.superAdminOnly || isSuperAdmin,
-  );
+  const filteredItems = NAV_ITEMS.filter((item) => {
+    if (item.superAdminOnly && !isSuperAdmin) return false;
+    if (item.adminOnly && isSuperAdmin) return false;
+    return true;
+  });
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <motion.aside
         animate={{ width: sidebarCollapsed ? 64 : 256 }}
-        transition={{ duration: 0.2, ease: 'easeInOut' }}
+        transition={{ duration: 0.2, ease: "easeInOut" }}
         className="flex flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground"
       >
         <div className="flex h-14 items-center justify-between px-4">
           {!sidebarCollapsed && (
-            <h1 className="text-lg font-bold text-sidebar-primary">SMS Admin</h1>
+            <h1 className="text-lg font-bold text-sidebar-primary">
+              SMS {isSuperAdmin ? "Super Admin" : "Admin"}
+            </h1>
           )}
           <Button
             variant="ghost"
@@ -111,11 +166,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 to={item.path}
                 className={({ isActive }) =>
                   cn(
-                    'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                    "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                     isActive
-                      ? 'bg-sidebar-accent text-sidebar-primary'
-                      : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                    sidebarCollapsed && 'justify-center px-2',
+                      ? "bg-sidebar-accent text-sidebar-primary"
+                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                    sidebarCollapsed && "justify-center px-2",
                   )
                 }
                 title={sidebarCollapsed ? item.label : undefined}
@@ -132,15 +187,22 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         <div className="p-2">
           {!sidebarCollapsed && user && (
             <p className="mb-2 truncate px-3 text-xs text-sidebar-foreground/60">
-              {user.name} ({user.role.replace('_', ' ')})
+              {user.name} (
+              {user.role
+                .replace("_", " ")
+                .toLowerCase()
+                .replace(/\b\w/g, (l) => l.toUpperCase())}
+              )
             </p>
           )}
           <Button
             variant="ghost"
             onClick={() => setShowLogout(true)}
             className={cn(
-              'w-full text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-destructive',
-              sidebarCollapsed ? 'justify-center px-2' : 'justify-start gap-3 px-3',
+              "w-full text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-destructive",
+              sidebarCollapsed
+                ? "justify-center px-2"
+                : "justify-start gap-3 px-3",
             )}
           >
             <LogOut className="h-4 w-4" />
@@ -150,16 +212,16 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       </motion.aside>
 
       <main className="flex-1 overflow-auto">
-        <div className="p-6">
-          {children}
-        </div>
+        <div className="p-6">{children}</div>
       </main>
 
       {/* Logout confirmation */}
       <AlertDialog open={showLogout} onOpenChange={setShowLogout}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure you want to logout?</AlertDialogTitle>
+            <AlertDialogTitle>
+              Are you sure you want to logout?
+            </AlertDialogTitle>
             <AlertDialogDescription>
               You will need to sign in again to access your account.
             </AlertDialogDescription>

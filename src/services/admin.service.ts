@@ -273,8 +273,10 @@ export const adminService = {
 
   createRecruiter: async (data: {
     name: string;
-    username: string;
-    email?: string;
+    email: string;
+    phone: string;
+    companyName: string;
+    designation?: string;
     password: string;
   }) => {
     const response = await api.post("/admin/recruiters", data);
@@ -297,12 +299,12 @@ export const adminService = {
     email: string;
     password: string;
   }) => {
-    const response = await api.post("/admin/admins", data);
+    const response = await api.post("/super-admin/admins", data);
     return extractData<AdminAccount>(response);
   },
 
   deleteAdmin: async (id: string) => {
-    const response = await api.delete(`/admin/admins/${id}`);
+    const response = await api.delete(`/super-admin/admins/${id}`);
     return extractData<{ message: string }>(response);
   },
 

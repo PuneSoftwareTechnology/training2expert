@@ -19,7 +19,6 @@ const RecruiterShortlistPage = lazy(
 );
 const AccessManagementPage = lazy(() => import("./pages/AccessManagementPage"));
 const TestManagementPage = lazy(() => import("./pages/TestManagementPage"));
-const ManageAdminsPage = lazy(() => import("./pages/ManageAdminsPage"));
 const QrManagementPage = lazy(() => import("./pages/QrManagementPage"));
 
 export default function AdminRoutes() {
@@ -44,14 +43,6 @@ export default function AdminRoutes() {
           />
           <Route path="access-management" element={<AccessManagementPage />} />
           <Route path="tests" element={<TestManagementPage />} />
-          <Route
-            path="manage-admins"
-            element={
-              <ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}>
-                <ManageAdminsPage />
-              </ProtectedRoute>
-            }
-          />
           <Route
             path="qr-management"
             element={
