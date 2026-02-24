@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { Plus, Trash2, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
+import type { ColumnDef } from '@tanstack/react-table';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,32 +13,25 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table';
-import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { DataTable, SortableHeader } from '@/components/ui/data-table';
 import { TableSkeleton } from '@/components/loaders/TableSkeleton';
 import { QueryError } from '@/components/errors/QueryError';
 import { PageTransition } from '@/components/animations/PageTransition';
+import { recruiterSchema, type RecruiterFormValues } from '../schemas/recruiter.schema';
 import { adminService } from '@/services/admin.service';
 import { getErrorMessage } from '@/services/api';
 import { formatDate } from '@/utils/format';
+import type { RecruiterAccount } from '@/types/student.types';
 
-const recruiterSchema = z.object({
-  name: z.string().min(2, 'Name is required'),
-  username: z.string().min(3, 'Username must be at least 3 characters'),
-  email: z.string().email('Invalid email').optional().or(z.literal('')),
-  password: z
-    .string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(/[A-Z]/, 'Must contain at least one uppercase letter')
-    .regex(/[a-z]/, 'Must contain at least one lowercase letter')
-    .regex(/\d/, 'Must contain at least one number'),
-});
-
-type RecruiterFormValues = z.infer<typeof recruiterSchema>;
+const FORM_FIELDS: { name: keyof RecruiterFormValues; label: string; type?: 'email' | 'password'; required?: boolean }[] = [
+  { name: 'name', label: 'Name', required: true },
+  { name: 'username', label: 'Username', required: true },
+  { name: 'email', label: 'Email', type: 'email' },
+  { name: 'password', label: 'Password', type: 'password', required: true },
+];
 
 export default function AccessManagementPage() {
   const queryClient = useQueryClient();
@@ -50,9 +43,7 @@ export default function AccessManagementPage() {
     queryFn: adminService.getRecruiters,
   });
 
-  const form = useForm<RecruiterFormValues>({
-    resolver: zodResolver(recruiterSchema),
-  });
+  const form = useForm<RecruiterFormValues>({ resolver: zodResolver(recruiterSchema) });
 
   const createMutation = useMutation({
     mutationFn: adminService.createRecruiter,
@@ -62,7 +53,7 @@ export default function AccessManagementPage() {
       setDialogOpen(false);
       form.reset();
     },
-    onError: (error) => toast.error(getErrorMessage(error)),
+    onError: (err) => toast.error(getErrorMessage(err)),
   });
 
   const deleteMutation = useMutation({
@@ -72,16 +63,34 @@ export default function AccessManagementPage() {
       toast.success('Recruiter deleted');
       setDeleteId(null);
     },
-    onError: (error) => toast.error(getErrorMessage(error)),
+    onError: (err) => toast.error(getErrorMessage(err)),
   });
 
-  const onSubmit = (data: RecruiterFormValues) => {
-    createMutation.mutate(data);
-  };
+  const columns: ColumnDef<RecruiterAccount>[] = [
+    {
+      accessorKey: 'name',
+      header: ({ column }) => <SortableHeader column={column} title="Name" />,
+      cell: ({ getValue }) => <span className="font-medium">{getValue<string>()}</span>,
+    },
+    { accessorKey: 'username', header: 'Username' },
+    { accessorKey: 'email', header: 'Email', cell: ({ getValue }) => getValue<string>() || '-' },
+    { accessorKey: 'role', header: 'Role' },
+    {
+      accessorKey: 'createdAt',
+      header: ({ column }) => <SortableHeader column={column} title="Created" />,
+      cell: ({ getValue }) => formatDate(getValue<string>()),
+    },
+    {
+      id: 'actions', header: 'Actions', enableSorting: false,
+      cell: ({ row }) => (
+        <Button variant="ghost" size="sm" onClick={() => setDeleteId(row.original.id)} className="text-destructive hover:text-destructive">
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      ),
+    },
+  ];
 
-  if (isError) {
-    return <QueryError error={error} onRetry={refetch} />;
-  }
+  if (isError) return <QueryError error={error} onRetry={refetch} />;
 
   return (
     <PageTransition>
@@ -89,8 +98,7 @@ export default function AccessManagementPage() {
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold">Access Management</h2>
           <Button onClick={() => { form.reset(); setDialogOpen(true); }}>
-            <Plus className="mr-2 h-4 w-4" />
-            Create Recruiter
+            <Plus className="mr-2 h-4 w-4" /> Create Recruiter
           </Button>
         </div>
 
@@ -106,34 +114,7 @@ export default function AccessManagementPage() {
         ) : (
           <Card>
             <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Username</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {recruiters.map((r) => (
-                    <TableRow key={r.id}>
-                      <TableCell className="font-medium">{r.name}</TableCell>
-                      <TableCell>{r.username}</TableCell>
-                      <TableCell>{r.email ?? '-'}</TableCell>
-                      <TableCell>{r.role}</TableCell>
-                      <TableCell>{formatDate(r.createdAt)}</TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="sm" onClick={() => setDeleteId(r.id)} className="text-destructive hover:text-destructive">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <DataTable columns={columns} data={recruiters} emptyMessage="No recruiters yet" />
             </CardContent>
           </Card>
         )}
@@ -141,27 +122,18 @@ export default function AccessManagementPage() {
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent>
             <DialogHeader><DialogTitle>Create Recruiter</DialogTitle></DialogHeader>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div className="space-y-2">
-                <Label>Name *</Label>
-                <Input {...form.register('name')} />
-                {form.formState.errors.name && <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label>Username *</Label>
-                <Input {...form.register('username')} />
-                {form.formState.errors.username && <p className="text-xs text-destructive">{form.formState.errors.username.message}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label>Email</Label>
-                <Input type="email" {...form.register('email')} />
-                {form.formState.errors.email && <p className="text-xs text-destructive">{form.formState.errors.email.message}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label>Password *</Label>
-                <PasswordInput {...form.register('password')} />
-                {form.formState.errors.password && <p className="text-xs text-destructive">{form.formState.errors.password.message}</p>}
-              </div>
+            <form onSubmit={form.handleSubmit((data) => createMutation.mutate(data))} className="space-y-4">
+              {FORM_FIELDS.map(({ name, label, type, required }) => (
+                <div key={name} className="space-y-2">
+                  <Label>{label}{required && ' *'}</Label>
+                  {type === 'password' ? (
+                    <PasswordInput {...form.register(name)} />
+                  ) : (
+                    <Input {...(type ? { type } : {})} {...form.register(name)} />
+                  )}
+                  {form.formState.errors[name] && <p className="text-xs text-destructive">{form.formState.errors[name]?.message}</p>}
+                </div>
+              ))}
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
                 <Button type="submit" loading={createMutation.isPending}>

@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { Plus, Trash2, UserCog } from 'lucide-react';
 import { toast } from 'sonner';
+import type { ColumnDef } from '@tanstack/react-table';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,31 +13,24 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table';
-import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { DataTable, SortableHeader } from '@/components/ui/data-table';
 import { TableSkeleton } from '@/components/loaders/TableSkeleton';
 import { QueryError } from '@/components/errors/QueryError';
 import { PageTransition } from '@/components/animations/PageTransition';
+import { adminSchema, type AdminFormValues } from '../schemas/admin.schema';
 import { adminService } from '@/services/admin.service';
 import { getErrorMessage } from '@/services/api';
 import { formatDate } from '@/utils/format';
+import type { AdminAccount } from '@/types/student.types';
 
-const adminSchema = z.object({
-  name: z.string().min(2, 'Name is required'),
-  email: z.string().email('Invalid email'),
-  password: z
-    .string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(/[A-Z]/, 'Must contain at least one uppercase letter')
-    .regex(/[a-z]/, 'Must contain at least one lowercase letter')
-    .regex(/\d/, 'Must contain at least one number'),
-});
-
-type AdminFormValues = z.infer<typeof adminSchema>;
+const FORM_FIELDS: { name: keyof AdminFormValues; label: string; type?: 'email' | 'password' }[] = [
+  { name: 'name', label: 'Name *' },
+  { name: 'email', label: 'Email *', type: 'email' },
+  { name: 'password', label: 'Password *', type: 'password' },
+];
 
 export default function ManageAdminsPage() {
   const queryClient = useQueryClient();
@@ -49,9 +42,7 @@ export default function ManageAdminsPage() {
     queryFn: adminService.getAdmins,
   });
 
-  const form = useForm<AdminFormValues>({
-    resolver: zodResolver(adminSchema),
-  });
+  const form = useForm<AdminFormValues>({ resolver: zodResolver(adminSchema) });
 
   const createMutation = useMutation({
     mutationFn: adminService.createAdmin,
@@ -61,7 +52,7 @@ export default function ManageAdminsPage() {
       setDialogOpen(false);
       form.reset();
     },
-    onError: (error) => toast.error(getErrorMessage(error)),
+    onError: (err) => toast.error(getErrorMessage(err)),
   });
 
   const deleteMutation = useMutation({
@@ -71,12 +62,33 @@ export default function ManageAdminsPage() {
       toast.success('Admin deleted');
       setDeleteId(null);
     },
-    onError: (error) => toast.error(getErrorMessage(error)),
+    onError: (err) => toast.error(getErrorMessage(err)),
   });
 
-  if (isError) {
-    return <QueryError error={error} onRetry={refetch} />;
-  }
+  const columns: ColumnDef<AdminAccount>[] = [
+    {
+      accessorKey: 'name',
+      header: ({ column }) => <SortableHeader column={column} title="Name" />,
+      cell: ({ getValue }) => <span className="font-medium">{getValue<string>()}</span>,
+    },
+    { accessorKey: 'email', header: 'Email' },
+    { accessorKey: 'role', header: 'Role' },
+    {
+      accessorKey: 'createdAt',
+      header: ({ column }) => <SortableHeader column={column} title="Created" />,
+      cell: ({ getValue }) => formatDate(getValue<string>()),
+    },
+    {
+      id: 'actions', header: 'Actions', enableSorting: false,
+      cell: ({ row }) => (
+        <Button variant="ghost" size="sm" onClick={() => setDeleteId(row.original.id)} className="text-destructive hover:text-destructive">
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      ),
+    },
+  ];
+
+  if (isError) return <QueryError error={error} onRetry={refetch} />;
 
   return (
     <PageTransition>
@@ -100,32 +112,7 @@ export default function ManageAdminsPage() {
         ) : (
           <Card>
             <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {admins.map((admin) => (
-                    <TableRow key={admin.id}>
-                      <TableCell className="font-medium">{admin.name}</TableCell>
-                      <TableCell>{admin.email}</TableCell>
-                      <TableCell>{admin.role}</TableCell>
-                      <TableCell>{formatDate(admin.createdAt)}</TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="sm" onClick={() => setDeleteId(admin.id)} className="text-destructive hover:text-destructive">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <DataTable columns={columns} data={admins} emptyMessage="No admin accounts" />
             </CardContent>
           </Card>
         )}
@@ -134,21 +121,17 @@ export default function ManageAdminsPage() {
           <DialogContent>
             <DialogHeader><DialogTitle>Create Admin</DialogTitle></DialogHeader>
             <form onSubmit={form.handleSubmit((data) => createMutation.mutate(data))} className="space-y-4">
-              <div className="space-y-2">
-                <Label>Name *</Label>
-                <Input {...form.register('name')} />
-                {form.formState.errors.name && <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label>Email *</Label>
-                <Input type="email" {...form.register('email')} />
-                {form.formState.errors.email && <p className="text-xs text-destructive">{form.formState.errors.email.message}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label>Password *</Label>
-                <PasswordInput {...form.register('password')} />
-                {form.formState.errors.password && <p className="text-xs text-destructive">{form.formState.errors.password.message}</p>}
-              </div>
+              {FORM_FIELDS.map(({ name, label, type }) => (
+                <div key={name} className="space-y-2">
+                  <Label>{label}</Label>
+                  {type === 'password' ? (
+                    <PasswordInput {...form.register(name)} />
+                  ) : (
+                    <Input {...(type ? { type } : {})} {...form.register(name)} />
+                  )}
+                  {form.formState.errors[name] && <p className="text-xs text-destructive">{form.formState.errors[name]?.message}</p>}
+                </div>
+              ))}
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
                 <Button type="submit" loading={createMutation.isPending}>

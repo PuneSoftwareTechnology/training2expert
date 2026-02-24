@@ -1,12 +1,12 @@
-export type EmploymentStatus = 'WORKING' | 'NON_WORKING' | 'FRESHER';
-export type CompletionStatus = 'ACTIVE' | 'DROPOUT' | 'COMPLETED';
-export type EnrollmentStatus = 'NEW' | 'APPROVED' | 'REJECTED';
-export type LeadStatus = 'PROSPECTIVE' | 'NON_PROSPECTIVE' | 'ENROLLED';
-export type DemoStatus = 'DONE' | 'PENDING';
-export type PaymentMode = 'CASH' | 'UPI';
-export type PlacementStatus = 'PLACED' | 'NOT_PLACED';
-export type Institute = 'PST' | 'TCH';
-export type ApprovalState = 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED';
+export type EmploymentStatus = "WORKING" | "NON_WORKING" | "FRESHER";
+export type CompletionStatus = "ACTIVE" | "DROPOUT" | "COMPLETED";
+export type EnrollmentStatus = "NEW" | "APPROVED" | "REJECTED";
+export type LeadStatus = "PROSPECTIVE" | "NON_PROSPECTIVE" | "ENROLLED";
+export type DemoStatus = "DONE" | "PENDING";
+export type PaymentMode = "CASH" | "UPI";
+export type PlacementStatus = "PLACED" | "NOT_PLACED";
+export type Institute = "PST" | "TCH";
+export type ApprovalState = "PENDING_APPROVAL" | "APPROVED" | "REJECTED";
 
 export interface StudentProfile {
   id: string;
@@ -62,7 +62,7 @@ export interface Installment {
 
 export interface Enquiry {
   id: string;
-  enquiryDate: string;
+  enquiry_date: string;
   name: string;
   phone: string;
   email?: string;
@@ -97,7 +97,7 @@ export interface Enrollment {
 export interface CvTemplate {
   id: string;
   course: string;
-  experienceLevel: 'FRESHER' | 'EXPERIENCED';
+  experienceLevel: "FRESHER" | "EXPERIENCED";
   downloadUrl: string;
 }
 

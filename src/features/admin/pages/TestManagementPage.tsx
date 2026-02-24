@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm, useFieldArray, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { Plus, Trash2, Power, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -18,24 +17,10 @@ import { Separator } from '@/components/ui/separator';
 import { CardSkeleton } from '@/components/loaders/CardSkeleton';
 import { QueryError } from '@/components/errors/QueryError';
 import { PageTransition } from '@/components/animations/PageTransition';
+import { testSchema, type TestFormValues } from '../schemas/test.schema';
 import { adminService } from '@/services/admin.service';
 import { getErrorMessage } from '@/services/api';
 import { COURSES } from '@/constants/courses';
-
-const questionSchema = z.object({
-  question: z.string().min(1, 'Question is required'),
-  options: z.array(z.string().min(1)).length(4, 'Must have exactly 4 options'),
-  correctOptionIndex: z.coerce.number().min(0).max(3),
-});
-
-const testSchema = z.object({
-  title: z.string().min(2, 'Title is required'),
-  course: z.string().min(1, 'Course is required'),
-  durationMinutes: z.coerce.number().min(1, 'Duration must be at least 1 minute'),
-  questions: z.array(questionSchema).min(1, 'At least one question required'),
-});
-
-type TestFormValues = z.infer<typeof testSchema>;
 
 export default function TestManagementPage() {
   const queryClient = useQueryClient();

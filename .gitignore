@@ -8,3 +8,5 @@ dist-ssr
 !.env.example
 __unconfig*
 todos.json
+
+test.js

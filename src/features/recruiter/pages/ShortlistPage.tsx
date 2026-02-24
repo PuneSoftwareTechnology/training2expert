@@ -1,15 +1,29 @@
 import { useQuery } from '@tanstack/react-query';
 import { ListChecks } from 'lucide-react';
+import type { ColumnDef } from '@tanstack/react-table';
 
 import { Card, CardContent } from '@/components/ui/card';
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table';
+import { DataTable, SortableHeader } from '@/components/ui/data-table';
 import { TableSkeleton } from '@/components/loaders/TableSkeleton';
 import { QueryError } from '@/components/errors/QueryError';
 import { PageTransition } from '@/components/animations/PageTransition';
 import { recruiterService } from '@/services/recruiter.service';
 import { formatDate } from '@/utils/format';
+import type { RecruiterShortlist } from '@/types/student.types';
+
+const columns: ColumnDef<RecruiterShortlist>[] = [
+  {
+    accessorKey: 'studentName',
+    header: ({ column }) => <SortableHeader column={column} title="Student Name" />,
+    cell: ({ getValue }) => <span className="font-medium">{getValue<string>()}</span>,
+  },
+  { accessorKey: 'course', header: 'Course' },
+  {
+    accessorKey: 'dateOfShortlist',
+    header: ({ column }) => <SortableHeader column={column} title="Date Shortlisted" />,
+    cell: ({ getValue }) => formatDate(getValue<string>()),
+  },
+];
 
 export default function ShortlistPage() {
   const { data, isLoading, isError, error, refetch } = useQuery({
@@ -38,24 +52,7 @@ export default function ShortlistPage() {
         ) : (
           <Card>
             <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Student Name</TableHead>
-                    <TableHead>Course</TableHead>
-                    <TableHead>Date Shortlisted</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.map((record) => (
-                    <TableRow key={record.id}>
-                      <TableCell className="font-medium">{record.studentName}</TableCell>
-                      <TableCell>{record.course}</TableCell>
-                      <TableCell>{formatDate(record.dateOfShortlist)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <DataTable columns={columns} data={data} emptyMessage="No candidates shortlisted yet" />
             </CardContent>
           </Card>
         )}

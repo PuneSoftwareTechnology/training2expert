@@ -6,12 +6,14 @@ export function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
-export function formatDate(dateString: string): string {
+export function formatDate(dateString: string | number): string {
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return String(dateString);
   return new Intl.DateTimeFormat('en-IN', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
-  }).format(new Date(dateString));
+  }).format(date);
 }
 
 export function formatPhone(phone: string): string {
@@ -25,6 +27,10 @@ export function daysBetween(dateA: string, dateB: string): number {
   const a = new Date(dateA).getTime();
   const b = new Date(dateB).getTime();
   return Math.floor(Math.abs(b - a) / (1000 * 60 * 60 * 24));
+}
+
+export function todayStr(): string {
+  return new Date().toISOString().split('T')[0];
 }
 
 export function formatExperience(years: number, months: number): string {

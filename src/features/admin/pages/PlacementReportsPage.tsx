@@ -1,35 +1,53 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import type { ColumnDef } from '@tanstack/react-table';
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table';
+import { DataTable, SortableHeader } from '@/components/ui/data-table';
 import { TableSkeleton } from '@/components/loaders/TableSkeleton';
 import { QueryError } from '@/components/errors/QueryError';
 import { PageTransition } from '@/components/animations/PageTransition';
-
 import { adminService } from '@/services/admin.service';
 import { COURSES, PLACEMENT_STATUSES } from '@/constants/courses';
+import type { PlacementRow } from '@/types/student.types';
+
+const FILTER_SELECTS = [
+  { label: 'Course', key: 'course' as const, options: COURSES.map((c) => ({ value: c, label: c })) },
+  { label: 'Status', key: 'status' as const, options: PLACEMENT_STATUSES.map((s) => ({ ...s })) },
+];
+
+const columns: ColumnDef<PlacementRow>[] = [
+  {
+    accessorKey: 'name',
+    header: ({ column }) => <SortableHeader column={column} title="Name" />,
+    cell: ({ getValue }) => <span className="font-medium">{getValue<string>()}</span>,
+  },
+  { accessorKey: 'course', header: 'Course' },
+  {
+    accessorKey: 'placementStatus', header: 'Status',
+    cell: ({ getValue }) => {
+      const s = getValue<string>();
+      return <Badge variant={s === 'PLACED' ? 'default' : 'secondary'}>{s === 'PLACED' ? 'Placed' : 'Not Placed'}</Badge>;
+    },
+  },
+  { accessorKey: 'companyName', header: 'Company', cell: ({ getValue }) => getValue<string>() ?? '-' },
+];
 
 export default function PlacementReportsPage() {
-  const [course, setCourse] = useState('');
-  const [status, setStatus] = useState('');
+  const [filters, setFilters] = useState({ course: '', status: '' });
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['admin', 'reports', 'placement', { course, status }],
+    queryKey: ['admin', 'reports', 'placement', filters],
     queryFn: () => adminService.getPlacementReport({
-      course: course || undefined,
-      status: status || undefined,
+      course: filters.course || undefined,
+      status: filters.status || undefined,
     }),
   });
 
-  if (isError) {
-    return <QueryError error={error} onRetry={refetch} />;
-  }
+  if (isError) return <QueryError error={error} onRetry={refetch} />;
 
   return (
     <PageTransition>
@@ -37,26 +55,18 @@ export default function PlacementReportsPage() {
         <h2 className="text-2xl font-bold">Placement Reports</h2>
 
         <div className="flex gap-4">
-          <div className="space-y-1">
-            <Label className="text-xs">Course</Label>
-            <Select value={course} onValueChange={setCourse}>
-              <SelectTrigger className="w-36"><SelectValue placeholder="All" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All</SelectItem>
-                {COURSES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Status</Label>
-            <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger className="w-36"><SelectValue placeholder="All" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All</SelectItem>
-                {PLACEMENT_STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
+          {FILTER_SELECTS.map(({ label, key, options }) => (
+            <div key={key} className="space-y-1">
+              <Label className="text-xs">{label}</Label>
+              <Select value={filters[key]} onValueChange={(v) => setFilters((f) => ({ ...f, [key]: v }))}>
+                <SelectTrigger className="w-36"><SelectValue placeholder="All" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All</SelectItem>
+                  {options.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          ))}
         </div>
 
         {isLoading ? (
@@ -64,34 +74,7 @@ export default function PlacementReportsPage() {
         ) : (
           <Card>
             <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Course</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Company</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data?.map((row) => (
-                    <TableRow key={row.id}>
-                      <TableCell className="font-medium">{row.name}</TableCell>
-                      <TableCell>{row.course}</TableCell>
-                      <TableCell>
-                        <Badge variant={row.placementStatus === 'PLACED' ? 'default' : 'secondary'}>
-                          {row.placementStatus === 'PLACED' ? 'Placed' : 'Not Placed'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{row.companyName ?? '-'}</TableCell>
-                    </TableRow>
-                  )) ?? (
-                    <TableRow>
-                      <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">No data</TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+              <DataTable columns={columns} data={data ?? []} emptyMessage="No data" />
             </CardContent>
           </Card>
         )}

@@ -1,4 +1,4 @@
-import { api, extractData } from './api';
+import { api, extractData } from "./api";
 import type {
   Enquiry,
   Enrollment,
@@ -19,7 +19,7 @@ import type {
   LeadStatus,
   DemoStatus,
   EnrollmentStatus,
-} from '@/types/student.types';
+} from "@/types/student.types";
 
 interface EnquiryFilters {
   fromDate?: string;
@@ -52,12 +52,20 @@ interface CandidateFilters {
 export const adminService = {
   // Enquiry
   getEnquiries: async (filters: EnquiryFilters = {}) => {
-    const response = await api.get('/admin/enquiries', { params: filters });
-    return extractData<{ items: Enquiry[]; total: number; page: number; totalPages: number }>(response);
+    const response = await api.get("/admin/enquiries", { params: filters });
+    const result = extractData<
+      | Enquiry[]
+      | { items: Enquiry[]; total: number; page: number; totalPages: number }
+    >(response);
+    // Handle both response shapes: array directly or paginated object
+    if (Array.isArray(result)) {
+      return { items: result, total: result.length, page: 1, totalPages: 1 };
+    }
+    return result;
   },
 
-  createEnquiry: async (data: Omit<Enquiry, 'id'>) => {
-    const response = await api.post('/admin/enquiries', data);
+  createEnquiry: async (data: Omit<Enquiry, "id">) => {
+    const response = await api.post("/admin/enquiries", data);
     return extractData<Enquiry>(response);
   },
 
@@ -78,12 +86,19 @@ export const adminService = {
 
   // Enrollment
   getEnrollments: async (filters: EnrollmentFilters = {}) => {
-    const response = await api.get('/admin/enrollments', { params: filters });
-    return extractData<{ items: Enrollment[]; total: number; page: number; totalPages: number }>(response);
+    const response = await api.get("/admin/enrollments", { params: filters });
+    const result = extractData<
+      | Enrollment[]
+      | { items: Enrollment[]; total: number; page: number; totalPages: number }
+    >(response);
+    if (Array.isArray(result)) {
+      return { items: result, total: result.length, page: 1, totalPages: 1 };
+    }
+    return result;
   },
 
   createEnrollment: async (data: Partial<Enrollment>) => {
-    const response = await api.post('/admin/enrollments', data);
+    const response = await api.post("/admin/enrollments", data);
     return extractData<Enrollment>(response);
   },
 
@@ -108,90 +123,133 @@ export const adminService = {
   },
 
   // Payments
-  updateInstallment: async (enrollmentId: string, installment: Partial<Installment>) => {
-    const response = await api.put(`/admin/enrollments/${enrollmentId}/installments`, installment);
+  updateInstallment: async (
+    enrollmentId: string,
+    installment: Partial<Installment>,
+  ) => {
+    const response = await api.put(
+      `/admin/enrollments/${enrollmentId}/installments`,
+      installment,
+    );
     return extractData<Installment>(response);
   },
 
   sendReceipt: async (enrollmentId: string, installmentId: string) => {
-    const response = await api.post(`/admin/enrollments/${enrollmentId}/installments/${installmentId}/send-receipt`);
+    const response = await api.post(
+      `/admin/enrollments/${enrollmentId}/installments/${installmentId}/send-receipt`,
+    );
     return extractData<{ message: string }>(response);
   },
 
   sendCertificate: async (enrollmentId: string) => {
-    const response = await api.post(`/admin/enrollments/${enrollmentId}/send-certificate`);
+    const response = await api.post(
+      `/admin/enrollments/${enrollmentId}/send-certificate`,
+    );
     return extractData<{ message: string }>(response);
   },
 
   // Approval
   approveStudent: async (enrollmentId: string) => {
-    const response = await api.post(`/admin/enrollments/${enrollmentId}/approve`);
+    const response = await api.post(
+      `/admin/enrollments/${enrollmentId}/approve`,
+    );
     return extractData<{ message: string }>(response);
   },
 
   rejectStudent: async (enrollmentId: string) => {
-    const response = await api.post(`/admin/enrollments/${enrollmentId}/reject`);
+    const response = await api.post(
+      `/admin/enrollments/${enrollmentId}/reject`,
+    );
     return extractData<{ message: string }>(response);
   },
 
   // Reports
   getCandidateReport: async (filters: CandidateFilters = {}) => {
-    const response = await api.get('/admin/reports/candidates', { params: filters });
-    return extractData<{ items: CandidateReportRow[]; total: number }>(response);
+    const response = await api.get("/admin/reports/candidates", {
+      params: filters,
+    });
+    return extractData<{ items: CandidateReportRow[]; total: number }>(
+      response,
+    );
   },
 
   downloadCv: async (studentId: string): Promise<Blob> => {
-    const response = await api.get(`/admin/students/${studentId}/cv`, { responseType: 'blob' });
+    const response = await api.get(`/admin/students/${studentId}/cv`, {
+      responseType: "blob",
+    });
     return response.data as Blob;
   },
 
   downloadBulkCvs: async (studentIds: string[]): Promise<Blob> => {
-    const response = await api.post('/admin/reports/candidates/download-cvs', { studentIds }, { responseType: 'blob' });
+    const response = await api.post(
+      "/admin/reports/candidates/download-cvs",
+      { studentIds },
+      { responseType: "blob" },
+    );
     return response.data as Blob;
   },
 
-  sendBulkEmail: async (studentIds: string[], subject: string, body: string) => {
-    const response = await api.post('/admin/reports/candidates/send-email', { studentIds, subject, body });
+  sendBulkEmail: async (
+    studentIds: string[],
+    subject: string,
+    body: string,
+  ) => {
+    const response = await api.post("/admin/reports/candidates/send-email", {
+      studentIds,
+      subject,
+      body,
+    });
     return extractData<{ message: string }>(response);
   },
 
   addBulkComment: async (studentIds: string[], comment: string) => {
-    const response = await api.post('/admin/reports/candidates/add-comment', { studentIds, comment });
+    const response = await api.post("/admin/reports/candidates/add-comment", {
+      studentIds,
+      comment,
+    });
     return extractData<{ message: string }>(response);
   },
 
   getFeeDuesReport: async (daysFilter: number) => {
-    const response = await api.get('/admin/reports/fee-dues', { params: { days: daysFilter } });
+    const response = await api.get("/admin/reports/fee-dues", {
+      params: { days: daysFilter },
+    });
     return extractData<FeeDueRow[]>(response);
   },
 
   getEnrollmentFigures: async (institute: string, year: number) => {
-    const response = await api.get('/admin/reports/enrollment-figures', { params: { institute, year } });
+    const response = await api.get("/admin/reports/enrollment-figures", {
+      params: { institute, year },
+    });
     return extractData<EnrollmentFigureRow[]>(response);
   },
 
-  getPlacementReport: async (filters: { course?: string; status?: string } = {}) => {
-    const response = await api.get('/admin/reports/placement', { params: filters });
+  getPlacementReport: async (
+    filters: { course?: string; status?: string } = {},
+  ) => {
+    const response = await api.get("/admin/reports/placement", {
+      params: filters,
+    });
     return extractData<PlacementRow[]>(response);
   },
 
   // QR Code
   getActiveQrCode: async () => {
-    const response = await api.get('/admin/qr-code');
+    const response = await api.get("/admin/qr-code");
     return extractData<QrCode>(response);
   },
 
   getAllQrCodes: async () => {
-    const response = await api.get('/admin/qr-codes');
+    const response = await api.get("/admin/qr-codes");
     return extractData<QrCode[]>(response);
   },
 
   uploadQrCode: async (file: File, bankName: string) => {
     const formData = new FormData();
-    formData.append('image', file);
-    formData.append('bankName', bankName);
-    const response = await api.post('/admin/qr-codes', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+    formData.append("image", file);
+    formData.append("bankName", bankName);
+    const response = await api.post("/admin/qr-codes", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
     });
     return extractData<QrCode>(response);
   },
@@ -203,18 +261,23 @@ export const adminService = {
 
   // Recruiter Shortlist
   getRecruiterShortlist: async () => {
-    const response = await api.get('/admin/recruiter-shortlist');
+    const response = await api.get("/admin/recruiter-shortlist");
     return extractData<RecruiterShortlist[]>(response);
   },
 
   // Access Management
   getRecruiters: async () => {
-    const response = await api.get('/admin/recruiters');
+    const response = await api.get("/admin/recruiters");
     return extractData<RecruiterAccount[]>(response);
   },
 
-  createRecruiter: async (data: { name: string; username: string; email?: string; password: string }) => {
-    const response = await api.post('/admin/recruiters', data);
+  createRecruiter: async (data: {
+    name: string;
+    username: string;
+    email?: string;
+    password: string;
+  }) => {
+    const response = await api.post("/admin/recruiters", data);
     return extractData<RecruiterAccount>(response);
   },
 
@@ -225,12 +288,16 @@ export const adminService = {
 
   // Admin Management (Super Admin only)
   getAdmins: async () => {
-    const response = await api.get('/admin/admins');
+    const response = await api.get("/super-admin/admins");
     return extractData<AdminAccount[]>(response);
   },
 
-  createAdmin: async (data: { name: string; email: string; password: string }) => {
-    const response = await api.post('/admin/admins', data);
+  createAdmin: async (data: {
+    name: string;
+    email: string;
+    password: string;
+  }) => {
+    const response = await api.post("/admin/admins", data);
     return extractData<AdminAccount>(response);
   },
 
@@ -241,12 +308,17 @@ export const adminService = {
 
   // Tests
   getTests: async () => {
-    const response = await api.get('/admin/tests');
+    const response = await api.get("/admin/tests");
     return extractData<Test[]>(response);
   },
 
-  createTest: async (data: { title: string; course: string; durationMinutes: number; questions: Omit<TestQuestion, 'id'>[] }) => {
-    const response = await api.post('/admin/tests', data);
+  createTest: async (data: {
+    title: string;
+    course: string;
+    durationMinutes: number;
+    questions: Omit<TestQuestion, "id">[];
+  }) => {
+    const response = await api.post("/admin/tests", data);
     return extractData<Test>(response);
   },
 

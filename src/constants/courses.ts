@@ -62,4 +62,9 @@ export const MONTHS = [
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
 ] as const;
 
+export const LEAD_BADGE_VARIANTS: Record<string, 'default' | 'secondary' | 'outline'> = {
+  PROSPECTIVE: 'default',
+  ENROLLED: 'outline',
+};
+
 export const RECRUITER_DOWNLOAD_LIMIT = 100;
