@@ -44,20 +44,20 @@ export interface Evaluation {
 }
 
 export interface PaymentSummary {
-  totalFee: number;
-  paidAmount: number;
-  pendingAmount: number;
-  qrCodeUrl: string;
-  qrBankName: string;
+  total_fee: number;
+  paid_amount: number;
+  pending_amount: number;
+  qr_code_url: string;
+  qr_bank_name: string;
 }
 
 export interface Installment {
   id: string;
-  installmentNumber: number;
+  installment_number: number;
   amount: number;
-  paymentDate: string;
+  payment_date: string;
   mode: PaymentMode;
-  receiptUrl?: string;
+  receipt_url?: string;
 }
 
 export interface Enquiry {
@@ -74,24 +74,24 @@ export interface Enquiry {
 
 export interface Enrollment {
   id: string;
-  studentId: string;
+  student_id: string;
   name: string;
   email: string;
   phone: string;
-  enrollmentStatus: EnrollmentStatus;
+  enrollment_status: EnrollmentStatus;
   institute: Institute;
   course: string;
   batch: string;
   trainer: string;
-  startDate: string;
-  endDate: string;
-  completionStatus: CompletionStatus;
-  totalFees: number;
+  start_date: string;
+  end_date: string;
+  completion_status: CompletionStatus;
+  total_fee: number;
   installments: Installment[];
-  pendingAmount: number;
-  placementStatus: PlacementStatus;
-  companyName?: string;
-  certificateUrl?: string;
+  pending_amount: number;
+  placement_status: PlacementStatus;
+  company_name?: string;
+  certificate_url?: string;
 }
 
 export interface CvTemplate {

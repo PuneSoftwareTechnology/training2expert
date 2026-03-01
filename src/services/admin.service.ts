@@ -31,7 +31,7 @@ interface EnquiryFilters {
 }
 
 interface EnrollmentFilters {
-  enrollmentStatus?: EnrollmentStatus;
+  enrollment_status?: EnrollmentStatus;
   institute?: Institute;
   course?: string;
   page?: number;
@@ -77,11 +77,6 @@ export const adminService = {
   deleteEnquiry: async (id: string) => {
     const response = await api.delete(`/admin/enquiries/${id}`);
     return extractData<{ message: string }>(response);
-  },
-
-  convertToEnrollment: async (enquiryId: string) => {
-    const response = await api.post(`/admin/enquiries/${enquiryId}/convert`);
-    return extractData<Enrollment>(response);
   },
 
   // Enrollment
