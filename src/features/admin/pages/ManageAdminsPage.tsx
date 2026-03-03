@@ -32,7 +32,7 @@ import { TableSkeleton } from "@/components/loaders/TableSkeleton";
 import { QueryError } from "@/components/errors/QueryError";
 import { PageTransition } from "@/components/animations/PageTransition";
 import { adminSchema, type AdminFormValues } from "../schemas/admin.schema";
-import { adminService } from "@/services/admin.service";
+import { superAdminService } from "@/services/super-admin.service";
 import { getErrorMessage } from "@/services/api";
 import { formatDate } from "@/utils/format";
 import { useRole } from "@/hooks/useRole";
@@ -62,13 +62,13 @@ export default function ManageAdminsPage() {
     refetch,
   } = useQuery({
     queryKey: ["admin", "admins"],
-    queryFn: adminService.getAdmins,
+    queryFn: superAdminService.getAdmins,
   });
 
   const form = useForm<AdminFormValues>({ resolver: zodResolver(adminSchema) });
 
   const createMutation = useMutation({
-    mutationFn: adminService.createAdmin,
+    mutationFn: superAdminService.createAdmin,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "admins"] });
       toast.success("Admin created");
@@ -79,7 +79,7 @@ export default function ManageAdminsPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: adminService.deleteAdmin,
+    mutationFn: superAdminService.deleteAdmin,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "admins"] });
       toast.success("Admin deleted");

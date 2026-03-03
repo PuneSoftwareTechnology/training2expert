@@ -27,11 +27,11 @@ export default function QrCodePage() {
         {qrCode ? (
           <Card className="max-w-md">
             <CardHeader>
-              <CardTitle className="text-lg">{qrCode.bankName}</CardTitle>
+              <CardTitle className="text-lg">{qrCode.bank_name}</CardTitle>
             </CardHeader>
             <CardContent className="flex justify-center">
               <img
-                src={qrCode.imageUrl}
+                src={qrCode.image_url}
                 alt="Payment QR Code"
                 className="h-72 w-72 rounded-lg border object-contain p-2"
               />

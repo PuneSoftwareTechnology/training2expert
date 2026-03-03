@@ -1,5 +1,6 @@
 import { api, extractData } from './api';
-import type { StudentProfile, Evaluation, PaymentSummary, CvTemplate, Test, TestAttempt } from '@/types/student.types';
+import type { Test } from '@/types/common.types';
+import type { StudentProfile, Evaluation, PaymentSummary, CvTemplate, TestAttempt } from '@/types/student.types';
 import type { ChangePasswordPayload } from '@/types/user.types';
 
 export const studentService = {

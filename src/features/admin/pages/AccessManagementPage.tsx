@@ -42,6 +42,7 @@ import {
 } from "../schemas/recruiter.schema";
 import { adminSchema, type AdminFormValues } from "../schemas/admin.schema";
 import { adminService } from "@/services/admin.service";
+import { superAdminService } from "@/services/super-admin.service";
 import { getErrorMessage } from "@/services/api";
 import type { AdminAccount, RecruiterAccount } from "@/types/student.types";
 
@@ -90,7 +91,7 @@ export default function AccessManagementPage() {
     refetch: refetchAdmins,
   } = useQuery({
     queryKey: ["admin", "admins"],
-    queryFn: adminService.getAdmins,
+    queryFn: superAdminService.getAdmins,
     enabled: isSuperAdmin,
   });
 
@@ -132,7 +133,7 @@ export default function AccessManagementPage() {
   });
 
   const createAdminMutation = useMutation({
-    mutationFn: adminService.createAdmin,
+    mutationFn: superAdminService.createAdmin,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "admins"] });
       toast.success("Admin created");
@@ -153,7 +154,7 @@ export default function AccessManagementPage() {
   });
 
   const deleteAdminMutation = useMutation({
-    mutationFn: adminService.deleteAdmin,
+    mutationFn: superAdminService.deleteAdmin,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "admins"] });
       toast.success("Admin deleted");

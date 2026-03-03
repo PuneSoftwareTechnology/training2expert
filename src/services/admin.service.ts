@@ -1,17 +1,5 @@
 import { api, extractData } from "./api";
 import type {
-  Enquiry,
-  Enrollment,
-  Evaluation,
-  StudentProfile,
-  CandidateReportRow,
-  FeeDueRow,
-  EnrollmentFigureRow,
-  PlacementRow,
-  RecruiterShortlist,
-  RecruiterAccount,
-  AdminAccount,
-  QrCode,
   Test,
   TestQuestion,
   Installment,
@@ -19,7 +7,19 @@ import type {
   LeadStatus,
   DemoStatus,
   EnrollmentStatus,
-} from "@/types/student.types";
+} from "@/types/common.types";
+import type {
+  Enquiry,
+  Enrollment,
+  CandidateReportRow,
+  FeeDueRow,
+  EnrollmentFigureRow,
+  PlacementRow,
+  RecruiterShortlist,
+  RecruiterAccount,
+} from "@/types/admin.types";
+import type { QrCode } from "@/types/super-admin.types";
+import type { StudentProfile, Evaluation } from "@/types/student.types";
 
 interface EnquiryFilters {
   fromDate?: string;
@@ -228,29 +228,9 @@ export const adminService = {
     return extractData<PlacementRow[]>(response);
   },
 
-  // QR Code
+  // QR Code (Admin — read-only)
   getActiveQrCode: async () => {
     const response = await api.get("/admin/qr-code");
-    return extractData<QrCode>(response);
-  },
-
-  getAllQrCodes: async () => {
-    const response = await api.get("/admin/qr-codes");
-    return extractData<QrCode[]>(response);
-  },
-
-  uploadQrCode: async (file: File, bankName: string) => {
-    const formData = new FormData();
-    formData.append("image", file);
-    formData.append("bankName", bankName);
-    const response = await api.post("/admin/qr-codes", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    return extractData<QrCode>(response);
-  },
-
-  toggleQrCodeActive: async (qrId: string) => {
-    const response = await api.post(`/admin/qr-codes/${qrId}/toggle-active`);
     return extractData<QrCode>(response);
   },
 
@@ -280,26 +260,6 @@ export const adminService = {
 
   deleteRecruiter: async (id: string) => {
     const response = await api.delete(`/admin/recruiters/${id}`);
-    return extractData<{ message: string }>(response);
-  },
-
-  // Admin Management (Super Admin only)
-  getAdmins: async () => {
-    const response = await api.get("/super-admin/admins");
-    return extractData<AdminAccount[]>(response);
-  },
-
-  createAdmin: async (data: {
-    name: string;
-    email: string;
-    password: string;
-  }) => {
-    const response = await api.post("/super-admin/admins", data);
-    return extractData<AdminAccount>(response);
-  },
-
-  deleteAdmin: async (id: string) => {
-    const response = await api.delete(`/super-admin/admins/${id}`);
     return extractData<{ message: string }>(response);
   },
 
