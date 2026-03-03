@@ -14,7 +14,7 @@ import { adminService } from '@/services/admin.service';
 import { formatCurrency } from '@/utils/format';
 import { FEE_DUE_FILTERS } from '@/constants/courses';
 import { cn } from '@/lib/utils';
-import type { FeeDueRow } from '@/types/student.types';
+import type { FeeDueRow } from '@/types/admin.types';
 
 const columns: ColumnDef<FeeDueRow>[] = [
   {

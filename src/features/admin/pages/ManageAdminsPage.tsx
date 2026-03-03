@@ -36,7 +36,7 @@ import { superAdminService } from "@/services/super-admin.service";
 import { getErrorMessage } from "@/services/api";
 import { formatDate } from "@/utils/format";
 import { useRole } from "@/hooks/useRole";
-import type { AdminAccount } from "@/types/student.types";
+import type { AdminAccount } from "@/types/super-admin.types";
 
 const FORM_FIELDS: {
   name: keyof AdminFormValues;

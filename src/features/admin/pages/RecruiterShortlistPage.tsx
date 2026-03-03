@@ -9,7 +9,7 @@ import { QueryError } from '@/components/errors/QueryError';
 import { PageTransition } from '@/components/animations/PageTransition';
 import { adminService } from '@/services/admin.service';
 import { formatDate } from '@/utils/format';
-import type { RecruiterShortlist } from '@/types/student.types';
+import type { RecruiterShortlist } from '@/types/admin.types';
 
 const columns: ColumnDef<RecruiterShortlist>[] = [
   {

@@ -18,11 +18,8 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { INSTITUTES } from "@/constants/courses";
-import type {
-  Institute,
-  Enrollment,
-  EnrollmentStatus,
-} from "@/types/student.types";
+import type { Institute } from "@/types/common.types";
+import type { Enrollment } from "@/types/admin.types";
 
 interface NewCandidateFields {
   name: string;

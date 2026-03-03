@@ -40,13 +40,13 @@ import {
   COMPLETION_STATUSES,
 } from "@/constants/courses";
 import type {
-  Enrollment,
   EnrollmentStatus,
   CompletionStatus,
   PlacementStatus,
   Institute,
   Installment,
-} from "@/types/student.types";
+} from "@/types/common.types";
+import type { Enrollment } from "@/types/admin.types";
 
 // ---------------------------------------------------------------------------
 // Helpers

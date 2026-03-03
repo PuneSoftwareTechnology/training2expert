@@ -1,5 +1,6 @@
 import { api, extractData } from './api';
-import type { RecruiterCandidate, RecruiterShortlist } from '@/types/student.types';
+import type { RecruiterShortlist } from '@/types/admin.types';
+import type { RecruiterCandidate } from '@/types/student.types';
 
 interface CandidateFilters {
   course?: string;

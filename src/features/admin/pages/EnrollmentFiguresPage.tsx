@@ -12,7 +12,7 @@ import { PageTransition } from '@/components/animations/PageTransition';
 
 import { adminService } from '@/services/admin.service';
 import { INSTITUTES, MONTHS } from '@/constants/courses';
-import type { EnrollmentFigureRow } from '@/types/student.types';
+import type { EnrollmentFigureRow } from '@/types/admin.types';
 
 export default function EnrollmentFiguresPage() {
   const currentYear = new Date().getFullYear();

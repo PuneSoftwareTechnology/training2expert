@@ -44,7 +44,7 @@ export default function PaymentsPage() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Fee</p>
-                <p className="text-2xl font-bold">{formatCurrency(data?.totalFee ?? 0)}</p>
+                <p className="text-2xl font-bold">{formatCurrency(data?.total_fee ?? 0)}</p>
               </div>
             </CardContent>
           </Card>
@@ -57,7 +57,7 @@ export default function PaymentsPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Paid Amount</p>
                 <p className="text-2xl font-bold text-green-600">
-                  {formatCurrency(data?.paidAmount ?? 0)}
+                  {formatCurrency(data?.paid_amount ?? 0)}
                 </p>
               </div>
             </CardContent>
@@ -71,27 +71,27 @@ export default function PaymentsPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Pending Amount</p>
                 <p className="text-2xl font-bold text-orange-600">
-                  {formatCurrency(data?.pendingAmount ?? 0)}
+                  {formatCurrency(data?.pending_amount ?? 0)}
                 </p>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {data?.qrCodeUrl && (
+        {data?.qr_code_url && (
           <Card>
             <CardHeader>
               <CardTitle>Payment QR Code</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col items-center gap-3">
               <img
-                src={data.qrCodeUrl}
+                src={data.qr_code_url}
                 alt="Payment QR Code"
                 className="h-64 w-64 rounded-lg border object-contain p-2"
               />
-              {data.qrBankName && (
+              {data.qr_bank_name && (
                 <p className="text-sm font-medium text-muted-foreground">
-                  {data.qrBankName}
+                  {data.qr_bank_name}
                 </p>
               )}
             </CardContent>

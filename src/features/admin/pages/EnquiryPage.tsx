@@ -47,7 +47,8 @@ import { adminService } from "@/services/admin.service";
 import { getErrorMessage } from "@/services/api";
 import { formatDate, todayStr } from "@/utils/format";
 import { INSTITUTES, LEAD_STATUSES, DEMO_STATUSES } from "@/constants/courses";
-import type { LeadStatus, DemoStatus, Enquiry } from "@/types/student.types";
+import type { LeadStatus, DemoStatus } from "@/types/common.types";
+import type { Enquiry } from "@/types/admin.types";
 
 const LEAD_BADGE: Record<LeadStatus, "default" | "destructive" | "success"> = {
   PROSPECTIVE: "default",

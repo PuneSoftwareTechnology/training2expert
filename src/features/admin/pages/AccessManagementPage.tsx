@@ -44,7 +44,8 @@ import { adminSchema, type AdminFormValues } from "../schemas/admin.schema";
 import { adminService } from "@/services/admin.service";
 import { superAdminService } from "@/services/super-admin.service";
 import { getErrorMessage } from "@/services/api";
-import type { AdminAccount, RecruiterAccount } from "@/types/student.types";
+import type { RecruiterAccount } from "@/types/admin.types";
+import type { AdminAccount } from "@/types/super-admin.types";
 
 const FORM_FIELDS: {
   name: keyof RecruiterFormValues;

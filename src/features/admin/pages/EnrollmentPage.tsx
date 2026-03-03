@@ -29,11 +29,8 @@ import { PageTransition } from "@/components/animations/PageTransition";
 import { adminService } from "@/services/admin.service";
 import { getErrorMessage } from "@/services/api";
 import { INSTITUTES, ENROLLMENT_STATUSES } from "@/constants/courses";
-import type {
-  Enrollment,
-  EnrollmentStatus,
-  Institute,
-} from "@/types/student.types";
+import type { EnrollmentStatus, Institute } from "@/types/common.types";
+import type { Enrollment } from "@/types/admin.types";
 
 // Extracted Components
 import { AddCandidateDialog } from "../components/AddCandidateDialog";

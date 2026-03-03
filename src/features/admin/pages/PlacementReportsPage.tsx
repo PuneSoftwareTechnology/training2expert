@@ -12,7 +12,7 @@ import { QueryError } from '@/components/errors/QueryError';
 import { PageTransition } from '@/components/animations/PageTransition';
 import { adminService } from '@/services/admin.service';
 import { COURSES, PLACEMENT_STATUSES } from '@/constants/courses';
-import type { PlacementRow } from '@/types/student.types';
+import type { PlacementRow } from '@/types/admin.types';
 
 const FILTER_SELECTS = [
   { label: 'Course', key: 'course' as const, options: COURSES.map((c) => ({ value: c, label: c })) },
