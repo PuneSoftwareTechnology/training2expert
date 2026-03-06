@@ -18,9 +18,7 @@ export interface LoginCredentials {
 }
 
 export interface SignupPayload {
-  name: string;
   email: string;
-  phone: string;
   password: string;
 }
 

@@ -33,7 +33,7 @@ export default function TestsPage() {
 
   return (
     <PageTransition>
-      <div className="space-y-6">
+      <div className="space-y-4">
         <h2 className="text-2xl font-bold">Available Tests</h2>
 
         {!tests || tests.length === 0 ? (

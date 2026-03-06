@@ -81,7 +81,7 @@ export default function TestAttemptPage() {
 
   return (
     <PageTransition>
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/* Sticky header with timer */}
         <div className="sticky top-14 z-20 flex items-center justify-between rounded-lg border bg-card p-4 shadow-sm">
           <div>

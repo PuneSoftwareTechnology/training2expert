@@ -2,7 +2,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
-import { UserPlus } from 'lucide-react';
+import { UserPlus, Info } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -31,7 +31,7 @@ export default function SignupPage() {
   const signupMutation = useMutation({
     mutationFn: authService.signup,
     onSuccess: () => {
-      toast.success('Account created! Please check your email to verify.');
+      toast.success('Account activated! You can now login.');
       navigate(ROUTES.LOGIN);
     },
     onError: (error) => {
@@ -39,7 +39,7 @@ export default function SignupPage() {
     },
   });
 
-  const onSubmit = (data: SignupFormValues) => {
+  const onSubmit = ({ confirmPassword: _, ...data }: SignupFormValues) => {
     signupMutation.mutate(data);
   };
 
@@ -47,25 +47,18 @@ export default function SignupPage() {
     <AuthLayout>
         <Card className="shadow-lg shadow-primary/[0.04]">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold">Create Account</CardTitle>
-            <CardDescription>Sign up as a student</CardDescription>
+            <CardTitle className="text-2xl font-bold">Activate Account</CardTitle>
+            <CardDescription>Set your password to activate your student account</CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="mb-4 flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
+              <Info className="mt-0.5 h-4 w-4 shrink-0" />
+              <p>You must be enrolled by an admin before you can activate your account. Use the email provided during enrollment.</p>
+            </div>
+
             <form onSubmit={(e) => { e.preventDefault(); handleSubmit(onSubmit)(e); }} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input
-                  id="name"
-                  placeholder="John Doe"
-                  {...register('name')}
-                />
-                {errors.name && (
-                  <p className="text-sm text-destructive">{errors.name.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">Enrolled Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -78,21 +71,7 @@ export default function SignupPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone</Label>
-                <Input
-                  id="phone"
-                  placeholder="9876543210"
-                  maxLength={10}
-                  onInput={(e) => { e.currentTarget.value = e.currentTarget.value.replace(/\D/g, ''); }}
-                  {...register('phone')}
-                />
-                {errors.phone && (
-                  <p className="text-sm text-destructive">{errors.phone.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">Set Password</Label>
                 <PasswordInput
                   id="password"
                   placeholder="Min 8 characters"
@@ -103,17 +82,29 @@ export default function SignupPage() {
                 )}
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <PasswordInput
+                  id="confirmPassword"
+                  placeholder="Re-enter password"
+                  {...register('confirmPassword')}
+                />
+                {errors.confirmPassword && (
+                  <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
+                )}
+              </div>
+
               <Button
                 type="submit"
                 className="w-full"
                 loading={signupMutation.isPending}
               >
                 {!signupMutation.isPending && <UserPlus className="mr-2 h-4 w-4" />}
-                {signupMutation.isPending ? 'Creating account...' : 'Sign Up'}
+                {signupMutation.isPending ? 'Activating...' : 'Activate Account'}
               </Button>
 
               <p className="text-center text-sm text-muted-foreground">
-                Already have an account?{' '}
+                Already activated?{' '}
                 <Link to={ROUTES.LOGIN} className="text-primary hover:underline">
                   Sign In
                 </Link>

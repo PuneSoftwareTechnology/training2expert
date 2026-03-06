@@ -87,7 +87,7 @@ export default function FeeDuesPage() {
 
   return (
     <PageTransition>
-      <div className="space-y-6">
+      <div className="space-y-4">
         <h2 className="text-2xl font-bold">Fee Dues Report</h2>
 
         <div className="flex gap-2">

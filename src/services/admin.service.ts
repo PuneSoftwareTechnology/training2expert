@@ -49,7 +49,25 @@ interface CandidateFilters {
   limit?: number;
 }
 
+export interface DashboardStats {
+  totalEnrollments: number;
+  totalEnquiries: number;
+  totalFeeCollected: number;
+  totalPendingDues: number;
+  totalPlaced: number;
+  totalNotPlaced: number;
+  courseWiseEnrollments: { course: string; count: number }[];
+  enrollmentStatusBreakdown: { status: string; count: number }[];
+  recentEnrollments: Enrollment[];
+}
+
 export const adminService = {
+  // Dashboard
+  getDashboardStats: async () => {
+    const response = await api.get("/admin/dashboard/stats");
+    return extractData<DashboardStats>(response);
+  },
+
   // Enquiry
   getEnquiries: async (filters: EnquiryFilters = {}) => {
     const response = await api.get("/admin/enquiries", { params: filters });
@@ -84,12 +102,18 @@ export const adminService = {
     const response = await api.get("/admin/enrollments", { params: filters });
     const result = extractData<
       | Enrollment[]
-      | { items: Enrollment[]; total: number; page: number; totalPages: number }
+      | { items: Enrollment[]; total: number; page: number; totalPages: number; courses?: string[] }
     >(response);
     if (Array.isArray(result)) {
-      return { items: result, total: result.length, page: 1, totalPages: 1 };
+      return { items: result, total: result.length, page: 1, totalPages: 1, courses: [] as string[] };
     }
     return result;
+  },
+
+  getCourses: async () => {
+    const response = await api.get("/admin/enrollments", { params: { limit: 1 } });
+    const result = extractData<{ courses?: string[] }>(response);
+    return result.courses ?? [];
   },
 
   createEnrollment: async (data: Partial<Enrollment>) => {
@@ -100,6 +124,11 @@ export const adminService = {
   updateEnrollment: async (id: string, data: Partial<Enrollment>) => {
     const response = await api.put(`/admin/enrollments/${id}`, data);
     return extractData<Enrollment>(response);
+  },
+
+  deleteEnrollment: async (id: string) => {
+    const response = await api.delete(`/admin/enrollments/${id}`);
+    return extractData<{ message: string }>(response);
   },
 
   getStudentProfile: async (studentId: string) => {
@@ -163,7 +192,7 @@ export const adminService = {
     const response = await api.get("/admin/reports/candidates", {
       params: filters,
     });
-    return extractData<{ items: CandidateReportRow[]; total: number }>(
+    return extractData<{ items: CandidateReportRow[]; courses: string[] }>(
       response,
     );
   },

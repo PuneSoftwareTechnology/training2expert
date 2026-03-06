@@ -30,7 +30,7 @@ export default function EvaluationsPage() {
   if (!evaluations || evaluations.length === 0) {
     return (
       <PageTransition>
-        <div className="space-y-6">
+        <div className="space-y-4">
           <h2 className="text-2xl font-bold">Evaluations</h2>
           <Card>
             <CardContent className="flex flex-col items-center gap-2 py-12 text-center">
@@ -45,7 +45,7 @@ export default function EvaluationsPage() {
 
   return (
     <PageTransition>
-      <div className="space-y-6">
+      <div className="space-y-4">
         <h2 className="text-2xl font-bold">Evaluations</h2>
 
         <div className="space-y-4">

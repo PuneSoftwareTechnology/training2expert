@@ -19,7 +19,7 @@ export const authService = {
   },
 
   signup: async (payload: SignupPayload): Promise<{ message: string }> => {
-    const response = await api.post("/auth/signup", payload);
+    const response = await api.post("/student/signup", payload);
     return extractData<{ message: string }>(response);
   },
 

@@ -1,14 +1,3 @@
-export const COURSES = [
-  "SAP FICO",
-  "SAP PP",
-  "SAP MM",
-  "SAP SD",
-  "DA",
-  "Cyber Security",
-] as const;
-
-export type Course = (typeof COURSES)[number];
-
 export const INSTITUTES = ["PST", "TCH"] as const;
 export type InstituteName = (typeof INSTITUTES)[number];
 

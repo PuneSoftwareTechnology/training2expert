@@ -12,7 +12,7 @@ export const ROUTES = {
   STUDENT_CV: "/student/cv",
   STUDENT_TESTS: "/student/tests",
 
-  ADMIN_DASHBOARD: "/admin",
+  ADMIN_DASHBOARD: "/admin/dashboard",
   ADMIN_ENQUIRY: "/admin/enquiry",
   ADMIN_ENROLLMENT: "/admin/enrollment",
   ADMIN_REPORTS: "/admin/reports",

@@ -16,7 +16,7 @@ import { QueryError } from '@/components/errors/QueryError';
 import { PageTransition } from '@/components/animations/PageTransition';
 import { recruiterService } from '@/services/recruiter.service';
 import { getErrorMessage } from '@/services/api';
-import { COURSES, RECRUITER_DOWNLOAD_LIMIT } from '@/constants/courses';
+import { RECRUITER_DOWNLOAD_LIMIT } from '@/constants/courses';
 import { formatExperience } from '@/utils/format';
 import type { RecruiterCandidate } from '@/types/student.types';
 
@@ -59,6 +59,8 @@ export default function CandidateFilterPage() {
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
+
+  const courses = data?.courses ?? [];
 
   const isLimitReached = (downloadCount?.used ?? 0) >= RECRUITER_DOWNLOAD_LIMIT;
 
@@ -127,7 +129,7 @@ export default function CandidateFilterPage() {
 
   return (
     <PageTransition>
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold">Candidate Search</h2>
           {isLimitReached ? (
@@ -148,7 +150,7 @@ export default function CandidateFilterPage() {
                   <SelectTrigger className="w-36"><SelectValue placeholder="All" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="ALL">All</SelectItem>
-                    {COURSES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    {courses.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>

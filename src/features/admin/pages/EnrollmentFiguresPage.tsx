@@ -51,7 +51,7 @@ export default function EnrollmentFiguresPage() {
 
   return (
     <PageTransition>
-      <div className="space-y-6">
+      <div className="space-y-4">
         <h2 className="text-2xl font-bold">Enrollment Figures</h2>
 
         <div className="flex gap-4">

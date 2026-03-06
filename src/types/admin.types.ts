@@ -2,9 +2,9 @@ import type {
   CompletionStatus,
   DemoStatus,
   EnrollmentStatus,
-  Installment,
   Institute,
   LeadStatus,
+  PaymentMode,
   PlacementStatus,
 } from "./common.types";
 
@@ -35,8 +35,15 @@ export interface Enrollment {
   end_date: string;
   completion_status: CompletionStatus;
   total_fee: number;
-  installments: Installment[];
-  pending_amount: number;
+  installment1_amount?: number;
+  installment1_date?: string;
+  installment1_mode?: PaymentMode;
+  installment2_amount?: number;
+  installment2_date?: string;
+  installment2_mode?: PaymentMode;
+  installment3_amount?: number;
+  installment3_date?: string;
+  installment3_mode?: PaymentMode;
   placement_status: PlacementStatus;
   company_name?: string;
   certificate_url?: string;

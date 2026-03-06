@@ -22,7 +22,6 @@ import { PageTransition } from '@/components/animations/PageTransition';
 
 import { adminService } from '@/services/admin.service';
 import { getErrorMessage } from '@/services/api';
-import { COURSES } from '@/constants/courses';
 
 export default function CandidateFilterPage() {
   const queryClient = useQueryClient();
@@ -86,6 +85,8 @@ export default function CandidateFilterPage() {
     onError: (error) => toast.error(getErrorMessage(error)),
   });
 
+  const courses = data?.courses ?? [];
+
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
@@ -121,7 +122,7 @@ export default function CandidateFilterPage() {
 
   return (
     <PageTransition>
-      <div className="space-y-6">
+      <div className="space-y-4">
         <h2 className="text-2xl font-bold">Candidate Filter Report</h2>
 
         <Card>
@@ -133,7 +134,7 @@ export default function CandidateFilterPage() {
                   <SelectTrigger className="w-36"><SelectValue placeholder="All" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="ALL">All</SelectItem>
-                    {COURSES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    {courses.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>

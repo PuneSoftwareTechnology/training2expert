@@ -1,50 +1,39 @@
 import { memo } from "react";
-import { useMutation } from "@tanstack/react-query";
 import {
-  Pencil,
-  ChevronDown,
-  ChevronUp,
-  User,
-  Check,
-  X,
+  Eye,
   Send,
-  Save,
+  FileText,
+  Mail,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import { TableCell, TableRow } from "@/components/ui/table";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { adminService } from "@/services/admin.service";
-import { getErrorMessage } from "@/services/api";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { formatCurrency, formatDate } from "@/utils/format";
 import {
-  INSTITUTES,
   ENROLLMENT_STATUSES,
   COMPLETION_STATUSES,
+  PAYMENT_MODES,
 } from "@/constants/courses";
 import type {
   EnrollmentStatus,
   CompletionStatus,
   PlacementStatus,
-  Institute,
-  Installment,
+  PaymentMode,
 } from "@/types/common.types";
 import type { Enrollment } from "@/types/admin.types";
 
@@ -52,7 +41,7 @@ import type { Enrollment } from "@/types/admin.types";
 // Helpers
 // ---------------------------------------------------------------------------
 
-function leadStatusVariant(status: EnrollmentStatus) {
+function enrollmentStatusVariant(status: EnrollmentStatus) {
   switch (status) {
     case "NEW":
       return "secondary" as const;
@@ -66,11 +55,20 @@ function leadStatusVariant(status: EnrollmentStatus) {
 function completionStatusVariant(status: CompletionStatus) {
   switch (status) {
     case "ACTIVE":
-      return "default" as const;
+      return "success" as const;
     case "COMPLETED":
-      return "outline" as const;
+      return "default" as const;
     case "DROPOUT":
       return "destructive" as const;
+  }
+}
+
+function placementStatusVariant(status: PlacementStatus) {
+  switch (status) {
+    case "PLACED":
+      return "success" as const;
+    case "NOT_PLACED":
+      return "secondary" as const;
   }
 }
 
@@ -83,65 +81,107 @@ const INSTITUTE_BADGE: Record<string, "default" | "secondary" | "outline"> = {
 // Sub-components
 // ---------------------------------------------------------------------------
 
-function DetailField({
+function InstallmentCells({
+  amount,
+  date,
+  mode,
+  cellClassName,
   label,
-  value,
+  studentName,
+  studentEmail,
 }: {
+  amount?: number;
+  date?: string;
+  mode?: PaymentMode;
+  cellClassName?: string;
   label: string;
-  value: string | number;
+  studentName: string;
+  studentEmail: string;
 }) {
-  return (
-    <div className="flex flex-col">
-      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-        {label}
-      </span>
-      <span className="text-sm font-medium">{value || "-"}</span>
-    </div>
-  );
-}
-
-function InstallmentRow({
-  installment,
-  enrollmentId,
-}: {
-  installment: Installment;
-  enrollmentId: string;
-}) {
-  const sendReceiptMutation = useMutation({
-    mutationFn: () => adminService.sendReceipt(enrollmentId, installment.id),
-    onSuccess: () =>
-      toast.success(
-        `Receipt sent for installment #${installment.installment_number}`,
-      ),
-    onError: (error) => toast.error(getErrorMessage(error)),
-  });
+  if (!amount) {
+    return (
+      <>
+        <TableCell className={cn("text-sm text-muted-foreground", cellClassName)}>-</TableCell>
+        <TableCell className={cn("text-sm text-muted-foreground", cellClassName)}>-</TableCell>
+        <TableCell className={cn("text-sm text-muted-foreground", cellClassName)}>-</TableCell>
+        <TableCell className={cn("text-sm text-muted-foreground", cellClassName)}>-</TableCell>
+        <TableCell className={cn("text-sm text-muted-foreground", cellClassName)}>-</TableCell>
+      </>
+    );
+  }
 
   return (
-    <TableRow>
-      <TableCell className="text-sm">
-        #{installment.installment_number}
+    <>
+      <TableCell className={cn("text-sm font-medium", cellClassName)}>
+        {formatCurrency(amount)}
       </TableCell>
-      <TableCell className="text-sm">
-        {formatCurrency(installment.amount)}
+      <TableCell className={cn("text-sm", cellClassName)}>
+        {date ? formatDate(date) : "-"}
       </TableCell>
-      <TableCell className="text-sm">
-        {formatDate(installment.payment_date)}
+      <TableCell className={cellClassName}>
+        {mode ? (
+          <Badge variant="outline" className="text-[10px]">
+            {PAYMENT_MODES.find((m) => m.value === mode)?.label ?? mode}
+          </Badge>
+        ) : (
+          <span className="text-sm text-muted-foreground">-</span>
+        )}
       </TableCell>
-      <TableCell>
-        <Badge variant="outline">{installment.mode}</Badge>
-      </TableCell>
-      <TableCell>
+      <TableCell className={cellClassName}>
         <Button
           variant="ghost"
-          size="xs"
-          onClick={() => sendReceiptMutation.mutate()}
-          loading={sendReceiptMutation.isPending}
+          size="icon"
+          className="h-7 w-7 text-primary"
+          title="View Receipt"
+          onClick={(e) => {
+            e.stopPropagation();
+            toast.info("No receipt available");
+          }}
         >
-          {!sendReceiptMutation.isPending && <Send className="h-3 w-3" />}
-          {sendReceiptMutation.isPending ? "Sending..." : "Send Receipt"}
+          <Eye className="h-3.5 w-3.5" />
         </Button>
       </TableCell>
-    </TableRow>
+      <TableCell className={cellClassName}>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-primary"
+              title="Send Receipt"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Send className="h-3.5 w-3.5" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Send {label} Installment Receipt</AlertDialogTitle>
+              <AlertDialogDescription>
+                You are about to send the {label.toLowerCase()} installment receipt
+                via email to{" "}
+                <span className="font-semibold text-foreground">
+                  {studentName}
+                </span>{" "}
+                at{" "}
+                <span className="font-semibold text-foreground">
+                  {studentEmail}
+                </span>
+                . Are you sure?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => toast.info("Send receipt triggered")}
+              >
+                Yes, Send
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </TableCell>
+    </>
   );
 }
 
@@ -149,420 +189,276 @@ function InstallmentRow({
 // Types
 // ---------------------------------------------------------------------------
 
-export interface EditableFields {
-  name: string;
-  email: string;
-  phone: string;
-  enrollment_status: EnrollmentStatus;
-  institute: Institute;
-  course: string;
-  batch: string | undefined;
-  trainer: string | undefined;
-  start_date: string;
-  end_date: string;
-  completion_status: CompletionStatus;
-  total_fee: number;
-  placement_status: PlacementStatus;
-  company_name: string | undefined;
-}
-
 interface EnrollmentTableRowProps {
   enrollment: Enrollment;
-  isEditing: boolean;
-  isExpanded: boolean;
-  editFields: EditableFields | null;
-  onToggleExpand: () => void;
-  onStartEdit: (enrollment: Enrollment) => void;
-  onCancelEdit: () => void;
-  onSaveEdit: (enrollment: Enrollment) => void;
-  onViewProfile: (studentId: string) => void;
-  onApprove: (enrollment: Enrollment) => void;
-  onReject: (enrollment: Enrollment) => void;
-  onUpdateField: <K extends keyof EditableFields>(
-    key: K,
-    value: EditableFields[K],
-  ) => void;
-  isSaving: boolean;
-  isApproving: boolean;
-  isRejecting: boolean;
+  index: number;
+  onEdit: (enrollment: Enrollment) => void;
+  onDelete: (enrollmentId: string) => void;
 }
+
+// ---------------------------------------------------------------------------
+// Main Component
+// ---------------------------------------------------------------------------
 
 export const EnrollmentTableRow = memo(function EnrollmentTableRow({
   enrollment,
-  isEditing,
-  isExpanded,
-  editFields,
-  onToggleExpand,
-  onStartEdit,
-  onCancelEdit,
-  onSaveEdit,
-  onViewProfile,
-  onApprove,
-  onReject,
-  onUpdateField,
-  isSaving,
-  isApproving,
-  isRejecting,
+  index,
+  onEdit,
+  onDelete,
 }: EnrollmentTableRowProps) {
+  const isOdd = index % 2 === 1;
+
+  const pendingAmount =
+    Number(enrollment.total_fee || 0) -
+    Number(enrollment.installment1_amount || 0) -
+    Number(enrollment.installment2_amount || 0) -
+    Number(enrollment.installment3_amount || 0);
+
+  // Column-group backgrounds — alternating row shades (Finder-style)
+  const bg = {
+    sno: isOdd ? "bg-muted/40" : "",
+    actions: isOdd ? "bg-gray-100/50" : "bg-gray-50/25",
+    basic: isOdd ? "bg-blue-50/45" : "bg-blue-50/15",
+    course: isOdd ? "bg-orange-50/45" : "bg-orange-50/15",
+    payment: isOdd ? "bg-indigo-50/45" : "bg-indigo-50/15",
+    cert: isOdd ? "bg-teal-50/45" : "bg-teal-50/15",
+    placement: isOdd ? "bg-purple-50/45" : "bg-purple-50/15",
+  };
+
   return (
-    <>
-      <TableRow
+    <TableRow className="transition-colors">
+      {/* S.No */}
+      <TableCell
         className={cn(
-          "cursor-pointer transition-colors hover:bg-muted/50",
-          isExpanded && "bg-muted/30",
+          "text-sm font-medium text-center border-r border-border",
+          bg.sno,
         )}
-        onClick={onToggleExpand}
       >
-        <TableCell>
-          <Button variant="ghost" size="icon" className="h-6 w-6 p-0">
-            {isExpanded ? (
-              <ChevronUp className="h-4 w-4" />
-            ) : (
-              <ChevronDown className="h-4 w-4" />
-            )}
-          </Button>
-        </TableCell>
-        <TableCell>
-          {isEditing && editFields ? (
-            <Input
-              value={editFields.name}
-              onChange={(e) => onUpdateField("name", e.target.value)}
-              className="h-8 w-32"
-              onClick={(e) => e.stopPropagation()}
-            />
-          ) : (
-            <span className="font-semibold">{enrollment.name}</span>
-          )}
-        </TableCell>
+        {index + 1}
+      </TableCell>
 
-        {/* Email */}
-        <TableCell>
-          {isEditing && editFields ? (
-            <Input
-              type="email"
-              value={editFields.email}
-              onChange={(e) => onUpdateField("email", e.target.value)}
-              className="h-8 w-44"
+      {/* === ACTIONS === */}
+      <TableCell className={cn("text-center border-l border-border", bg.actions)}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 text-primary"
+          title="Edit Enrollment"
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit(enrollment);
+          }}
+        >
+          <Pencil className="h-3.5 w-3.5" />
+        </Button>
+      </TableCell>
+      <TableCell className={cn("text-center border-r border-border", bg.actions)}>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-destructive"
+              title="Delete Enrollment"
               onClick={(e) => e.stopPropagation()}
-            />
-          ) : (
-            <span className="text-sm">{enrollment.email}</span>
-          )}
-        </TableCell>
-
-        {/* Phone */}
-        <TableCell>
-          {isEditing && editFields ? (
-            <Input
-              value={editFields.phone}
-              maxLength={10}
-              onChange={(e) =>
-                onUpdateField("phone", e.target.value.replace(/\D/g, ""))
-              }
-              className="h-8 w-28"
-              onClick={(e) => e.stopPropagation()}
-            />
-          ) : (
-            <span className="text-sm">{enrollment.phone}</span>
-          )}
-        </TableCell>
-
-        {/* Status */}
-        <TableCell>
-          {isEditing && editFields ? (
-            <Select
-              value={editFields.enrollment_status}
-              onValueChange={(v) =>
-                onUpdateField("enrollment_status", v as EnrollmentStatus)
-              }
             >
-              <SelectTrigger
-                className="h-8 w-28"
-                onClick={(e) => e.stopPropagation()}
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Enrollment</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete the enrollment for{" "}
+                <span className="font-semibold text-foreground">
+                  {enrollment.name}
+                </span>
+                ? This action can be reversed by an administrator.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => onDelete(enrollment.id)}
               >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {ENROLLMENT_STATUSES.map((s) => (
-                  <SelectItem key={s.value} value={s.value}>
-                    {s.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : (
-            <Badge variant={leadStatusVariant(enrollment.enrollment_status)}>
-              {ENROLLMENT_STATUSES.find(
-                (s) => s.value === enrollment.enrollment_status,
-              )?.label ?? enrollment.enrollment_status}
-            </Badge>
-          )}
-        </TableCell>
+                Yes, Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </TableCell>
 
-        {/* Institute */}
-        <TableCell>
-          {isEditing && editFields ? (
-            <Select
-              value={editFields.institute}
-              onValueChange={(v) => onUpdateField("institute", v as Institute)}
+      {/* === BASIC INFO === */}
+      <TableCell className={cn("text-sm font-semibold border-l border-border", bg.basic)}>
+        {enrollment.name}
+      </TableCell>
+      <TableCell className={cn("text-sm", bg.basic)}>
+        {enrollment.email}
+      </TableCell>
+      <TableCell className={cn("text-sm", bg.basic)}>
+        {enrollment.phone}
+      </TableCell>
+      <TableCell className={bg.basic}>
+        <Badge variant={enrollmentStatusVariant(enrollment.enrollment_status)}>
+          {ENROLLMENT_STATUSES.find(
+            (s) => s.value === enrollment.enrollment_status,
+          )?.label ?? enrollment.enrollment_status}
+        </Badge>
+      </TableCell>
+      <TableCell className={cn("border-r border-border", bg.basic)}>
+        <Badge variant={INSTITUTE_BADGE[enrollment.institute] ?? "outline"}>
+          {enrollment.institute}
+        </Badge>
+      </TableCell>
+
+      {/* === COURSE DETAILS === */}
+      <TableCell className={cn("text-sm border-l border-border", bg.course)}>
+        {enrollment.course}
+      </TableCell>
+      <TableCell className={cn("text-sm", bg.course)}>
+        <Badge variant="outline" className="text-[10px]">
+          {enrollment.batch || "-"}
+        </Badge>
+      </TableCell>
+      <TableCell className={cn("text-sm", bg.course)}>
+        {enrollment.trainer || "-"}
+      </TableCell>
+      <TableCell className={cn("text-sm", bg.course)}>
+        {formatDate(enrollment.start_date)}
+      </TableCell>
+      <TableCell className={cn("text-sm", bg.course)}>
+        {formatDate(enrollment.end_date)}
+      </TableCell>
+      <TableCell className={cn("border-r border-border", bg.course)}>
+        <Badge variant={completionStatusVariant(enrollment.completion_status)}>
+          {COMPLETION_STATUSES.find(
+            (s) => s.value === enrollment.completion_status,
+          )?.label ?? enrollment.completion_status}
+        </Badge>
+      </TableCell>
+
+      {/* === PAYMENT TRACKING === */}
+      <TableCell
+        className={cn("text-sm font-semibold border-l border-border", bg.payment)}
+      >
+        {formatCurrency(Number(enrollment.total_fee))}
+      </TableCell>
+
+      {/* 1st Installment */}
+      <InstallmentCells
+        amount={enrollment.installment1_amount}
+        date={enrollment.installment1_date}
+        mode={enrollment.installment1_mode}
+        cellClassName={bg.payment}
+        label="1st"
+        studentName={enrollment.name}
+        studentEmail={enrollment.email}
+      />
+
+      {/* 2nd Installment */}
+      <InstallmentCells
+        amount={enrollment.installment2_amount}
+        date={enrollment.installment2_date}
+        mode={enrollment.installment2_mode}
+        cellClassName={bg.payment}
+        label="2nd"
+        studentName={enrollment.name}
+        studentEmail={enrollment.email}
+      />
+
+      {/* 3rd Installment */}
+      <InstallmentCells
+        amount={enrollment.installment3_amount}
+        date={enrollment.installment3_date}
+        mode={enrollment.installment3_mode}
+        cellClassName={bg.payment}
+        label="3rd"
+        studentName={enrollment.name}
+        studentEmail={enrollment.email}
+      />
+
+      {/* Pending Amount */}
+      <TableCell
+        className={cn(
+          "text-sm font-semibold border-r border-border",
+          bg.payment,
+          pendingAmount > 0 ? "text-destructive" : "text-success",
+        )}
+      >
+        {formatCurrency(pendingAmount)}
+      </TableCell>
+
+      {/* === CERTIFICATE === */}
+      <TableCell className={cn("border-l border-border", bg.cert)}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 text-primary"
+          title="View Certificate"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (enrollment.certificate_url) {
+              window.open(enrollment.certificate_url, "_blank");
+            } else {
+              toast.info("No certificate available");
+            }
+          }}
+        >
+          <FileText className="h-3.5 w-3.5" />
+        </Button>
+      </TableCell>
+      <TableCell className={cn("border-r border-border", bg.cert)}>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-primary"
+              title="Send Certificate"
+              onClick={(e) => e.stopPropagation()}
             >
-              <SelectTrigger
-                className="h-8 w-20"
-                onClick={(e) => e.stopPropagation()}
+              <Mail className="h-3.5 w-3.5" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Send Certificate</AlertDialogTitle>
+              <AlertDialogDescription>
+                You are about to send the certificate via email to{" "}
+                <span className="font-semibold text-foreground">
+                  {enrollment.name}
+                </span>{" "}
+                at{" "}
+                <span className="font-semibold text-foreground">
+                  {enrollment.email}
+                </span>
+                . Are you sure?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() =>
+                  toast.info("Send certificate triggered")
+                }
               >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {INSTITUTES.map((i) => (
-                  <SelectItem key={i} value={i}>
-                    {i}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : (
-            <Badge variant={INSTITUTE_BADGE[enrollment.institute] ?? "outline"}>
-              {enrollment.institute}
-            </Badge>
-          )}
-        </TableCell>
+                Yes, Send
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </TableCell>
 
-        {/* Course */}
-        <TableCell>
-          {isEditing && editFields ? (
-            <Input
-              value={editFields.course}
-              onChange={(e) => onUpdateField("course", e.target.value)}
-              className="h-8 w-32"
-              onClick={(e) => e.stopPropagation()}
-            />
-          ) : (
-            <span className="text-sm">{enrollment.course}</span>
-          )}
-        </TableCell>
-
-        {/* Batch */}
-        <TableCell>
-          {isEditing && editFields ? (
-            <Input
-              value={editFields.batch}
-              onChange={(e) => onUpdateField("batch", e.target.value)}
-              className="h-8 w-24"
-              onClick={(e) => e.stopPropagation()}
-            />
-          ) : (
-            <span className="text-sm">{enrollment.batch || "-"}</span>
-          )}
-        </TableCell>
-
-        {/* Start Date */}
-        <TableCell>
-          {isEditing && editFields ? (
-            <Input
-              type="date"
-              value={editFields.start_date}
-              onChange={(e) => onUpdateField("start_date", e.target.value)}
-              className="h-8 w-28"
-              onClick={(e) => e.stopPropagation()}
-            />
-          ) : (
-            <span className="text-sm">{formatDate(enrollment.start_date)}</span>
-          )}
-        </TableCell>
-
-        {/* End Date */}
-        <TableCell>
-          {isEditing && editFields ? (
-            <Input
-              type="date"
-              value={editFields.end_date}
-              onChange={(e) => onUpdateField("end_date", e.target.value)}
-              className="h-8 w-28"
-              onClick={(e) => e.stopPropagation()}
-            />
-          ) : (
-            <span className="text-sm">{formatDate(enrollment.end_date)}</span>
-          )}
-        </TableCell>
-
-        {/* Completion */}
-        <TableCell>
-          {isEditing && editFields ? (
-            <Select
-              value={editFields.completion_status}
-              onValueChange={(v) =>
-                onUpdateField("completion_status", v as CompletionStatus)
-              }
-            >
-              <SelectTrigger
-                className="h-8 w-28"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {COMPLETION_STATUSES.map((s) => (
-                  <SelectItem key={s.value} value={s.value}>
-                    {s.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : (
-            <Badge
-              variant={completionStatusVariant(enrollment.completion_status)}
-            >
-              {COMPLETION_STATUSES.find(
-                (s) => s.value === enrollment.completion_status,
-              )?.label ?? enrollment.completion_status}
-            </Badge>
-          )}
-        </TableCell>
-
-        {/* Approval Actions Cell (for NEW status) */}
-        <TableCell onClick={(e) => e.stopPropagation()}>
-          {enrollment.enrollment_status === "NEW" ? (
-            <div className="flex gap-1">
-              <Button
-                variant="ghost"
-                size="xs"
-                onClick={() => onApprove(enrollment)}
-                disabled={isApproving}
-                className="text-green-600 hover:text-green-700"
-              >
-                <Check className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="xs"
-                onClick={() => onReject(enrollment)}
-                disabled={isRejecting}
-                className="text-red-600 hover:text-red-700"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          ) : (
-            <span className="text-xs text-muted-foreground">-</span>
-          )}
-        </TableCell>
-
-        {/* Main Actions Cell */}
-        <TableCell onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-center gap-1">
-            {isEditing ? (
-              <>
-                <Button
-                  variant="ghost"
-                  size="xs"
-                  onClick={() => onSaveEdit(enrollment)}
-                  loading={isSaving}
-                  className="text-green-600 hover:text-green-700"
-                >
-                  {!isSaving && <Save className="h-4 w-4" />}
-                  {isSaving ? "Saving..." : "Save"}
-                </Button>
-                <Button variant="ghost" size="xs" onClick={onCancelEdit}>
-                  <X className="h-4 w-4" />
-                  Cancel
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  variant="ghost"
-                  size="xs"
-                  onClick={() => onStartEdit(enrollment)}
-                >
-                  <Pencil className="h-4 w-4" />
-                  Edit
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="xs"
-                  onClick={() => onViewProfile(enrollment.student_id)}
-                >
-                  <User className="h-4 w-4" />
-                  Profile
-                </Button>
-              </>
-            )}
-          </div>
-        </TableCell>
-      </TableRow>
-
-      {/* Expanded Details Row */}
-      {isExpanded && (
-        <TableRow className="bg-muted/10">
-          <TableCell colSpan={12} className="p-4 child-row">
-            <div className="grid gap-6 md:grid-cols-3">
-              {/* Internal Course Details */}
-              <div className="space-y-2">
-                <p className="text-sm font-semibold">Additional Info</p>
-                <Separator />
-                <DetailField
-                  label="Trainer"
-                  value={enrollment.trainer || "-"}
-                />
-                <DetailField
-                  label="Total Fees"
-                  value={formatCurrency(Number(enrollment.total_fee))}
-                />
-                <DetailField
-                  label="Pending Amount"
-                  value={formatCurrency(Number(enrollment.pending_amount))}
-                />
-                <DetailField
-                  label="Placement Status"
-                  value={enrollment.placement_status}
-                />
-                {enrollment.company_name && (
-                  <DetailField
-                    label="Company"
-                    value={enrollment.company_name}
-                  />
-                )}
-                {enrollment.certificate_url && (
-                  <DetailField label="Certificate" value="Available" />
-                )}
-              </div>
-
-              {/* Installments Table */}
-              <div className="md:col-span-2 space-y-2">
-                <p className="text-sm font-semibold">Payment Installments</p>
-                <Separator />
-                {enrollment.installments &&
-                enrollment.installments.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="text-xs">#</TableHead>
-                        <TableHead className="text-xs">Amount</TableHead>
-                        <TableHead className="text-xs">Date</TableHead>
-                        <TableHead className="text-xs">Mode</TableHead>
-                        <TableHead className="text-xs">Action</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {enrollment.installments.map((inst) => (
-                        <InstallmentRow
-                          key={inst.id}
-                          installment={inst}
-                          enrollmentId={enrollment.id}
-                        />
-                      ))}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <p className="py-2 text-sm text-muted-foreground italic">
-                    No installments recorded for this student.
-                  </p>
-                )}
-              </div>
-            </div>
-          </TableCell>
-        </TableRow>
-      )}
-    </>
+      {/* === PLACEMENT === */}
+      <TableCell className={cn("border-l border-border", bg.placement)}>
+        <Badge variant={placementStatusVariant(enrollment.placement_status)}>
+          {enrollment.placement_status === "PLACED" ? "Placed" : "Not Placed"}
+        </Badge>
+      </TableCell>
+      <TableCell className={cn("text-sm border-r border-border", bg.placement)}>
+        {enrollment.company_name || "-"}
+      </TableCell>
+    </TableRow>
   );
 });

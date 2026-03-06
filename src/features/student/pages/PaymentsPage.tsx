@@ -33,7 +33,7 @@ export default function PaymentsPage() {
 
   return (
     <PageTransition>
-      <div className="space-y-6">
+      <div className="space-y-4">
         <h2 className="text-2xl font-bold">Payment Summary</h2>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">

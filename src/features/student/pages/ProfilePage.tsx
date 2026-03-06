@@ -158,7 +158,7 @@ export default function ProfilePage() {
 
   return (
     <PageTransition>
-      <div className="space-y-6">
+      <div className="space-y-4">
         <h2 className="text-2xl font-bold">My Profile</h2>
 
         {/* Profile Photo + Basic Info */}

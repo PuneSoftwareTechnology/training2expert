@@ -11,13 +11,10 @@ import { TableSkeleton } from '@/components/loaders/TableSkeleton';
 import { QueryError } from '@/components/errors/QueryError';
 import { PageTransition } from '@/components/animations/PageTransition';
 import { adminService } from '@/services/admin.service';
-import { COURSES, PLACEMENT_STATUSES } from '@/constants/courses';
+import { PLACEMENT_STATUSES } from '@/constants/courses';
 import type { PlacementRow } from '@/types/admin.types';
 
-const FILTER_SELECTS = [
-  { label: 'Course', key: 'course' as const, options: COURSES.map((c) => ({ value: c, label: c })) },
-  { label: 'Status', key: 'status' as const, options: PLACEMENT_STATUSES.map((s) => ({ ...s })) },
-];
+const STATUS_OPTIONS = PLACEMENT_STATUSES.map((s) => ({ ...s }));
 
 const columns: ColumnDef<PlacementRow>[] = [
   {
@@ -47,26 +44,39 @@ export default function PlacementReportsPage() {
     }),
   });
 
+  const { data: courses = [] } = useQuery({
+    queryKey: ['admin', 'courses'],
+    queryFn: adminService.getCourses,
+  });
+
   if (isError) return <QueryError error={error} onRetry={refetch} />;
 
   return (
     <PageTransition>
-      <div className="space-y-6">
+      <div className="space-y-4">
         <h2 className="text-2xl font-bold">Placement Reports</h2>
 
         <div className="flex gap-4">
-          {FILTER_SELECTS.map(({ label, key, options }) => (
-            <div key={key} className="space-y-1">
-              <Label className="text-xs">{label}</Label>
-              <Select value={filters[key]} onValueChange={(v) => setFilters((f) => ({ ...f, [key]: v }))}>
-                <SelectTrigger className="w-36"><SelectValue placeholder="All" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">All</SelectItem>
-                  {options.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          ))}
+          <div className="space-y-1">
+            <Label className="text-xs">Course</Label>
+            <Select value={filters.course} onValueChange={(v) => setFilters((f) => ({ ...f, course: v }))}>
+              <SelectTrigger className="w-36"><SelectValue placeholder="All" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All</SelectItem>
+                {courses.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Status</Label>
+            <Select value={filters.status} onValueChange={(v) => setFilters((f) => ({ ...f, status: v }))}>
+              <SelectTrigger className="w-36"><SelectValue placeholder="All" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All</SelectItem>
+                {STATUS_OPTIONS.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {isLoading ? (

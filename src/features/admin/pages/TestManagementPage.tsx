@@ -20,7 +20,7 @@ import { PageTransition } from '@/components/animations/PageTransition';
 import { testSchema, type TestFormValues } from '../schemas/test.schema';
 import { adminService } from '@/services/admin.service';
 import { getErrorMessage } from '@/services/api';
-import { COURSES } from '@/constants/courses';
+
 
 export default function TestManagementPage() {
   const queryClient = useQueryClient();
@@ -29,6 +29,11 @@ export default function TestManagementPage() {
   const { data: tests, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['admin', 'tests'],
     queryFn: adminService.getTests,
+  });
+
+  const { data: courses = [] } = useQuery({
+    queryKey: ['admin', 'courses'],
+    queryFn: adminService.getCourses,
   });
 
   const form = useForm<TestFormValues>({
@@ -86,7 +91,7 @@ export default function TestManagementPage() {
 
   return (
     <PageTransition>
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold">Test Management</h2>
           <Button onClick={() => setDialogOpen(true)}>
@@ -150,7 +155,7 @@ export default function TestManagementPage() {
             <DialogHeader>
               <DialogTitle>Create Test</DialogTitle>
             </DialogHeader>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-1">
                   <Label>Title *</Label>
@@ -162,7 +167,7 @@ export default function TestManagementPage() {
                   <Select value={form.watch('course')} onValueChange={(v) => form.setValue('course', v)}>
                     <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                     <SelectContent>
-                      {COURSES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                      {courses.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>

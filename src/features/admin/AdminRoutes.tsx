@@ -5,6 +5,7 @@ import { ProtectedRoute } from "@/components/organisms/ProtectedRoute";
 import { PageLoader } from "@/components/loaders/PageLoader";
 import { ROLES } from "@/constants/roles";
 
+const DashboardPage = lazy(() => import("./pages/DashboardPage"));
 const EnquiryPage = lazy(() => import("./pages/EnquiryPage"));
 const EnrollmentPage = lazy(() => import("./pages/EnrollmentPage"));
 const CandidateFilterPage = lazy(() => import("./pages/CandidateFilterPage"));
@@ -26,7 +27,8 @@ export default function AdminRoutes() {
     <AdminLayout>
       <Suspense fallback={<PageLoader />}>
         <Routes>
-          <Route index element={<Navigate to="enquiry" replace />} />
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<DashboardPage />} />
           <Route path="enquiry" element={<EnquiryPage />} />
           <Route path="enrollment" element={<EnrollmentPage />} />
           <Route path="reports/candidates" element={<CandidateFilterPage />} />

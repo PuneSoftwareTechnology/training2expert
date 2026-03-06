@@ -16,7 +16,7 @@ interface CandidateFilters {
 export const recruiterService = {
   getCandidates: async (filters: CandidateFilters = {}) => {
     const response = await api.get('/recruiter/candidates', { params: filters });
-    return extractData<{ items: RecruiterCandidate[]; total: number; page: number; totalPages: number }>(response);
+    return extractData<{ items: RecruiterCandidate[]; courses: string[]; total: number; page: number; totalPages: number }>(response);
   },
 
   downloadCv: async (studentId: string): Promise<Blob> => {

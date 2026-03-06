@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import type { ReactNode } from "react";
 import { motion } from "framer-motion";
 import {
+  LayoutDashboard,
   ClipboardList,
   Users,
   BarChart3,
@@ -47,6 +48,11 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
+  {
+    label: "Dashboard",
+    path: ROUTES.ADMIN_DASHBOARD,
+    icon: <LayoutDashboard className="h-4 w-4" />,
+  },
   {
     label: "Enquiry",
     path: ROUTES.ADMIN_ENQUIRY,
