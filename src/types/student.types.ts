@@ -1,4 +1,4 @@
-import type { ApprovalState, EmploymentStatus } from "./common.types";
+import type { ApprovalState, EmploymentStatus, EnrollmentStatus } from "./common.types";
 
 // Re-export all types for backward compatibility
 export * from "./common.types";
@@ -6,6 +6,11 @@ export * from "./admin.types";
 export * from "./super-admin.types";
 
 // Student-specific types
+export interface Certification {
+  name: string;
+  certificate?: string;
+}
+
 export interface StudentProfile {
   id: string;
   userId: string;
@@ -19,7 +24,7 @@ export interface StudentProfile {
   graduationYear?: number;
   postGraduation?: string;
   pgYear?: number;
-  certifications: string[];
+  certifications: Certification[];
   employmentStatus: EmploymentStatus;
   lastWorkedYear?: number;
   itExperienceYears: number;
@@ -27,6 +32,9 @@ export interface StudentProfile {
   nonItExperienceYears: number;
   nonItExperienceMonths: number;
   approvalState: ApprovalState;
+  enrollmentStatus: EnrollmentStatus;
+  course?: string;
+  batch?: string;
 }
 
 export interface Evaluation {

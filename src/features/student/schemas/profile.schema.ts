@@ -12,7 +12,10 @@ export const educationSchema = z.object({
   graduationYear: z.coerce.number().min(1980).max(2030).optional(),
   postGraduation: z.string().optional(),
   pgYear: z.coerce.number().min(1980).max(2030).optional(),
-  certifications: z.array(z.string()).default([]),
+  certifications: z.array(z.object({
+    name: z.string(),
+    certificate: z.string().optional(),
+  })).default([]),
 });
 
 export const workExperienceSchema = z.object({

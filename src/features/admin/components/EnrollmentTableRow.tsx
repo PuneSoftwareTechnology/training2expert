@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import {
   Eye,
   Send,
@@ -29,6 +29,8 @@ import {
   COMPLETION_STATUSES,
   PAYMENT_MODES,
 } from "@/constants/courses";
+import ReceiptDialog from "./ReceiptDialog";
+import type { ReceiptData } from "./PaymentReceipt";
 import type {
   EnrollmentStatus,
   CompletionStatus,
@@ -89,6 +91,7 @@ function InstallmentCells({
   label,
   studentName,
   studentEmail,
+  receiptData,
 }: {
   amount?: number;
   date?: string;
@@ -97,7 +100,10 @@ function InstallmentCells({
   label: string;
   studentName: string;
   studentEmail: string;
+  receiptData: ReceiptData;
 }) {
+  const [receiptOpen, setReceiptOpen] = useState(false);
+
   if (!amount) {
     return (
       <>
@@ -135,11 +141,16 @@ function InstallmentCells({
           title="View Receipt"
           onClick={(e) => {
             e.stopPropagation();
-            toast.info("No receipt available");
+            setReceiptOpen(true);
           }}
         >
           <Eye className="h-3.5 w-3.5" />
         </Button>
+        <ReceiptDialog
+          open={receiptOpen}
+          onOpenChange={setReceiptOpen}
+          data={receiptData}
+        />
       </TableCell>
       <TableCell className={cellClassName}>
         <AlertDialog>
@@ -354,6 +365,19 @@ export const EnrollmentTableRow = memo(function EnrollmentTableRow({
         label="1st"
         studentName={enrollment.name}
         studentEmail={enrollment.email}
+        receiptData={{
+          enrollmentId: enrollment.id,
+          studentName: enrollment.name,
+          courseName: enrollment.course,
+          institute: enrollment.institute,
+          totalFee: Number(enrollment.total_fee || 0),
+          amountReceived: Number(enrollment.installment1_amount || 0),
+          pendingAmount:
+            Number(enrollment.total_fee || 0) -
+            Number(enrollment.installment1_amount || 0),
+          installmentDate: enrollment.installment1_date,
+          paymentMode: enrollment.installment1_mode,
+        }}
       />
 
       {/* 2nd Installment */}
@@ -365,6 +389,20 @@ export const EnrollmentTableRow = memo(function EnrollmentTableRow({
         label="2nd"
         studentName={enrollment.name}
         studentEmail={enrollment.email}
+        receiptData={{
+          enrollmentId: enrollment.id,
+          studentName: enrollment.name,
+          courseName: enrollment.course,
+          institute: enrollment.institute,
+          totalFee: Number(enrollment.total_fee || 0),
+          amountReceived: Number(enrollment.installment2_amount || 0),
+          pendingAmount:
+            Number(enrollment.total_fee || 0) -
+            Number(enrollment.installment1_amount || 0) -
+            Number(enrollment.installment2_amount || 0),
+          installmentDate: enrollment.installment2_date,
+          paymentMode: enrollment.installment2_mode,
+        }}
       />
 
       {/* 3rd Installment */}
@@ -376,6 +414,21 @@ export const EnrollmentTableRow = memo(function EnrollmentTableRow({
         label="3rd"
         studentName={enrollment.name}
         studentEmail={enrollment.email}
+        receiptData={{
+          enrollmentId: enrollment.id,
+          studentName: enrollment.name,
+          courseName: enrollment.course,
+          institute: enrollment.institute,
+          totalFee: Number(enrollment.total_fee || 0),
+          amountReceived: Number(enrollment.installment3_amount || 0),
+          pendingAmount:
+            Number(enrollment.total_fee || 0) -
+            Number(enrollment.installment1_amount || 0) -
+            Number(enrollment.installment2_amount || 0) -
+            Number(enrollment.installment3_amount || 0),
+          installmentDate: enrollment.installment3_date,
+          paymentMode: enrollment.installment3_mode,
+        }}
       />
 
       {/* Pending Amount */}

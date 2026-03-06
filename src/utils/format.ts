@@ -39,3 +39,56 @@ export function formatExperience(years: number, months: number): string {
   if (months > 0) parts.push(`${months} mo${months > 1 ? 's' : ''}`);
   return parts.length > 0 ? parts.join(' ') : 'No experience';
 }
+
+const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine',
+  'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+function twoDigitWords(n: number): string {
+  if (n < 20) return ones[n];
+  return tens[Math.floor(n / 10)] + (n % 10 ? ' ' + ones[n % 10] : '');
+}
+
+export function numberToWords(num: number): string {
+  if (num === 0) return 'Zero Rupees only';
+  let words = '';
+  if (num >= 10000000) {
+    words += twoDigitWords(Math.floor(num / 10000000)) + ' Crore ';
+    num %= 10000000;
+  }
+  if (num >= 100000) {
+    words += twoDigitWords(Math.floor(num / 100000)) + ' Lakh ';
+    num %= 100000;
+  }
+  if (num >= 1000) {
+    words += twoDigitWords(Math.floor(num / 1000)) + ' Thousand ';
+    num %= 1000;
+  }
+  if (num >= 100) {
+    words += ones[Math.floor(num / 100)] + ' Hundred ';
+    num %= 100;
+  }
+  if (num > 0) {
+    words += twoDigitWords(num) + ' ';
+  }
+  return words.trim() + ' Rupees only';
+}
+
+export function generateReceiptNumber(enrollmentId: string, installmentDate?: string): string {
+  const date = installmentDate ? new Date(installmentDate) : new Date();
+  const month = date.getMonth() + 1;
+  const year = date.getFullYear();
+  const fyStart = month >= 4 ? year : year - 1;
+  const fyEnd = (fyStart + 1) % 100;
+  const idPart = enrollmentId.slice(0, 8).toUpperCase();
+  return `FY${fyStart}-${fyEnd.toString().padStart(2, '0')}-${idPart}`;
+}
+
+export function formatReceiptDate(dateString?: string): string {
+  const date = dateString ? new Date(dateString) : new Date();
+  if (isNaN(date.getTime())) return '';
+  const dd = date.getDate().toString().padStart(2, '0');
+  const mm = (date.getMonth() + 1).toString().padStart(2, '0');
+  const yyyy = date.getFullYear();
+  return `${dd}.${mm}.${yyyy}`;
+}
