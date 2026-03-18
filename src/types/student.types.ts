@@ -55,6 +55,15 @@ export interface PaymentSummary {
   pending_amount: number;
   qr_code_url: string;
   qr_bank_name: string;
+  installment1_amount?: number;
+  installment1_date?: string;
+  installment1_mode?: string;
+  installment2_amount?: number;
+  installment2_date?: string;
+  installment2_mode?: string;
+  installment3_amount?: number;
+  installment3_date?: string;
+  installment3_mode?: string;
 }
 
 export interface CvTemplate {
