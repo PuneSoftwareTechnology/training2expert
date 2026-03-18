@@ -1,7 +1,14 @@
-import { useState, type ReactNode } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { LogOut, Layers } from "lucide-react";
+import {
+  LogOut,
+  Layers,
+  CheckCircle2,
+  Clock,
+  Menu,
+  Pencil,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -14,10 +21,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
 import { ROUTES } from "@/constants/routes";
 import { SIDEBAR_ITEMS } from "@/constants/roles";
+import type { StudentProfileFull } from "@/types/student.types";
 
 interface StudentLayoutProps {
   children: ReactNode;
@@ -26,6 +41,13 @@ interface StudentLayoutProps {
 export function StudentLayout({ children }: StudentLayoutProps) {
   const navigate = useNavigate();
   const logout = useAuthStore((s) => s.logout);
+  const user = useAuthStore((s) => s.user);
+  const queryClient = useQueryClient();
+  const profileData = queryClient.getQueryData<StudentProfileFull>([
+    "student",
+    "profile",
+  ]);
+  const isVerified = profileData?.enrollmentStatus === "APPROVED";
   const [showLogout, setShowLogout] = useState(false);
   const [activeSection, setActiveSection] = useState("profile");
 
@@ -34,13 +56,59 @@ export function StudentLayout({ children }: StudentLayoutProps) {
     navigate(ROUTES.LOGIN, { replace: true });
   };
 
+  const isScrollingRef = useRef(false);
+
   const scrollToSection = (id: string) => {
     setActiveSection(id);
+    isScrollingRef.current = true;
     const el = document.getElementById(`section-${id}`);
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "start" });
     }
+    setTimeout(() => {
+      isScrollingRef.current = false;
+    }, 800);
   };
+
+  // Scroll spy: update active section based on which section is in view
+  useEffect(() => {
+    const sectionIds = SIDEBAR_ITEMS.map((item) => item.id);
+    const elements = sectionIds
+      .map((id) => document.getElementById(`section-${id}`))
+      .filter(Boolean) as HTMLElement[];
+
+    if (elements.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (isScrollingRef.current) return;
+
+        // Find the most visible section
+        let bestEntry: IntersectionObserverEntry | null = null;
+        for (const entry of entries) {
+          if (
+            entry.isIntersecting &&
+            (!bestEntry ||
+              entry.intersectionRatio > bestEntry.intersectionRatio)
+          ) {
+            bestEntry = entry;
+          }
+        }
+
+        if (bestEntry) {
+          const id = bestEntry.target.id.replace("section-", "");
+          setActiveSection(id);
+        }
+      },
+      {
+        threshold: [0.1, 0.3, 0.5, 0.7],
+        rootMargin: "-80px 0px -40% 0px",
+      },
+    );
+
+    elements.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-blue-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
@@ -123,23 +191,60 @@ export function StudentLayout({ children }: StudentLayoutProps) {
       {/* ─── Mobile Top Header ─── */}
       <header className="fixed inset-x-0 top-0 z-30 md:hidden">
         <div className="flex h-14 items-center justify-between border-b border-white/10 bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 px-4 text-white shadow-lg shadow-blue-500/20">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm">
               <Layers className="h-4 w-4" />
             </div>
-            <span className="font-bold tracking-tight">
-              Student Management System
-            </span>
+            <div className="min-w-0">
+              <span className="block truncate text-base font-extrabold uppercase tracking-wide">
+                {user?.name || "Student"}
+              </span>
+            </div>
+            {isVerified ? (
+              <span className="flex shrink-0 items-center gap-1 rounded-full bg-emerald-500/25 px-2 py-0.5 text-[10px] font-semibold text-emerald-100 backdrop-blur-sm">
+                <CheckCircle2 className="h-3 w-3" />
+                Verified
+              </span>
+            ) : (
+              <span className="flex shrink-0 items-center gap-1 rounded-full bg-amber-500/25 px-2 py-0.5 text-[10px] font-semibold text-amber-100 backdrop-blur-sm">
+                <Clock className="h-3 w-3" />
+                Pending
+              </span>
+            )}
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowLogout(true)}
-            className="rounded-lg bg-red-500/20 text-red-100 hover:bg-red-500/35 hover:text-white"
-          >
-            <LogOut className="mr-1.5 h-4 w-4" />
-            Logout
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 shrink-0 bg-white/15 text-white hover:bg-white/25"
+              >
+                <Menu className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48 p-1.5">
+              <DropdownMenuItem
+                onClick={() =>
+                  window.dispatchEvent(new CustomEvent("toggle-profile-edit"))
+                }
+                className="gap-2.5 px-3 py-2.5 font-medium text-blue-700 focus:bg-blue-50 focus:text-blue-700 dark:text-blue-400 dark:focus:bg-blue-950/30"
+              >
+                <div className="flex h-7 w-7 items-center justify-center  bg-gradient-to-br text-white shadow-sm">
+                  <Pencil className="h-3.5 w-3.5" />
+                </div>
+                Edit Profile
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setShowLogout(true)}
+                className="gap-2.5 rounded-lg px-3 py-2.5 font-medium text-red-600 focus:bg-red-50 focus:text-red-600 dark:text-red-400 dark:focus:bg-red-950/30"
+              >
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br text-white shadow-sm">
+                  <LogOut className="h-3.5 w-3.5" />
+                </div>
+                Logout
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 

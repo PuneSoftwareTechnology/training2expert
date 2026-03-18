@@ -9,10 +9,12 @@ import { PageTransition } from '@/components/animations/PageTransition';
 import { studentService } from '@/services/student.service';
 
 export default function EvaluationsPage() {
-  const { data: evaluations, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['student', 'evaluations'],
-    queryFn: studentService.getEvaluations,
+  const { data: profile, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ['student', 'profile'],
+    queryFn: studentService.getProfile,
   });
+
+  const evaluations = profile?.evaluations;
 
   if (isLoading) {
     return (
@@ -112,7 +114,6 @@ export default function EvaluationsPage() {
                     </div>
                   )}
                 </div>
-                {/* trainerRemark is INTENTIONALLY not rendered here */}
               </CardContent>
             </Card>
           ))}

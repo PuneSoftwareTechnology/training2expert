@@ -16,20 +16,18 @@ export default function CvPage() {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { data: templates, isLoading: templatesLoading, isError, error, refetch } = useQuery({
-    queryKey: ['student', 'cv-templates'],
-    queryFn: studentService.getCvTemplates,
+  const { data: profile, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ['student', 'profile'],
+    queryFn: studentService.getProfile,
   });
 
-  const { data: myCv, isLoading: cvLoading } = useQuery({
-    queryKey: ['student', 'my-cv'],
-    queryFn: studentService.getMyCv,
-  });
+  const templates = profile?.cvTemplates;
+  const myCv = profile?.cv;
 
   const uploadMutation = useMutation({
     mutationFn: studentService.uploadCv,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['student', 'my-cv'] });
+      queryClient.invalidateQueries({ queryKey: ['student', 'profile'] });
       toast.success('CV uploaded successfully');
     },
     onError: (error) => toast.error(getErrorMessage(error)),
@@ -47,7 +45,7 @@ export default function CvPage() {
     link.click();
   };
 
-  if (templatesLoading || cvLoading) {
+  if (isLoading) {
     return (
       <div className="space-y-4">
         <CardSkeleton />

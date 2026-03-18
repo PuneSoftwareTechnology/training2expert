@@ -73,6 +73,13 @@ export interface CvTemplate {
   downloadUrl: string;
 }
 
+export interface StudentProfileFull extends StudentProfile {
+  payments: PaymentSummary | null;
+  evaluations: Evaluation[];
+  cvTemplates: CvTemplate[];
+  cv: { url: string } | null;
+}
+
 export interface TestAttempt {
   testId: string;
   answers: Record<string, number>;

@@ -14,22 +14,6 @@ export default function ProfilePage() {
     queryKey: ['student', 'profile'],
     queryFn: studentService.getProfile,
   });
-  const { data: paymentData } = useQuery({
-    queryKey: ['student', 'payments'],
-    queryFn: studentService.getPaymentSummary,
-  });
-  const { data: evaluations } = useQuery({
-    queryKey: ['student', 'evaluations'],
-    queryFn: studentService.getEvaluations,
-  });
-  const { data: templates } = useQuery({
-    queryKey: ['student', 'cv-templates'],
-    queryFn: studentService.getCvTemplates,
-  });
-  const { data: myCv } = useQuery({
-    queryKey: ['student', 'my-cv'],
-    queryFn: studentService.getMyCv,
-  });
 
   if (isLoading) {
     return (
@@ -49,9 +33,9 @@ export default function ProfilePage() {
     <PageTransition>
       <div className="space-y-12 pb-8">
         <ProfileDetailsSection profile={profile} />
-        <PaymentSection paymentData={paymentData} />
-        <EvaluationSection evaluations={evaluations} />
-        <CareerResumeSection templates={templates} myCv={myCv ?? undefined} />
+        <PaymentSection paymentData={profile.payments ?? undefined} />
+        <EvaluationSection evaluations={profile.evaluations} />
+        <CareerResumeSection templates={profile.cvTemplates} myCv={profile.cv ?? undefined} />
       </div>
     </PageTransition>
   );

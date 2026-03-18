@@ -27,7 +27,7 @@ export default function EvaluationSection({ evaluations }: EvaluationSectionProp
 
   return (
     <section id="section-evaluation" className="scroll-mt-20">
-      <div className="mb-8 h-px bg-gradient-to-r from-transparent via-violet-300/50 to-transparent dark:via-violet-700/30" />
+      <div className="mb-4 h-px bg-gradient-to-r from-transparent via-violet-300/50 to-transparent md:mb-8 dark:via-violet-700/30" />
       <SectionHeader icon={Award} gradient="from-violet-500 to-purple-600" title="Academic Evaluation" subtitle="Performance scores & feedback" />
 
       <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0} className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-3">

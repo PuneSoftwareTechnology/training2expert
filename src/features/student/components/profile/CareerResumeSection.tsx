@@ -24,7 +24,7 @@ export default function CareerResumeSection({ templates, myCv }: CareerResumeSec
   const cvUploadMutation = useMutation({
     mutationFn: studentService.uploadCv,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['student', 'my-cv'] });
+      queryClient.invalidateQueries({ queryKey: ['student', 'profile'] });
       toast.success('CV uploaded successfully');
     },
     onError: (e) => toast.error(getErrorMessage(e)),
@@ -54,7 +54,7 @@ export default function CareerResumeSection({ templates, myCv }: CareerResumeSec
 
   return (
     <section id="section-cv" className="scroll-mt-20">
-      <div className="mb-8 h-px bg-gradient-to-r from-transparent via-orange-300/50 to-transparent dark:via-orange-700/30" />
+      <div className="mb-4 h-px bg-gradient-to-r from-transparent via-orange-300/50 to-transparent md:mb-8 dark:via-orange-700/30" />
       <SectionHeader icon={FolderUp} gradient="from-orange-500 to-rose-600" title="Career & Resume" subtitle="Templates & CV upload" />
 
       <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0} className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">

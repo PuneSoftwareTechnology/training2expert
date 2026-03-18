@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -39,6 +39,13 @@ export default function ProfileDetailsSection({ profile }: ProfileDetailsSection
   const [certInput, setCertInput] = useState('');
   const [certFile, setCertFile] = useState<File | null>(null);
   const [editMode, setEditMode] = useState(false);
+
+  // Listen for edit toggle from mobile hamburger menu
+  const toggleEdit = useCallback(() => setEditMode((prev) => !prev), []);
+  useEffect(() => {
+    window.addEventListener("toggle-profile-edit", toggleEdit);
+    return () => window.removeEventListener("toggle-profile-edit", toggleEdit);
+  }, [toggleEdit]);
 
   const isVerified = profile.enrollmentStatus === 'APPROVED';
 
@@ -165,24 +172,28 @@ export default function ProfileDetailsSection({ profile }: ProfileDetailsSection
   };
 
   return (
-    <section id="section-profile" className="scroll-mt-20">
+    <section id="section-profile" className={editMode ? "scroll-mt-28 md:scroll-mt-20" : "scroll-mt-20"}>
       {/* Mobile sticky edit bar */}
       {editMode && (
-        <div className="fixed inset-x-0 top-14 z-20 flex items-center justify-between border-b border-blue-200 bg-white/95 px-4 py-2.5 shadow-md backdrop-blur-sm md:hidden dark:border-blue-900 dark:bg-slate-900/95">
-          <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">Editing Profile</span>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={onCancelEdit} className="rounded-lg">Cancel</Button>
-            <Button size="sm" onClick={onSaveAll} loading={updateMutation.isPending} className="rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600">
-              {!updateMutation.isPending && <Save className="mr-1.5 h-3.5 w-3.5" />}
-              {updateMutation.isPending ? 'Saving...' : 'Save'}
-            </Button>
+        <>
+          <div className="fixed inset-x-0 top-14 z-20 flex items-center justify-between border-b border-blue-200 bg-white/95 px-4 py-2.5 shadow-md backdrop-blur-sm md:hidden dark:border-blue-900 dark:bg-slate-900/95">
+            <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">Editing Profile</span>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={onCancelEdit} className="rounded-lg">Cancel</Button>
+              <Button size="sm" onClick={onSaveAll} loading={updateMutation.isPending} className="rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600">
+                {!updateMutation.isPending && <Save className="mr-1.5 h-3.5 w-3.5" />}
+                {updateMutation.isPending ? 'Saving...' : 'Save'}
+              </Button>
+            </div>
           </div>
-        </div>
+          {/* Spacer to push content below the fixed edit bar on mobile */}
+          <div className="h-11 md:hidden" />
+        </>
       )}
 
       {/* Header */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex items-center gap-3">
+      <div className="mb-4 flex flex-col gap-4 md:mb-6 md:flex-row md:items-start md:justify-between">
+        <div className="hidden items-center gap-3 md:flex">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25">
             <GraduationCap className="h-6 w-6" />
           </div>
@@ -191,7 +202,7 @@ export default function ProfileDetailsSection({ profile }: ProfileDetailsSection
             <p className="text-sm text-muted-foreground">Manage your personal and educational background.</p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="hidden items-center gap-3 md:flex">
           {isVerified ? (
             <Badge className="rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">Verified</Badge>
           ) : (
@@ -251,57 +262,57 @@ export default function ProfileDetailsSection({ profile }: ProfileDetailsSection
           </CardHeader>
           <CardContent className="pt-5">
             {editMode ? (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>Full Name <span className="text-destructive">*</span></Label>
-                  <Input {...basicForm.register('name')} placeholder="Full Name" className="rounded-lg" />
-                  {basicForm.formState.errors.name && <p className="text-sm text-destructive">{basicForm.formState.errors.name.message}</p>}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5 rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-slate-800/50">
+                  <Label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Full Name <span className="text-destructive">*</span></Label>
+                  <Input {...basicForm.register('name')} placeholder="Full Name" className="h-9 rounded-lg border-slate-200 bg-white text-sm dark:border-slate-700 dark:bg-slate-900" />
+                  {basicForm.formState.errors.name && <p className="text-xs text-destructive">{basicForm.formState.errors.name.message}</p>}
                 </div>
-                <div className="space-y-2">
-                  <Label>Phone <span className="text-destructive">*</span></Label>
+                <div className="space-y-1.5 rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-slate-800/50">
+                  <Label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Phone <span className="text-destructive">*</span></Label>
                   <Input
                     maxLength={10}
                     onInput={(e) => { e.currentTarget.value = e.currentTarget.value.replace(/\D/g, ''); }}
                     {...basicForm.register('phone')}
-                    placeholder="+1 234 567 8900"
-                    className="rounded-lg"
+                    placeholder="1234567890"
+                    className="h-9 rounded-lg border-slate-200 bg-white text-sm dark:border-slate-700 dark:bg-slate-900"
                   />
-                  {basicForm.formState.errors.phone && <p className="text-sm text-destructive">{basicForm.formState.errors.phone.message}</p>}
+                  {basicForm.formState.errors.phone && <p className="text-xs text-destructive">{basicForm.formState.errors.phone.message}</p>}
                 </div>
-                <div className="space-y-2">
-                  <Label>Email <span className="text-destructive">*</span></Label>
-                  <Input value={profile.email ?? ''} disabled placeholder="john.doe@example.com" className="rounded-lg" />
+                <div className="space-y-1.5 rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-slate-800/50">
+                  <Label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Email <span className="text-destructive">*</span></Label>
+                  <Input value={profile.email ?? ''} disabled placeholder="john@example.com" className="h-9 rounded-lg border-slate-200 bg-white text-sm dark:border-slate-700 dark:bg-slate-900" />
                 </div>
-                <div className="space-y-2">
-                  <Label>City</Label>
-                  <Input {...basicForm.register('city')} placeholder="City" className="rounded-lg" />
+                <div className="space-y-1.5 rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-slate-800/50">
+                  <Label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">City</Label>
+                  <Input {...basicForm.register('city')} placeholder="City" className="h-9 rounded-lg border-slate-200 bg-white text-sm dark:border-slate-700 dark:bg-slate-900" />
                 </div>
-                <div className="space-y-2 sm:col-span-2">
-                  <Label>Area</Label>
-                  <Input {...basicForm.register('area')} placeholder="Area" className="rounded-lg" />
+                <div className="col-span-2 space-y-1.5 rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-slate-800/50">
+                  <Label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Area</Label>
+                  <Input {...basicForm.register('area')} placeholder="Area" className="h-9 rounded-lg border-slate-200 bg-white text-sm dark:border-slate-700 dark:bg-slate-900" />
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Full Name</p>
-                  <p className="text-sm font-medium">{profile.name || '—'}</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-slate-800/50">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Full Name</p>
+                  <p className="mt-0.5 text-sm font-semibold text-foreground">{profile.name || '—'}</p>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Phone</p>
-                  <p className="text-sm font-medium">{profile.phone || '—'}</p>
+                <div className="rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-slate-800/50">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Phone</p>
+                  <p className="mt-0.5 text-sm font-semibold text-foreground">{profile.phone || '—'}</p>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Email</p>
-                  <p className="text-sm font-medium">{profile.email || '—'}</p>
+                <div className="rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-slate-800/50">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Email</p>
+                  <p className="mt-0.5 truncate text-sm font-semibold text-foreground">{profile.email || '—'}</p>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">City</p>
-                  <p className="text-sm font-medium">{profile.city || '—'}</p>
+                <div className="rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-slate-800/50">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">City</p>
+                  <p className="mt-0.5 text-sm font-semibold text-foreground">{profile.city || '—'}</p>
                 </div>
-                <div className="space-y-1 sm:col-span-2">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Area</p>
-                  <p className="text-sm font-medium">{profile.area || '—'}</p>
+                <div className="col-span-2 rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-slate-800/50">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Area</p>
+                  <p className="mt-0.5 text-sm font-semibold text-foreground">{profile.area || '—'}</p>
                 </div>
               </div>
             )}
@@ -353,37 +364,37 @@ export default function ProfileDetailsSection({ profile }: ProfileDetailsSection
           </CardHeader>
           <CardContent className="pt-5">
             {editMode ? (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Graduation</Label>
-                  <Input {...educationForm.register('graduation')} placeholder="Degree Name" className="rounded-lg" />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5 rounded-xl bg-violet-50/60 px-3 py-2.5 dark:bg-violet-950/20">
+                  <Label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Graduation</Label>
+                  <Input {...educationForm.register('graduation')} placeholder="Degree Name" className="h-9 rounded-lg border-violet-200 bg-white text-sm dark:border-violet-800 dark:bg-slate-900" />
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Graduation Year</Label>
-                  <Input type="number" {...educationForm.register('graduationYear')} placeholder="YYYY" className="rounded-lg" />
+                <div className="space-y-1.5 rounded-xl bg-violet-50/60 px-3 py-2.5 dark:bg-violet-950/20">
+                  <Label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Grad. Year</Label>
+                  <Input type="number" {...educationForm.register('graduationYear')} placeholder="YYYY" className="h-9 rounded-lg border-violet-200 bg-white text-sm dark:border-violet-800 dark:bg-slate-900" />
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Post Graduation</Label>
-                  <Input {...educationForm.register('postGraduation')} placeholder="Degree Name" className="rounded-lg" />
+                <div className="space-y-1.5 rounded-xl bg-violet-50/60 px-3 py-2.5 dark:bg-violet-950/20">
+                  <Label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Post Graduation</Label>
+                  <Input {...educationForm.register('postGraduation')} placeholder="Degree Name" className="h-9 rounded-lg border-violet-200 bg-white text-sm dark:border-violet-800 dark:bg-slate-900" />
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">PG Year</Label>
-                  <Input type="number" {...educationForm.register('pgYear')} placeholder="YYYY" className="rounded-lg" />
+                <div className="space-y-1.5 rounded-xl bg-violet-50/60 px-3 py-2.5 dark:bg-violet-950/20">
+                  <Label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">PG Year</Label>
+                  <Input type="number" {...educationForm.register('pgYear')} placeholder="YYYY" className="h-9 rounded-lg border-violet-200 bg-white text-sm dark:border-violet-800 dark:bg-slate-900" />
                 </div>
-                <div className="space-y-3 sm:col-span-2">
-                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Certifications</Label>
-                  <div className="flex flex-col gap-2 sm:flex-row">
+                <div className="col-span-2 space-y-2.5 rounded-xl bg-violet-50/60 px-3 py-2.5 dark:bg-violet-950/20">
+                  <Label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Certifications</Label>
+                  <div className="space-y-2">
                     <Input
                       value={certInput}
                       onChange={(e) => setCertInput(e.target.value)}
-                      placeholder="Certification name (e.g. AWS, PMP)"
-                      className="rounded-lg"
+                      placeholder="e.g. AWS, PMP"
+                      className="h-9 rounded-lg border-violet-200 bg-white text-sm dark:border-violet-800 dark:bg-slate-900"
                       onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCertification(); } }}
                     />
                     <div className="flex gap-2">
-                      <Button type="button" variant="outline" size="sm" className="rounded-lg text-xs" onClick={() => certFileInputRef.current?.click()}>
+                      <Button type="button" variant="outline" size="sm" className="h-9 flex-1 rounded-lg border-violet-200 text-xs dark:border-violet-800" onClick={() => certFileInputRef.current?.click()}>
                         <Upload className="mr-1.5 h-3.5 w-3.5" />
-                        {certFile ? certFile.name.slice(0, 15) + '...' : 'Upload File'}
+                        {certFile ? certFile.name.slice(0, 12) + '...' : 'Upload'}
                       </Button>
                       <input
                         ref={certFileInputRef}
@@ -392,7 +403,7 @@ export default function ProfileDetailsSection({ profile }: ProfileDetailsSection
                         className="hidden"
                         onChange={(e) => { const f = e.target.files?.[0]; if (f) setCertFile(f); }}
                       />
-                      <Button type="button" variant="outline" size="icon" onClick={addCertification} className="rounded-lg" disabled={certUploadMutation.isPending}>
+                      <Button type="button" variant="outline" size="icon" onClick={addCertification} className="h-9 w-9 shrink-0 rounded-lg border-violet-200 dark:border-violet-800" disabled={certUploadMutation.isPending}>
                         {certUploadMutation.isPending ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> : <Plus className="h-4 w-4" />}
                       </Button>
                     </div>
@@ -400,15 +411,13 @@ export default function ProfileDetailsSection({ profile }: ProfileDetailsSection
                   {(educationForm.watch('certifications') ?? []).length > 0 && (
                     <div className="space-y-2 pt-1">
                       {(educationForm.watch('certifications') ?? []).map((cert, i) => (
-                        <div key={i} className="flex items-center justify-between rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 dark:border-violet-800 dark:bg-violet-900/20">
-                          <div className="flex items-center gap-2">
-                            <Award className="h-4 w-4 text-violet-500" />
-                            <span className="text-sm font-medium text-violet-700 dark:text-violet-300">{cert.name}</span>
-                            {cert.certificate && (
-                              <a href={cert.certificate} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 underline hover:text-blue-800 dark:text-blue-400">View</a>
-                            )}
-                          </div>
-                          <button type="button" onClick={() => removeCertification(i)} className="text-violet-400 hover:text-violet-600">
+                        <div key={i} className="flex items-center gap-2 rounded-xl border border-violet-200 bg-white px-3 py-2 dark:border-violet-800 dark:bg-slate-900">
+                          <Award className="h-4 w-4 shrink-0 text-violet-500" />
+                          <span className="min-w-0 flex-1 truncate text-sm font-medium text-violet-700 dark:text-violet-300">{cert.name}</span>
+                          {cert.certificate && (
+                            <a href={cert.certificate} target="_blank" rel="noopener noreferrer" className="shrink-0 text-xs text-blue-600 underline hover:text-blue-800 dark:text-blue-400">View</a>
+                          )}
+                          <button type="button" onClick={() => removeCertification(i)} className="shrink-0 text-violet-400 hover:text-violet-600">
                             <X className="h-3.5 w-3.5" />
                           </button>
                         </div>
@@ -418,35 +427,35 @@ export default function ProfileDetailsSection({ profile }: ProfileDetailsSection
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Graduation</p>
-                  <p className="text-sm font-medium">{profile.graduation || '—'}</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-xl bg-violet-50/60 px-3 py-2.5 dark:bg-violet-950/20">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Graduation</p>
+                  <p className="mt-0.5 text-sm font-semibold text-foreground">{profile.graduation || '—'}</p>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Graduation Year</p>
-                  <p className="text-sm font-medium">{profile.graduationYear || '—'}</p>
+                <div className="rounded-xl bg-violet-50/60 px-3 py-2.5 dark:bg-violet-950/20">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Grad. Year</p>
+                  <p className="mt-0.5 text-sm font-semibold text-foreground">{profile.graduationYear || '—'}</p>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Post Graduation</p>
-                  <p className="text-sm font-medium">{profile.postGraduation || '—'}</p>
+                <div className="rounded-xl bg-violet-50/60 px-3 py-2.5 dark:bg-violet-950/20">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Post Graduation</p>
+                  <p className="mt-0.5 text-sm font-semibold text-foreground">{profile.postGraduation || '—'}</p>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">PG Year</p>
-                  <p className="text-sm font-medium">{profile.pgYear || '—'}</p>
+                <div className="rounded-xl bg-violet-50/60 px-3 py-2.5 dark:bg-violet-950/20">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">PG Year</p>
+                  <p className="mt-0.5 text-sm font-semibold text-foreground">{profile.pgYear || '—'}</p>
                 </div>
-                <div className="space-y-2 sm:col-span-2">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Certifications</p>
+                <div className="col-span-2 space-y-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Certifications</p>
                   {(profile.certifications ?? []).length > 0 ? (
                     <div className="space-y-2">
                       {(profile.certifications ?? []).map((cert, i) => {
                         const c = typeof cert === 'string' ? { name: cert } : cert;
                         return (
-                          <div key={i} className="flex items-center gap-2 rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 dark:border-violet-800 dark:bg-violet-900/20">
-                            <Award className="h-4 w-4 text-violet-500" />
-                            <span className="text-sm font-medium text-violet-700 dark:text-violet-300">{c.name}</span>
+                          <div key={i} className="flex items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-3 py-2.5 dark:border-violet-800 dark:bg-violet-900/20">
+                            <Award className="h-4 w-4 shrink-0 text-violet-500" />
+                            <span className="min-w-0 flex-1 truncate text-sm font-medium text-violet-700 dark:text-violet-300">{c.name}</span>
                             {c.certificate && (
-                              <a href={c.certificate} target="_blank" rel="noopener noreferrer" className="ml-auto text-xs text-blue-600 underline hover:text-blue-800 dark:text-blue-400">View Certificate</a>
+                              <a href={c.certificate} target="_blank" rel="noopener noreferrer" className="shrink-0 text-xs text-blue-600 underline hover:text-blue-800 dark:text-blue-400">View</a>
                             )}
                           </div>
                         );
@@ -471,68 +480,72 @@ export default function ProfileDetailsSection({ profile }: ProfileDetailsSection
           </CardHeader>
           <CardContent className="pt-5">
             {editMode ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Employment Status</Label>
-                    <Select
-                      value={workForm.watch('employmentStatus')}
-                      onValueChange={(val) => workForm.setValue('employmentStatus', val as 'WORKING' | 'NON_WORKING' | 'FRESHER')}
-                    >
-                      <SelectTrigger className="rounded-lg"><SelectValue placeholder="Select status" /></SelectTrigger>
-                      <SelectContent>
-                        {EMPLOYMENT_STATUSES.map((s) => (<SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Last Worked Year</Label>
-                    <Input type="number" {...workForm.register('lastWorkedYear', { valueAsNumber: true })} placeholder="YYYY" className="rounded-lg" />
-                  </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5 rounded-xl bg-teal-50/60 px-3 py-2.5 dark:bg-teal-950/20">
+                  <Label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Status</Label>
+                  <Select
+                    value={workForm.watch('employmentStatus')}
+                    onValueChange={(val) => workForm.setValue('employmentStatus', val as 'WORKING' | 'NON_WORKING' | 'FRESHER')}
+                  >
+                    <SelectTrigger className="h-9 rounded-lg border-teal-200 bg-white text-sm dark:border-teal-800 dark:bg-slate-900"><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectContent>
+                      {EMPLOYMENT_STATUSES.map((s) => (<SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="space-y-3">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className="w-28 text-sm font-medium">IT Experience</span>
-                    <div className="flex items-center gap-2">
-                      <Input type="number" className="w-20 rounded-lg" {...workForm.register('itExperienceYears', { valueAsNumber: true })} placeholder="Yrs" />
-                      <span className="text-xs text-muted-foreground">Years</span>
-                      <Input type="number" className="w-20 rounded-lg" {...workForm.register('itExperienceMonths', { valueAsNumber: true })} placeholder="Mo" />
-                      <span className="text-xs text-muted-foreground">Months</span>
+                <div className="space-y-1.5 rounded-xl bg-teal-50/60 px-3 py-2.5 dark:bg-teal-950/20">
+                  <Label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Last Worked</Label>
+                  <Input type="number" {...workForm.register('lastWorkedYear', { valueAsNumber: true })} placeholder="YYYY" className="h-9 rounded-lg border-teal-200 bg-white text-sm dark:border-teal-800 dark:bg-slate-900" />
+                </div>
+                <div className="space-y-1.5 rounded-xl bg-teal-50/60 px-3 py-2.5 dark:bg-teal-950/20">
+                  <Label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">IT Experience</Label>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Input type="number" className="h-9 rounded-lg border-teal-200 bg-white pr-8 text-sm dark:border-teal-800 dark:bg-slate-900" {...workForm.register('itExperienceYears', { valueAsNumber: true })} placeholder="0" />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">yr</span>
+                    </div>
+                    <div className="relative flex-1">
+                      <Input type="number" className="h-9 rounded-lg border-teal-200 bg-white pr-10 text-sm dark:border-teal-800 dark:bg-slate-900" {...workForm.register('itExperienceMonths', { valueAsNumber: true })} placeholder="0" />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">mo</span>
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className="w-28 text-sm font-medium">Non-IT Exp</span>
-                    <div className="flex items-center gap-2">
-                      <Input type="number" className="w-20 rounded-lg" {...workForm.register('nonItExperienceYears', { valueAsNumber: true })} placeholder="Yrs" />
-                      <span className="text-xs text-muted-foreground">Years</span>
-                      <Input type="number" className="w-20 rounded-lg" {...workForm.register('nonItExperienceMonths', { valueAsNumber: true })} placeholder="Mo" />
-                      <span className="text-xs text-muted-foreground">Months</span>
+                </div>
+                <div className="space-y-1.5 rounded-xl bg-teal-50/60 px-3 py-2.5 dark:bg-teal-950/20">
+                  <Label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Non-IT Exp.</Label>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Input type="number" className="h-9 rounded-lg border-teal-200 bg-white pr-8 text-sm dark:border-teal-800 dark:bg-slate-900" {...workForm.register('nonItExperienceYears', { valueAsNumber: true })} placeholder="0" />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">yr</span>
+                    </div>
+                    <div className="relative flex-1">
+                      <Input type="number" className="h-9 rounded-lg border-teal-200 bg-white pr-10 text-sm dark:border-teal-800 dark:bg-slate-900" {...workForm.register('nonItExperienceMonths', { valueAsNumber: true })} placeholder="0" />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">mo</span>
                     </div>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Employment Status</p>
-                  <p className="text-sm font-medium">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-xl bg-teal-50/60 px-3 py-2.5 dark:bg-teal-950/20">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Status</p>
+                  <p className="mt-0.5 text-sm font-semibold text-foreground">
                     {EMPLOYMENT_STATUSES.find((s) => s.value === profile.employmentStatus)?.label || '—'}
                   </p>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Last Worked Year</p>
-                  <p className="text-sm font-medium">{profile.lastWorkedYear || '—'}</p>
+                <div className="rounded-xl bg-teal-50/60 px-3 py-2.5 dark:bg-teal-950/20">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Last Worked</p>
+                  <p className="mt-0.5 text-sm font-semibold text-foreground">{profile.lastWorkedYear || '—'}</p>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">IT Experience</p>
-                  <p className="text-sm font-medium">
-                    {profile.itExperienceYears || 0} Years, {profile.itExperienceMonths || 0} Months
+                <div className="rounded-xl bg-teal-50/60 px-3 py-2.5 dark:bg-teal-950/20">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">IT Experience</p>
+                  <p className="mt-0.5 text-sm font-semibold text-foreground">
+                    {profile.itExperienceYears || 0}y {profile.itExperienceMonths || 0}m
                   </p>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Non-IT Experience</p>
-                  <p className="text-sm font-medium">
-                    {profile.nonItExperienceYears || 0} Years, {profile.nonItExperienceMonths || 0} Months
+                <div className="rounded-xl bg-teal-50/60 px-3 py-2.5 dark:bg-teal-950/20">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Non-IT Exp.</p>
+                  <p className="mt-0.5 text-sm font-semibold text-foreground">
+                    {profile.nonItExperienceYears || 0}y {profile.nonItExperienceMonths || 0}m
                   </p>
                 </div>
               </div>

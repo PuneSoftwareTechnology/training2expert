@@ -9,10 +9,12 @@ import { studentService } from '@/services/student.service';
 import { formatCurrency } from '@/utils/format';
 
 export default function PaymentsPage() {
-  const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['student', 'payments'],
-    queryFn: studentService.getPaymentSummary,
+  const { data: profile, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ['student', 'profile'],
+    queryFn: studentService.getProfile,
   });
+
+  const data = profile?.payments;
 
   if (isLoading) {
     return (
