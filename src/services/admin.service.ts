@@ -234,10 +234,8 @@ export const adminService = {
     return extractData<{ message: string }>(response);
   },
 
-  getFeeDuesReport: async (daysFilter: number) => {
-    const response = await api.get("/admin/reports/fee-dues", {
-      params: { days: daysFilter },
-    });
+  getFeeDuesReport: async () => {
+    const response = await api.get("/admin/reports/fee-dues");
     return extractData<FeeDueRow[]>(response);
   },
 

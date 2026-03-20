@@ -10,7 +10,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -56,12 +56,11 @@ export function DataTable<TData, TValue>({
   });
 
   // Apply external search filter
-  if (searchKey && searchValue !== undefined) {
-    const col = table.getColumn(searchKey);
-    if (col && col.getFilterValue() !== searchValue) {
-      col.setFilterValue(searchValue || undefined);
+  useEffect(() => {
+    if (searchKey && searchValue !== undefined) {
+      table.getColumn(searchKey)?.setFilterValue(searchValue || undefined);
     }
-  }
+  }, [searchKey, searchValue, table]);
 
   return (
     <div className="space-y-2">
