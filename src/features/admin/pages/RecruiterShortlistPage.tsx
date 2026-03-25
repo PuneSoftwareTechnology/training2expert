@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { ListChecks } from 'lucide-react';
+import { ListChecks, Briefcase, Calendar, User } from 'lucide-react';
 import type { ColumnDef } from '@tanstack/react-table';
 
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { DataTable, SortableHeader } from '@/components/ui/data-table';
 import { TableSkeleton } from '@/components/loaders/TableSkeleton';
@@ -39,7 +40,12 @@ export default function RecruiterShortlistPage() {
   return (
     <PageTransition>
       <div className="space-y-4">
-        <h2 className="text-2xl font-bold">Recruiter Shortlist</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold sm:text-2xl">Recruiter Shortlist</h2>
+          {data && data.length > 0 && (
+            <Badge variant="outline">{data.length} record{data.length !== 1 ? 's' : ''}</Badge>
+          )}
+        </div>
 
         {isLoading ? (
           <TableSkeleton rows={6} columns={4} />
@@ -51,11 +57,42 @@ export default function RecruiterShortlistPage() {
             </CardContent>
           </Card>
         ) : (
-          <Card>
-            <CardContent className="p-0">
-              <DataTable columns={columns} data={data} emptyMessage="No shortlist records" />
-            </CardContent>
-          </Card>
+          <>
+            {/* Desktop table */}
+            <div className="hidden md:block">
+              <Card>
+                <CardContent className="p-0">
+                  <DataTable columns={columns} data={data} emptyMessage="No shortlist records" />
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Mobile cards */}
+            <div className="space-y-3 md:hidden">
+              {data.map((item) => (
+                <Card key={item.id}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-semibold">{item.studentName}</p>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <User className="h-3.5 w-3.5" /> {item.recruiterName}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Briefcase className="h-3.5 w-3.5" /> {item.course}
+                          </span>
+                        </div>
+                        <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                          <Calendar className="h-3 w-3" /> {formatDate(item.dateOfShortlist)}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </>
         )}
       </div>
     </PageTransition>
