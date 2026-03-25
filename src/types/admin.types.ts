@@ -103,7 +103,16 @@ export interface EnrollmentFigureRow {
 export interface PlacementRow {
   id: string;
   name: string;
+  phone?: string;
   course: string;
+  courseEndDate?: string;
   placementStatus: PlacementStatus;
   companyName?: string;
+  contactedDate?: string;
+}
+
+export interface PlacementReportData {
+  notContacted: PlacementRow[];
+  contacted: PlacementRow[];
+  courses: string[];
 }

@@ -14,7 +14,7 @@ import type {
   CandidateReportRow,
   FeeDueRow,
   EnrollmentFigureRow,
-  PlacementRow,
+  PlacementReportData,
   RecruiterShortlist,
   RecruiterAccount,
 } from "@/types/admin.types";
@@ -247,12 +247,20 @@ export const adminService = {
   },
 
   getPlacementReport: async (
-    filters: { course?: string; status?: string } = {},
+    filters: { fromDate?: string; toDate?: string; course?: string; status?: string } = {},
   ) => {
     const response = await api.get("/admin/reports/placement", {
       params: filters,
     });
-    return extractData<PlacementRow[]>(response);
+    return extractData<PlacementReportData>(response);
+  },
+
+  updatePlacementContact: async (
+    enrollmentId: string,
+    data: { placementStatus: string; companyName?: string },
+  ) => {
+    const response = await api.put(`/admin/reports/placement/${enrollmentId}`, data);
+    return extractData<{ placementStatus: string; companyName?: string; contactedDate: string }>(response);
   },
 
   // QR Code (Admin — read-only)

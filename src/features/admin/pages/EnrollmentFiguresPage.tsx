@@ -14,9 +14,11 @@ import { adminService } from '@/services/admin.service';
 import { INSTITUTES, MONTHS } from '@/constants/courses';
 import type { EnrollmentFigureRow } from '@/types/admin.types';
 
+const INSTITUTE_OPTIONS = ['Combined', ...INSTITUTES] as const;
+
 export default function EnrollmentFiguresPage() {
   const currentYear = new Date().getFullYear();
-  const [institute, setInstitute] = useState<string>('PST');
+  const [institute, setInstitute] = useState<string>('Combined');
   const [year, setYear] = useState(currentYear);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
@@ -26,21 +28,40 @@ export default function EnrollmentFiguresPage() {
 
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
 
+  const tableData = useMemo(() => {
+    if (!data?.length) return [];
+    const totalRow: EnrollmentFigureRow = { course: 'Total', monthlyData: {}, total: 0 };
+    for (const row of data) {
+      totalRow.total += (row.total ?? 0);
+      for (const month of MONTHS) {
+        totalRow.monthlyData[month] = (totalRow.monthlyData[month] ?? 0) + (row.monthlyData?.[month] ?? 0);
+      }
+    }
+    return [...data, totalRow];
+  }, [data]);
+
   const columns: ColumnDef<EnrollmentFigureRow>[] = useMemo(() => [
     {
       accessorKey: 'course',
       header: 'Course',
-      cell: ({ getValue }) => <span className="font-medium">{getValue<string>()}</span>,
+      cell: ({ row, getValue }) => {
+        const isTotal = row.original.course === 'Total';
+        return <span className={isTotal ? 'font-bold' : 'font-medium'}>{getValue<string>()}</span>;
+      },
     },
     ...MONTHS.map((month): ColumnDef<EnrollmentFigureRow> => ({
       id: month,
       header: () => <span className="block text-center">{month}</span>,
-      accessorFn: (row) => row.monthlyData[month] ?? 0,
-      cell: ({ getValue }) => <span className="block text-center">{getValue<number>()}</span>,
+      accessorFn: (row) => row.monthlyData?.[month] ?? 0,
+      cell: ({ row, getValue }) => {
+        const isTotal = row.original.course === 'Total';
+        const val = getValue<number>();
+        return <span className={`block text-center ${isTotal ? 'font-bold' : ''}`}>{val || ''}</span>;
+      },
     })),
     {
       accessorKey: 'total',
-      header: () => <span className="block text-center font-bold">Total</span>,
+      header: () => <span className="block text-center font-bold">Total (YTD)</span>,
       cell: ({ getValue }) => <span className="block text-center font-bold">{getValue<number>()}</span>,
     },
   ], []);
@@ -62,7 +83,7 @@ export default function EnrollmentFiguresPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {INSTITUTES.map((i) => (
+                {INSTITUTE_OPTIONS.map((i) => (
                   <SelectItem key={i} value={i}>{i}</SelectItem>
                 ))}
               </SelectContent>
@@ -88,7 +109,7 @@ export default function EnrollmentFiguresPage() {
         ) : (
           <Card>
             <CardContent className="overflow-x-auto p-0">
-              <DataTable columns={columns} data={data ?? []} pageSize={50} emptyMessage="No data available" />
+              <DataTable columns={columns} data={tableData} pageSize={50} emptyMessage="No data available" />
             </CardContent>
           </Card>
         )}
