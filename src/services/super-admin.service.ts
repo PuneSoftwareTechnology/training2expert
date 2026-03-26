@@ -17,6 +17,14 @@ export const superAdminService = {
     return extractData<AdminAccount>(response);
   },
 
+  updateAdmin: async (
+    id: string,
+    data: { name?: string; email?: string },
+  ) => {
+    const response = await api.put(`/super-admin/admins/${id}`, data);
+    return extractData<AdminAccount>(response);
+  },
+
   deleteAdmin: async (id: string) => {
     const response = await api.delete(`/super-admin/admins/${id}`);
     return extractData<{ message: string }>(response);

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Download, Mail, MessageSquare, Search } from 'lucide-react';
+import { Download, Mail, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,7 @@ import {
 import { TableSkeleton } from '@/components/loaders/TableSkeleton';
 import { QueryError } from '@/components/errors/QueryError';
 import { PageTransition } from '@/components/animations/PageTransition';
+import { FilterActions } from '@/components/ui/filter-actions';
 
 import { adminService } from '@/services/admin.service';
 import { getErrorMessage } from '@/services/api';
@@ -37,7 +38,7 @@ export default function CandidateFilterPage() {
   const [emailBody, setEmailBody] = useState('');
   const [comment, setComment] = useState('');
 
-  const { data, isLoading, isError, error, refetch } = useQuery({
+  const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
     queryKey: ['admin', 'reports', 'candidates', { course, city, minExp, minTech, minComm }],
     queryFn: () =>
       adminService.getCandidateReport({
@@ -86,6 +87,7 @@ export default function CandidateFilterPage() {
   });
 
   const courses = data?.courses ?? [];
+  const cities = data?.cities ?? [];
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) =>
@@ -102,13 +104,13 @@ export default function CandidateFilterPage() {
     }
   };
 
-  const handleDownloadSingle = async (studentId: string) => {
+  const handleDownloadSingle = async (studentId: string, name: string, course: string) => {
     try {
       const blob = await adminService.downloadCv(studentId);
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'CV.pdf';
+      link.download = `${name}_${course}.pdf`;
       link.click();
       URL.revokeObjectURL(url);
     } catch (error) {
@@ -140,7 +142,13 @@ export default function CandidateFilterPage() {
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">City</Label>
-                <Input value={city} onChange={(e) => setCity(e.target.value)} className="w-32" placeholder="City" />
+                <Select value={city} onValueChange={setCity}>
+                  <SelectTrigger className="w-36"><SelectValue placeholder="All" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">All</SelectItem>
+                    {cities.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Min Experience (yrs)</Label>
@@ -154,9 +162,11 @@ export default function CandidateFilterPage() {
                 <Label className="text-xs">Min Comm Rating</Label>
                 <Input type="number" value={minComm} onChange={(e) => setMinComm(e.target.value)} className="w-24" min="1" max="10" />
               </div>
-              <Button variant="outline" size="sm" onClick={() => { setCourse(''); setCity(''); setMinExp(''); setMinTech(''); setMinComm(''); }}>
-                <Search className="mr-1 h-3.5 w-3.5" /> Reset
-              </Button>
+              <FilterActions
+                onReset={() => { setCourse(''); setCity(''); setMinExp(''); setMinTech(''); setMinComm(''); }}
+                onRefresh={() => refetch()}
+                isFetching={isFetching}
+              />
             </div>
           </CardContent>
         </Card>
@@ -214,7 +224,7 @@ export default function CandidateFilterPage() {
                       <TableCell>
                         <div className="flex gap-1">
                           {row.cvUrl && (
-                            <Button variant="ghost" size="sm" onClick={() => handleDownloadSingle(row.id)}>
+                            <Button variant="ghost" size="sm" onClick={() => handleDownloadSingle(row.id, row.name, row.course)}>
                               <Download className="h-3.5 w-3.5" />
                             </Button>
                           )}

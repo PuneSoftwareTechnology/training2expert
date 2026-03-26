@@ -20,6 +20,7 @@ import type {
 } from "@/types/admin.types";
 import type { QrCode } from "@/types/super-admin.types";
 import type { StudentProfileFull, Evaluation } from "@/types/student.types";
+import type { DashboardData, DashboardPeriod } from "@/types/dashboard.types";
 
 interface EnquiryFilters {
   fromDate?: string;
@@ -49,23 +50,15 @@ interface CandidateFilters {
   limit?: number;
 }
 
-export interface DashboardStats {
-  totalEnrollments: number;
-  totalEnquiries: number;
-  totalFeeCollected: number;
-  totalPendingDues: number;
-  totalPlaced: number;
-  totalNotPlaced: number;
-  courseWiseEnrollments: { course: string; count: number }[];
-  enrollmentStatusBreakdown: { status: string; count: number }[];
-  recentEnrollments: Enrollment[];
-}
-
 export const adminService = {
   // Dashboard
-  getDashboardStats: async () => {
-    const response = await api.get("/admin/dashboard/stats");
-    return extractData<DashboardStats>(response);
+  getDashboardStats: async (params?: {
+    period?: DashboardPeriod;
+    startDate?: string;
+    endDate?: string;
+  }) => {
+    const response = await api.get("/admin/dashboard/stats", { params });
+    return extractData<DashboardData>(response);
   },
 
   // Enquiry
@@ -192,7 +185,7 @@ export const adminService = {
     const response = await api.get("/admin/reports/candidates", {
       params: filters,
     });
-    return extractData<{ items: CandidateReportRow[]; courses: string[] }>(
+    return extractData<{ items: CandidateReportRow[]; courses: string[]; cities: string[] }>(
       response,
     );
   },
@@ -290,6 +283,20 @@ export const adminService = {
     password: string;
   }) => {
     const response = await api.post("/admin/recruiters", data);
+    return extractData<RecruiterAccount>(response);
+  },
+
+  updateRecruiter: async (
+    id: string,
+    data: {
+      name?: string;
+      email?: string;
+      phone?: string;
+      companyName?: string;
+      designation?: string;
+    },
+  ) => {
+    const response = await api.put(`/admin/recruiters/${id}`, data);
     return extractData<RecruiterAccount>(response);
   },
 

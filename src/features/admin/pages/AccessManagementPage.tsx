@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Trash2, ShieldCheck, RefreshCw } from "lucide-react";
+import { z } from "zod";
+import { Plus, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import type { ColumnDef } from "@tanstack/react-table";
 
@@ -33,6 +34,7 @@ import { DataTable, SortableHeader } from "@/components/ui/data-table";
 import { TableSkeleton } from "@/components/loaders/TableSkeleton";
 import { QueryError } from "@/components/errors/QueryError";
 import { PageTransition } from "@/components/animations/PageTransition";
+import { FilterActions } from "@/components/ui/filter-actions";
 import { useRole } from "@/hooks/useRole";
 import { ROLES } from "@/constants/roles";
 import { cn } from "@/lib/utils";
@@ -46,6 +48,13 @@ import { superAdminService } from "@/services/super-admin.service";
 import { getErrorMessage } from "@/services/api";
 import type { RecruiterAccount } from "@/types/admin.types";
 import type { AdminAccount } from "@/types/super-admin.types";
+
+// Edit schemas (password not required when editing)
+const recruiterEditSchema = recruiterSchema.omit({ password: true });
+type RecruiterEditFormValues = z.infer<typeof recruiterEditSchema>;
+
+const adminEditSchema = adminSchema.omit({ password: true });
+type AdminEditFormValues = z.infer<typeof adminEditSchema>;
 
 const FORM_FIELDS: {
   name: keyof RecruiterFormValues;
@@ -61,24 +70,44 @@ const FORM_FIELDS: {
   { name: "password", label: "Password", type: "password", required: true },
 ];
 
+const EDIT_FORM_FIELDS = FORM_FIELDS.filter((f) => f.name !== "password") as {
+  name: keyof RecruiterEditFormValues;
+  label: string;
+  type?: "email" | "tel";
+  required?: boolean;
+}[];
+
+const ROLE_COLORS: Record<string, string> = {
+  [ROLES.SUPER_ADMIN]:
+    "border-purple-400 bg-purple-500/15 text-purple-700 dark:text-purple-300 dark:border-purple-600",
+  [ROLES.ADMIN]:
+    "border-sky-400 bg-sky-500/15 text-sky-700 dark:text-sky-300 dark:border-sky-600",
+  [ROLES.RECRUITER]:
+    "border-teal-400 bg-teal-500/15 text-teal-700 dark:text-teal-300 dark:border-teal-600",
+};
+
 export default function AccessManagementPage() {
   const queryClient = useQueryClient();
   const { isSuperAdmin } = useRole();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMode, setDialogMode] = useState<"create" | "edit">("create");
   const [accountType, setAccountType] = useState<"recruiter" | "admin">(
     "recruiter",
   );
+  const [editId, setEditId] = useState<string | null>(null);
   const [deleteData, setDeleteData] = useState<{
     id: string;
     type: "admin" | "recruiter";
   } | null>(null);
 
+  // Queries
   const {
     data: recruiters,
     isLoading: loadingRecruiters,
     isError: isRecruiterError,
     error: recruiterError,
     refetch: refetchRecruiters,
+    isFetching: isFetchingRecruiters,
   } = useQuery({
     queryKey: ["admin", "recruiters"],
     queryFn: adminService.getRecruiters,
@@ -90,13 +119,14 @@ export default function AccessManagementPage() {
     isError: isAdminError,
     error: adminError,
     refetch: refetchAdmins,
+    isFetching: isFetchingAdmins,
   } = useQuery({
     queryKey: ["admin", "admins"],
     queryFn: superAdminService.getAdmins,
     enabled: isSuperAdmin,
   });
 
-  const isLoading = loadingRecruiters || (isSuperAdmin && loadingAdmins);
+  const isFetching = isFetchingRecruiters || isFetchingAdmins;
   const isError = isRecruiterError || isAdminError;
   const error = recruiterError || adminError;
 
@@ -105,6 +135,7 @@ export default function AccessManagementPage() {
     if (isSuperAdmin) refetchAdmins();
   };
 
+  // Create forms
   const recruiterForm = useForm<RecruiterFormValues>({
     resolver: zodResolver(recruiterSchema),
     defaultValues: {
@@ -122,6 +153,24 @@ export default function AccessManagementPage() {
     defaultValues: { name: "", email: "", password: "" },
   });
 
+  // Edit forms
+  const recruiterEditForm = useForm<RecruiterEditFormValues>({
+    resolver: zodResolver(recruiterEditSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      phone: "",
+      companyName: "",
+      designation: "",
+    },
+  });
+
+  const adminEditForm = useForm<AdminEditFormValues>({
+    resolver: zodResolver(adminEditSchema),
+    defaultValues: { name: "", email: "" },
+  });
+
+  // Create mutations
   const createRecruiterMutation = useMutation({
     mutationFn: adminService.createRecruiter,
     onSuccess: () => {
@@ -144,6 +193,32 @@ export default function AccessManagementPage() {
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
+  // Update mutations
+  const updateRecruiterMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: RecruiterEditFormValues }) =>
+      adminService.updateRecruiter(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "recruiters"] });
+      toast.success("Recruiter updated");
+      setDialogOpen(false);
+      setEditId(null);
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const updateAdminMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: AdminEditFormValues }) =>
+      superAdminService.updateAdmin(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "admins"] });
+      toast.success("Admin updated");
+      setDialogOpen(false);
+      setEditId(null);
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  // Delete mutations
   const deleteRecruiterMutation = useMutation({
     mutationFn: adminService.deleteRecruiter,
     onSuccess: () => {
@@ -164,6 +239,52 @@ export default function AccessManagementPage() {
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
+  // Helpers
+  const openCreateDialog = (type: "admin" | "recruiter") => {
+    setDialogMode("create");
+    setAccountType(type);
+    setEditId(null);
+    if (type === "recruiter") recruiterForm.reset();
+    else adminForm.reset();
+    setDialogOpen(true);
+  };
+
+  const openEditDialog = (
+    type: "admin" | "recruiter",
+    item: AdminAccount | RecruiterAccount,
+  ) => {
+    setDialogMode("edit");
+    setAccountType(type);
+    setEditId(item.id);
+    if (type === "recruiter") {
+      const r = item as RecruiterAccount;
+      recruiterEditForm.reset({
+        name: r.name,
+        email: r.email,
+        phone: r.phone,
+        companyName: r.companyName,
+        designation: r.designation || "",
+      });
+    } else {
+      const a = item as AdminAccount;
+      adminEditForm.reset({ name: a.name, email: a.email });
+    }
+    setDialogOpen(true);
+  };
+
+  const RoleBadge = ({ role }: { role?: string }) => {
+    if (!role) return null;
+    return (
+      <Badge
+        variant="outline"
+        className={cn("capitalize font-medium", ROLE_COLORS[role])}
+      >
+        {role.toLowerCase().replace("_", " ")}
+      </Badge>
+    );
+  };
+
+  // Columns
   const adminColumns: ColumnDef<AdminAccount>[] = [
     {
       accessorKey: "name",
@@ -176,36 +297,31 @@ export default function AccessManagementPage() {
     {
       accessorKey: "role",
       header: "Role",
-      cell: ({ getValue }) => {
-        const role = getValue<string>();
-        return (
-          <Badge
-            variant="outline"
-            className={cn(
-              "capitalize",
-              role === ROLES.SUPER_ADMIN &&
-                "border-purple-200 bg-purple-50 text-purple-700",
-              role === ROLES.ADMIN &&
-                "border-blue-200 bg-blue-50 text-blue-700",
-            )}
-          >
-            {role.toLowerCase().replace("_", " ")}
-          </Badge>
-        );
-      },
+      cell: ({ getValue }) => <RoleBadge role={getValue<string>()} />,
     },
     {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setDeleteData({ id: row.original.id, type: "admin" })}
-          className="text-destructive"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => openEditDialog("admin", row.original)}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() =>
+              setDeleteData({ id: row.original.id, type: "admin" })
+            }
+            className="text-destructive"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       ),
     },
   ];
@@ -243,19 +359,33 @@ export default function AccessManagementPage() {
       ),
     },
     {
+      accessorKey: "role",
+      header: "Role",
+      cell: ({ getValue }) => <RoleBadge role={getValue<string>()} />,
+    },
+    {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() =>
-            setDeleteData({ id: row.original.id, type: "recruiter" })
-          }
-          className="text-destructive"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => openEditDialog("recruiter", row.original)}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() =>
+              setDeleteData({ id: row.original.id, type: "recruiter" })
+            }
+            className="text-destructive"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       ),
     },
   ];
@@ -274,38 +404,18 @@ export default function AccessManagementPage() {
               Manage system administrators and recruiter accounts.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => refetch()}
-              disabled={isLoading}
-            >
-              <RefreshCw
-                className={cn("mr-2 h-4 w-4", isLoading && "animate-spin")}
-              />
-              Refresh
-            </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <FilterActions
+              onRefresh={refetch}
+              isFetching={isFetching}
+              showReset={false}
+            />
             {isSuperAdmin && (
-              <Button
-                size="sm"
-                onClick={() => {
-                  setAccountType("admin");
-                  adminForm.reset();
-                  setDialogOpen(true);
-                }}
-              >
+              <Button size="sm" onClick={() => openCreateDialog("admin")}>
                 <Plus className="mr-2 h-4 w-4" /> Add Admin
               </Button>
             )}
-            <Button
-              size="sm"
-              onClick={() => {
-                setAccountType("recruiter");
-                recruiterForm.reset();
-                setDialogOpen(true);
-              }}
-            >
+            <Button size="sm" onClick={() => openCreateDialog("recruiter")}>
               <Plus className="mr-2 h-4 w-4" /> Create Recruiter
             </Button>
           </div>
@@ -319,9 +429,19 @@ export default function AccessManagementPage() {
             )}
           >
             {isSuperAdmin && (
-              <TabsTrigger value="admins">Administrators</TabsTrigger>
+              <TabsTrigger
+                value="admins"
+                className="data-[state=active]:bg-sky-500/15 data-[state=active]:text-sky-700 dark:data-[state=active]:text-sky-300"
+              >
+                Administrators
+              </TabsTrigger>
             )}
-            <TabsTrigger value="recruiters">Recruiters</TabsTrigger>
+            <TabsTrigger
+              value="recruiters"
+              className="data-[state=active]:bg-teal-500/15 data-[state=active]:text-teal-700 dark:data-[state=active]:text-teal-300"
+            >
+              Recruiters
+            </TabsTrigger>
           </TabsList>
 
           {isSuperAdmin && (
@@ -373,15 +493,18 @@ export default function AccessManagementPage() {
           </TabsContent>
         </Tabs>
 
-        {/* Create Dialog */}
+        {/* Create / Edit Dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>
-                Create {accountType === "admin" ? "Admin Account" : "Recruiter"}
+                {dialogMode === "edit" ? "Edit" : "Create"}{" "}
+                {accountType === "admin" ? "Admin Account" : "Recruiter"}
               </DialogTitle>
             </DialogHeader>
-            {accountType === "recruiter" ? (
+
+            {/* Recruiter Create Form */}
+            {accountType === "recruiter" && dialogMode === "create" && (
               <form
                 onSubmit={recruiterForm.handleSubmit((data) =>
                   createRecruiterMutation.mutate(data),
@@ -452,7 +575,74 @@ export default function AccessManagementPage() {
                   </Button>
                 </div>
               </form>
-            ) : (
+            )}
+
+            {/* Recruiter Edit Form */}
+            {accountType === "recruiter" && dialogMode === "edit" && (
+              <form
+                onSubmit={recruiterEditForm.handleSubmit((data) =>
+                  updateRecruiterMutation.mutate({ id: editId!, data }),
+                )}
+                className="space-y-4"
+              >
+                <div className="grid grid-cols-2 gap-4">
+                  {EDIT_FORM_FIELDS.map(({ name, label, type, required }) => (
+                    <div
+                      key={name}
+                      className={cn(
+                        "space-y-1.5",
+                        name === "name" && "col-span-2",
+                      )}
+                    >
+                      <Label className="text-xs">
+                        {label} {required && "*"}
+                      </Label>
+                      <Input
+                        type={type === "tel" ? "text" : type}
+                        {...recruiterEditForm.register(name, {
+                          ...(name === "phone" && {
+                            onChange: (e) => {
+                              e.target.value = e.target.value
+                                .replace(/\D/g, "")
+                                .slice(0, 10);
+                            },
+                          }),
+                        })}
+                        maxLength={name === "phone" ? 10 : undefined}
+                        className="h-9"
+                      />
+                      {recruiterEditForm.formState.errors[name] && (
+                        <p className="text-[10px] text-destructive">
+                          {recruiterEditForm.formState.errors[name]?.message}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setDialogOpen(false)}
+                    className="h-9 px-4"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    loading={updateRecruiterMutation.isPending}
+                    className="h-9 px-4"
+                  >
+                    {updateRecruiterMutation.isPending
+                      ? "Saving..."
+                      : "Save Changes"}
+                  </Button>
+                </div>
+              </form>
+            )}
+
+            {/* Admin Create Form */}
+            {accountType === "admin" && dialogMode === "create" && (
               <form
                 onSubmit={adminForm.handleSubmit((data) =>
                   createAdminMutation.mutate(data),
@@ -510,6 +700,61 @@ export default function AccessManagementPage() {
                     {createAdminMutation.isPending
                       ? "Creating..."
                       : "Create Admin"}
+                  </Button>
+                </div>
+              </form>
+            )}
+
+            {/* Admin Edit Form */}
+            {accountType === "admin" && dialogMode === "edit" && (
+              <form
+                onSubmit={adminEditForm.handleSubmit((data) =>
+                  updateAdminMutation.mutate({ id: editId!, data }),
+                )}
+                className="space-y-4"
+              >
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Full Name *</Label>
+                  <Input
+                    {...adminEditForm.register("name")}
+                    className="h-9"
+                  />
+                  {adminEditForm.formState.errors.name && (
+                    <p className="text-[10px] text-destructive">
+                      {adminEditForm.formState.errors.name.message}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Email Address *</Label>
+                  <Input
+                    type="email"
+                    {...adminEditForm.register("email")}
+                    className="h-9"
+                  />
+                  {adminEditForm.formState.errors.email && (
+                    <p className="text-[10px] text-destructive">
+                      {adminEditForm.formState.errors.email.message}
+                    </p>
+                  )}
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setDialogOpen(false)}
+                    className="h-9 px-4"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    loading={updateAdminMutation.isPending}
+                    className="h-9 px-4"
+                  >
+                    {updateAdminMutation.isPending
+                      ? "Saving..."
+                      : "Save Changes"}
                   </Button>
                 </div>
               </form>
