@@ -19,7 +19,7 @@ import type {
   RecruiterAccount,
 } from "@/types/admin.types";
 import type { QrCode } from "@/types/super-admin.types";
-import type { StudentProfile, Evaluation } from "@/types/student.types";
+import type { StudentProfileFull, Evaluation } from "@/types/student.types";
 
 interface EnquiryFilters {
   fromDate?: string;
@@ -133,7 +133,7 @@ export const adminService = {
 
   getStudentProfile: async (studentId: string) => {
     const response = await api.get(`/admin/students/${studentId}/profile`);
-    return extractData<StudentProfile>(response);
+    return extractData<StudentProfileFull>(response);
   },
 
   getStudentEvaluation: async (studentId: string) => {

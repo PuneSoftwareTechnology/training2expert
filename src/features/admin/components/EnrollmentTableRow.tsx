@@ -6,6 +6,8 @@ import {
   Mail,
   Pencil,
   Trash2,
+  User,
+  ClipboardList,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -205,6 +207,8 @@ interface EnrollmentTableRowProps {
   index: number;
   onEdit: (enrollment: Enrollment) => void;
   onDelete: (enrollmentId: string) => void;
+  onViewProfile: (studentId: string) => void;
+  onViewEvaluation: (studentId: string) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -216,6 +220,8 @@ export const EnrollmentTableRow = memo(function EnrollmentTableRow({
   index,
   onEdit,
   onDelete,
+  onViewProfile,
+  onViewEvaluation,
 }: EnrollmentTableRowProps) {
   const isOdd = index % 2 === 1;
 
@@ -317,10 +323,38 @@ export const EnrollmentTableRow = memo(function EnrollmentTableRow({
           )?.label ?? enrollment.enrollment_status}
         </Badge>
       </TableCell>
-      <TableCell className={cn("border-r border-border", bg.basic)}>
+      <TableCell className={bg.basic}>
         <Badge variant={INSTITUTE_BADGE[enrollment.institute] ?? "outline"}>
           {enrollment.institute}
         </Badge>
+      </TableCell>
+      <TableCell className={cn("text-center", bg.basic)}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 text-primary"
+          title="View Profile"
+          onClick={(e) => {
+            e.stopPropagation();
+            onViewProfile(enrollment.student_id);
+          }}
+        >
+          <User className="h-3.5 w-3.5" />
+        </Button>
+      </TableCell>
+      <TableCell className={cn("text-center border-r border-border", bg.basic)}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 text-primary"
+          title="View Evaluation"
+          onClick={(e) => {
+            e.stopPropagation();
+            onViewEvaluation(enrollment.student_id);
+          }}
+        >
+          <ClipboardList className="h-3.5 w-3.5" />
+        </Button>
       </TableCell>
 
       {/* === COURSE DETAILS === */}

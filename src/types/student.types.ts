@@ -37,6 +37,11 @@ export interface StudentProfile {
   batch?: string;
 }
 
+export interface ModuleScore {
+  moduleName: string;
+  score: number;
+}
+
 export interface Evaluation {
   id: string;
   studentId: string;
@@ -44,6 +49,7 @@ export interface Evaluation {
   courseName: string;
   technicalScore: number;
   communicationScore: number;
+  moduleScores?: ModuleScore[];
   projectSubmission?: string;
   scopeForImprovement: string;
   trainerRemark: string;

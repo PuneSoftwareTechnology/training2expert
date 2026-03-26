@@ -52,6 +52,7 @@ import { AddCandidateDialog } from "../components/AddCandidateDialog";
 import { EditEnrollmentDialog } from "../components/EditEnrollmentDialog";
 import { EnrollmentTableRow } from "../components/EnrollmentTableRow";
 import { ProfileDialog } from "../components/ProfileDialog";
+import { EvaluationDialog } from "../components/EvaluationDialog";
 
 // ---------------------------------------------------------------------------
 // Column group definitions
@@ -67,7 +68,7 @@ const COLUMN_GROUPS = [
   {
     label: "Basic Info",
     icon: Info,
-    colSpan: 5,
+    colSpan: 7,
     color: "text-blue-600 bg-blue-50 border-blue-200",
   },
   {
@@ -96,7 +97,7 @@ const COLUMN_GROUPS = [
   },
 ] as const;
 
-// Total columns: 1 (S.No) + 2 + 5 + 6 + 17 + 2 + 2 = 35
+// Total columns: 1 (S.No) + 2 + 7 + 6 + 17 + 2 + 2 = 37
 
 export default function EnrollmentPage() {
   const queryClient = useQueryClient();
@@ -110,6 +111,7 @@ export default function EnrollmentPage() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editEnrollment, setEditEnrollment] = useState<Enrollment | null>(null);
   const [profileStudentId, setProfileStudentId] = useState<string | null>(null);
+  const [evaluationStudentId, setEvaluationStudentId] = useState<string | null>(null);
 
   // Active filter tags
   const activeFilters: { label: string; onRemove: () => void }[] = [];
@@ -428,8 +430,14 @@ export default function EnrollmentPage() {
                       <TableHead className="text-xs bg-blue-50/50">
                         Status
                       </TableHead>
-                      <TableHead className="text-xs border-r border-border bg-blue-50/50">
+                      <TableHead className="text-xs bg-blue-50/50">
                         Institute
+                      </TableHead>
+                      <TableHead className="text-xs bg-blue-50/50 text-center">
+                        Profile
+                      </TableHead>
+                      <TableHead className="text-xs border-r border-border bg-blue-50/50 text-center">
+                        Evaluation
                       </TableHead>
 
                       {/* Course Details sub-headers */}
@@ -535,12 +543,14 @@ export default function EnrollmentPage() {
                           index={index}
                           onEdit={setEditEnrollment}
                           onDelete={(id) => deleteMutation.mutate(id)}
+                          onViewProfile={setProfileStudentId}
+                          onViewEvaluation={setEvaluationStudentId}
                         />
                       ))
                     ) : (
                       <TableRow>
                         <TableCell
-                          colSpan={35}
+                          colSpan={37}
                           className="py-12 text-center text-muted-foreground"
                         >
                           No enrollments found matching your criteria.
@@ -634,6 +644,14 @@ export default function EnrollmentPage() {
           open={!!profileStudentId}
           onOpenChange={(open) => {
             if (!open) setProfileStudentId(null);
+          }}
+        />
+
+        <EvaluationDialog
+          studentId={evaluationStudentId || ""}
+          open={!!evaluationStudentId}
+          onOpenChange={(open) => {
+            if (!open) setEvaluationStudentId(null);
           }}
         />
       </div>
