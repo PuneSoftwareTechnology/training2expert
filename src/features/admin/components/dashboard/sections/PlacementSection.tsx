@@ -23,53 +23,52 @@ export function PlacementSection({ data }: PlacementSectionProps) {
   }));
 
   return (
-    <section className="space-y-4">
-      <h2 className="text-lg font-semibold flex items-center gap-2">
-        <UserCheck className="h-5 w-5 text-emerald-600" />
+    <section className="space-y-3">
+      <h2 className="text-sm font-semibold flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 w-fit">
+        <UserCheck className="h-4 w-4" />
         Placement & Outcomes
       </h2>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
-          <CardContent className="flex items-start justify-between pt-5">
+          <CardContent className="flex items-start justify-between pt-3">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <div className="rounded-lg p-2 bg-emerald-100">
-                  <UserCheck className="h-5 w-5 text-emerald-600" />
+                <div className="rounded-lg p-1.5 bg-emerald-100">
+                  <UserCheck className="h-4 w-4 text-emerald-600" />
                 </div>
                 <Badge variant="success" className="text-[10px]">
                   {data.rate}%
                 </Badge>
               </div>
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                 Students Placed
               </p>
-              <p className="text-2xl font-bold">{data.placed}</p>
+              <p className="text-xl font-bold">{data.placed}</p>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="flex items-start justify-between pt-5">
+          <CardContent className="flex items-start justify-between pt-3">
             <div className="space-y-1">
-              <div className="rounded-lg p-2 bg-orange-100 w-fit">
-                <UserX className="h-5 w-5 text-orange-600" />
+              <div className="rounded-lg p-1.5 bg-orange-100 w-fit">
+                <UserX className="h-4 w-4 text-orange-600" />
               </div>
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                 Awaiting Placement
               </p>
-              <p className="text-2xl font-bold">{data.awaitingPlacement}</p>
+              <p className="text-xl font-bold">{data.awaitingPlacement}</p>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="flex items-start justify-between pt-5">
+          <CardContent className="flex items-start justify-between pt-3">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <div className="rounded-lg p-2 bg-indigo-100">
-                  <TrendingUp className="h-5 w-5 text-indigo-600" />
+                <div className="rounded-lg p-1.5 bg-indigo-100">
+                  <TrendingUp className="h-4 w-4 text-indigo-600" />
                 </div>
                 <Badge
                   variant={
@@ -88,34 +87,33 @@ export function PlacementSection({ data }: PlacementSectionProps) {
                       : "Critical"}
                 </Badge>
               </div>
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                 Placement Rate
               </p>
-              <p className="text-2xl font-bold">{data.rate}%</p>
+              <p className="text-xl font-bold">{data.rate}%</p>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="flex items-start justify-between pt-5">
+          <CardContent className="flex items-start justify-between pt-3">
             <div className="space-y-1">
-              <div className="rounded-lg p-2 bg-cyan-100 w-fit">
-                <Building className="h-5 w-5 text-cyan-600" />
+              <div className="rounded-lg p-1.5 bg-cyan-100 w-fit">
+                <Building className="h-4 w-4 text-cyan-600" />
               </div>
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                 Hiring Companies
               </p>
-              <p className="text-2xl font-bold">{data.topCompanies.length}</p>
+              <p className="text-xl font-bold">{data.topCompanies.length}</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Placement Rate by Course (%)</CardTitle>
+          <CardHeader className="pb-1">
+            <CardTitle className="text-sm">Placement Rate by Course (%)</CardTitle>
           </CardHeader>
           <CardContent>
             <ComparisonBarChart
@@ -127,8 +125,8 @@ export function PlacementSection({ data }: PlacementSectionProps) {
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Top Hiring Companies</CardTitle>
+          <CardHeader className="pb-1">
+            <CardTitle className="text-sm">Top Hiring Companies</CardTitle>
           </CardHeader>
           <CardContent>
             <HorizontalBarChart data={companyData} />

@@ -56,6 +56,7 @@ export const adminService = {
     period?: DashboardPeriod;
     startDate?: string;
     endDate?: string;
+    institute?: Institute;
   }) => {
     const response = await api.get("/admin/dashboard/stats", { params });
     return extractData<DashboardData>(response);

@@ -24,24 +24,23 @@ export function RevenueSection({ data }: RevenueSectionProps) {
   }));
 
   return (
-    <section className="space-y-4">
-      <h2 className="text-lg font-semibold flex items-center gap-2">
-        <IndianRupee className="h-5 w-5 text-green-600" />
+    <section className="space-y-3">
+      <h2 className="text-sm font-semibold flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-50 text-green-700 w-fit">
+        <IndianRupee className="h-4 w-4" />
         Revenue & Financial Health
       </h2>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Revenue"
           value={formatCurrency(data.totalCollected)}
-          icon={<IndianRupee className="h-5 w-5 text-green-600" />}
+          icon={<IndianRupee className="h-4 w-4 text-green-600" />}
           iconBg="bg-green-100"
         />
         <StatCard
           title="Pending Dues"
           value={formatCurrency(data.pendingDues)}
-          icon={<AlertCircle className="h-5 w-5 text-red-600" />}
+          icon={<AlertCircle className="h-4 w-4 text-red-600" />}
           iconBg="bg-red-100"
           badge={
             data.pendingDues > 0
@@ -52,23 +51,22 @@ export function RevenueSection({ data }: RevenueSectionProps) {
         <StatCard
           title="Avg Fee / Student"
           value={formatCurrency(data.averageFeePerStudent)}
-          icon={<TrendingUp className="h-5 w-5 text-blue-600" />}
+          icon={<TrendingUp className="h-4 w-4 text-blue-600" />}
           iconBg="bg-blue-100"
         />
         <StatCard
           title="Institutes"
           value={instituteData.map((d) => `${d.name}: ${formatCurrency(d.value)}`).join(" | ") || "N/A"}
-          icon={<Building2 className="h-5 w-5 text-purple-600" />}
+          icon={<Building2 className="h-4 w-4 text-purple-600" />}
           iconBg="bg-purple-100"
           small
         />
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Revenue Trend (12 months)</CardTitle>
+          <CardHeader className="pb-1">
+            <CardTitle className="text-sm">Revenue Trend (12 months)</CardTitle>
           </CardHeader>
           <CardContent>
             <TrendLineChart
@@ -80,8 +78,8 @@ export function RevenueSection({ data }: RevenueSectionProps) {
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Revenue by Course</CardTitle>
+          <CardHeader className="pb-1">
+            <CardTitle className="text-sm">Revenue by Course</CardTitle>
           </CardHeader>
           <CardContent>
             <ComparisonBarChart
@@ -110,20 +108,20 @@ interface StatCardProps {
 function StatCard({ title, value, icon, iconBg, badge, small }: StatCardProps) {
   return (
     <Card>
-      <CardContent className="flex items-start justify-between pt-5">
+      <CardContent className="flex items-start justify-between pt-3">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <div className={`rounded-lg p-2 ${iconBg}`}>{icon}</div>
+            <div className={`rounded-lg p-1.5 ${iconBg}`}>{icon}</div>
             {badge && (
               <Badge variant={badge.variant} className="text-[10px]">
                 {badge.label}
               </Badge>
             )}
           </div>
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
             {title}
           </p>
-          <p className={small ? "text-sm font-semibold" : "text-2xl font-bold"}>
+          <p className={small ? "text-sm font-semibold" : "text-xl font-bold"}>
             {value}
           </p>
         </div>

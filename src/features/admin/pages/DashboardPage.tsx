@@ -15,8 +15,10 @@ import { EnquirySection } from "../components/dashboard/sections/EnquirySection"
 import { PlacementSection } from "../components/dashboard/sections/PlacementSection";
 import { RecruiterSection } from "../components/dashboard/sections/RecruiterSection";
 import { AssessmentSection } from "../components/dashboard/sections/AssessmentSection";
+import { InstituteSection } from "../components/dashboard/sections/InstituteSection";
 
 import type { DashboardData, DashboardPeriod } from "@/types/dashboard.types";
+import type { Institute } from "@/types/common.types";
 
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
@@ -24,13 +26,19 @@ export default function DashboardPage() {
   const [period, setPeriod] = useState<DashboardPeriod>("month");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [institute, setInstitute] = useState<Institute | "ALL">("ALL");
 
   const queryParams = useMemo(() => {
+    const params: Record<string, string> = { period };
     if (period === "custom" && startDate && endDate) {
-      return { period, startDate, endDate };
+      params.startDate = startDate;
+      params.endDate = endDate;
     }
-    return { period };
-  }, [period, startDate, endDate]);
+    if (institute !== "ALL") {
+      params.institute = institute;
+    }
+    return params;
+  }, [period, startDate, endDate, institute]);
 
   const {
     data: stats,
@@ -50,14 +58,14 @@ export default function DashboardPage() {
 
   return (
     <PageTransition>
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/* Page Header */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">
+            <h1 className="text-xl font-bold tracking-tight">
               Welcome back, {user?.name?.split(" ")[0] ?? "Admin"}
             </h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               Here's an overview of your institute's performance.
             </p>
           </div>
@@ -68,23 +76,27 @@ export default function DashboardPage() {
             endDate={endDate}
             onStartDateChange={setStartDate}
             onEndDateChange={setEndDate}
+            institute={institute}
+            onInstituteChange={setInstitute}
           />
         </div>
+
+        <InstituteSection />
 
         {isLoading ? (
           <DashboardSkeleton />
         ) : stats ? (
           <>
             <RevenueSection data={stats.revenue} />
-            <hr className="border-border" />
+            <hr className="border-border/50" />
             <EnrollmentSection data={stats.enrollment} />
-            <hr className="border-border" />
+            <hr className="border-border/50" />
             <EnquirySection data={stats.enquiry} />
-            <hr className="border-border" />
+            <hr className="border-border/50" />
             <PlacementSection data={stats.placement} />
-            <hr className="border-border" />
+            <hr className="border-border/50" />
             <RecruiterSection data={stats.recruiter} />
-            <hr className="border-border" />
+            <hr className="border-border/50" />
             <AssessmentSection data={stats.assessment} />
           </>
         ) : null}
