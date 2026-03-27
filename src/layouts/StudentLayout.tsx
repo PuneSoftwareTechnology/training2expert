@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, type ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   LogOut,
@@ -8,6 +8,8 @@ import {
   Clock,
   Menu,
   Pencil,
+  ClipboardList,
+  ArrowRight,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -22,16 +24,25 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
 import { ROUTES } from "@/constants/routes";
 import { SIDEBAR_ITEMS } from "@/constants/roles";
+import { studentService } from "@/services/student.service";
 import type { StudentProfileFull } from "@/types/student.types";
 
 interface StudentLayoutProps {
@@ -40,6 +51,7 @@ interface StudentLayoutProps {
 
 export function StudentLayout({ children }: StudentLayoutProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const logout = useAuthStore((s) => s.logout);
   const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
@@ -51,6 +63,57 @@ export function StudentLayout({ children }: StudentLayoutProps) {
   const [showLogout, setShowLogout] = useState(false);
   const [activeSection, setActiveSection] = useState("profile");
 
+  // If on a route-based page (e.g. /student/tests), reflect that in activeSection
+  const isTestsRoute = location.pathname.startsWith("/student/tests");
+  const currentActive = isTestsRoute ? "tests" : activeSection;
+  const [showTestDialog, setShowTestDialog] = useState(false);
+  const testDialogShownRef = useRef(false);
+
+  // Fetch available tests in background
+  const { data: availableTests, isLoading: testsLoading } = useQuery({
+    queryKey: ["student", "tests"],
+    queryFn: studentService.getAvailableTests,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Show Tests nav: while loading (avoid flash), when tests exist, or if already on tests route
+  const hasTests =
+    testsLoading ||
+    (availableTests && availableTests.length > 0) ||
+    isTestsRoute;
+  const visibleSidebarItems = SIDEBAR_ITEMS.filter((item) => {
+    if (item.id === "tests") return hasTests;
+    return true;
+  });
+
+  // Show test notification dialog once per session when tests are available
+  useEffect(() => {
+    if (
+      availableTests &&
+      availableTests.length > 0 &&
+      !testDialogShownRef.current &&
+      !sessionStorage.getItem("test-notification-dismissed")
+    ) {
+      testDialogShownRef.current = true;
+      setShowTestDialog(true);
+    }
+  }, [availableTests]);
+
+  const handleTestDialogDismiss = () => {
+    setShowTestDialog(false);
+    sessionStorage.setItem("test-notification-dismissed", "true");
+  };
+
+  const handleGoToTest = () => {
+    setShowTestDialog(false);
+    sessionStorage.setItem("test-notification-dismissed", "true");
+    if (availableTests && availableTests.length === 1) {
+      navigate(`/student/tests/${availableTests[0].id}`);
+    } else {
+      navigate("/student/tests");
+    }
+  };
+
   const handleLogout = () => {
     logout();
     navigate(ROUTES.LOGIN, { replace: true });
@@ -58,21 +121,37 @@ export function StudentLayout({ children }: StudentLayoutProps) {
 
   const isScrollingRef = useRef(false);
 
-  const scrollToSection = (id: string) => {
-    setActiveSection(id);
-    isScrollingRef.current = true;
-    const el = document.getElementById(`section-${id}`);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
+  const handleNavClick = (item: (typeof SIDEBAR_ITEMS)[number]) => {
+    // Route-based items navigate to a different page
+    if ("route" in item && item.route) {
+      navigate(item.route as string);
+      return;
     }
-    setTimeout(() => {
-      isScrollingRef.current = false;
-    }, 800);
+    // Section-based items scroll within the profile page
+    if (isTestsRoute) {
+      // If we're on the tests route, navigate back to profile first
+      navigate("/student/profile");
+      // Let the profile page load, then scroll
+      setTimeout(() => {
+        const el = document.getElementById(`section-${item.id}`);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 300);
+    } else {
+      setActiveSection(item.id);
+      isScrollingRef.current = true;
+      const el = document.getElementById(`section-${item.id}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      setTimeout(() => {
+        isScrollingRef.current = false;
+      }, 800);
+    }
   };
 
   // Scroll spy: update active section based on which section is in view
   useEffect(() => {
-    const sectionIds = SIDEBAR_ITEMS.map((item) => item.id);
+    const sectionIds = visibleSidebarItems.map((item) => item.id);
     const elements = sectionIds
       .map((id) => document.getElementById(`section-${id}`))
       .filter(Boolean) as HTMLElement[];
@@ -108,7 +187,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
 
     elements.forEach((el) => observer.observe(el));
     return () => observer.disconnect();
-  }, []);
+  }, [visibleSidebarItems]);
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-blue-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
@@ -132,13 +211,13 @@ export function StudentLayout({ children }: StudentLayoutProps) {
 
           {/* Navigation */}
           <nav className="flex-1 space-y-1 px-3 pt-4 ">
-            {SIDEBAR_ITEMS.map((item) => {
+            {visibleSidebarItems.map((item) => {
               const Icon = item.icon;
-              const isActive = activeSection === item.id;
+              const isActive = currentActive === item.id;
               return (
                 <button
                   key={item.id}
-                  onClick={() => scrollToSection(item.id)}
+                  onClick={() => handleNavClick(item)}
                   className={cn(
                     "group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
                     isActive
@@ -252,13 +331,13 @@ export function StudentLayout({ children }: StudentLayoutProps) {
       <nav className="fixed inset-x-0 bottom-0 z-30 md:hidden">
         <div className="mx-2 mb-2 rounded-3xl bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-900 px-2 pb-[env(safe-area-inset-bottom)] shadow-2xl shadow-slate-900/40">
           <div className="flex items-center justify-around py-2.5">
-            {SIDEBAR_ITEMS.map((item) => {
+            {visibleSidebarItems.map((item) => {
               const MobileIcon = item.mobileIcon;
-              const isActive = activeSection === item.id;
+              const isActive = currentActive === item.id;
               return (
                 <button
                   key={item.id}
-                  onClick={() => scrollToSection(item.id)}
+                  onClick={() => handleNavClick(item)}
                   className="relative flex flex-col items-center gap-1 px-3 py-1"
                 >
                   <div className="relative">
@@ -355,6 +434,47 @@ export function StudentLayout({ children }: StudentLayoutProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Test notification dialog */}
+      <Dialog open={showTestDialog} onOpenChange={(open) => !open && handleTestDialogDismiss()}>
+        <DialogContent showCloseButton={false} className="sm:max-w-md">
+          <DialogHeader className="items-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/30">
+              <ClipboardList className="h-7 w-7" />
+            </div>
+            <DialogTitle className="text-center text-xl">
+              {availableTests?.length === 1
+                ? "A Test is Available!"
+                : `${availableTests?.length} Tests Available!`}
+            </DialogTitle>
+            <DialogDescription className="text-center">
+              {availableTests?.length === 1 ? (
+                <>
+                  <span className="font-semibold text-foreground">
+                    {availableTests[0].title}
+                  </span>{" "}
+                  is ready for you. Duration: {availableTests[0].durationMinutes} min
+                  {" | "}{availableTests[0].totalMarks} marks.
+                </>
+              ) : (
+                <>
+                  You have {availableTests?.length} tests waiting for you.
+                  Don't miss out — take them before time runs out!
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:justify-center gap-2 pt-2">
+            <Button variant="outline" onClick={handleTestDialogDismiss}>
+              Later
+            </Button>
+            <Button onClick={handleGoToTest}>
+              {availableTests?.length === 1 ? "Take Test Now" : "View Tests"}
+              <ArrowRight className="ml-1 h-4 w-4" />
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

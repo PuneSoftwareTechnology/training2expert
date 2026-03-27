@@ -1,29 +1,34 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface TestTimerProps {
-  durationMinutes: number;
+  /** Server-controlled expiry time (ISO string). Takes priority over durationMinutes. */
+  expiryTime?: string;
+  /** Fallback: duration in minutes (used if expiryTime not provided) */
+  durationMinutes?: number;
   onTimeUp: () => void;
 }
 
-export function TestTimer({ durationMinutes, onTimeUp }: TestTimerProps) {
-  const [secondsLeft, setSecondsLeft] = useState(durationMinutes * 60);
+function calcSecondsLeft(expiryTime?: string, durationMinutes?: number): number {
+  if (expiryTime) {
+    const diff = Math.floor((new Date(expiryTime).getTime() - Date.now()) / 1000);
+    return Math.max(0, diff);
+  }
+  return (durationMinutes ?? 0) * 60;
+}
 
-  const handleTimeUp = useCallback(() => {
-    onTimeUp();
-  }, [onTimeUp]);
+export function TestTimer({ expiryTime, durationMinutes, onTimeUp }: TestTimerProps) {
+  const [secondsLeft, setSecondsLeft] = useState(() => calcSecondsLeft(expiryTime, durationMinutes));
+  const onTimeUpRef = useRef(onTimeUp);
+  onTimeUpRef.current = onTimeUp;
 
   useEffect(() => {
-    if (secondsLeft <= 0) {
-      handleTimeUp();
-      return;
-    }
-
     const timer = setInterval(() => {
       setSecondsLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
+          onTimeUpRef.current();
           return 0;
         }
         return prev - 1;
@@ -31,7 +36,7 @@ export function TestTimer({ durationMinutes, onTimeUp }: TestTimerProps) {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [secondsLeft, handleTimeUp]);
+  }, []);
 
   const minutes = Math.floor(secondsLeft / 60);
   const seconds = secondsLeft % 60;

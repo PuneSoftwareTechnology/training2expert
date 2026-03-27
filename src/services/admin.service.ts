@@ -17,6 +17,7 @@ import type {
   PlacementReportData,
   RecruiterShortlist,
   RecruiterAccount,
+  TestAttemptResult,
 } from "@/types/admin.types";
 import type { QrCode } from "@/types/super-admin.types";
 import type { StudentProfileFull, Evaluation } from "@/types/student.types";
@@ -312,10 +313,18 @@ export const adminService = {
     return extractData<Test[]>(response);
   },
 
+  getTestById: async (id: string) => {
+    const response = await api.get(`/admin/tests/${id}`);
+    return extractData<Test>(response);
+  },
+
   createTest: async (data: {
     title: string;
+    description?: string;
     course: string;
     durationMinutes: number;
+    endTime?: string;
+    isPublished?: boolean;
     questions: Omit<TestQuestion, "id">[];
   }) => {
     const response = await api.post("/admin/tests", data);
@@ -335,5 +344,10 @@ export const adminService = {
   deleteTest: async (id: string) => {
     const response = await api.delete(`/admin/tests/${id}`);
     return extractData<{ message: string }>(response);
+  },
+
+  getTestAttempts: async (testId: string) => {
+    const response = await api.get(`/admin/tests/${testId}/attempts`);
+    return extractData<TestAttemptResult[]>(response);
   },
 };

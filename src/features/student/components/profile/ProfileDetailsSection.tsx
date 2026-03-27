@@ -314,6 +314,14 @@ export default function ProfileDetailsSection({ profile }: ProfileDetailsSection
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Area</p>
                   <p className="mt-0.5 text-sm font-semibold text-foreground">{profile.area || '—'}</p>
                 </div>
+                <div className="rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-slate-800/50">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Course</p>
+                  <p className="mt-0.5 text-sm font-semibold text-foreground">{profile.course || '—'}</p>
+                </div>
+                <div className="rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-slate-800/50">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Batch</p>
+                  <p className="mt-0.5 text-sm font-semibold text-foreground">{profile.batch || '—'}</p>
+                </div>
               </div>
             )}
           </CardContent>

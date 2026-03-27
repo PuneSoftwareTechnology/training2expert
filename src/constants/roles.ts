@@ -7,6 +7,8 @@ import {
   Wallet,
   Award,
   FolderUp,
+  ClipboardList,
+  ClipboardCheck,
 } from "lucide-react";
 
 export const ROLES = {
@@ -61,5 +63,16 @@ export const SIDEBAR_ITEMS = [
     activeColor: "text-orange-600 dark:text-orange-400",
     activeBg: "bg-orange-500/10",
     iconBg: "bg-gradient-to-br from-orange-500 to-rose-600",
+  },
+  {
+    id: "tests",
+    label: "Tests",
+    icon: ClipboardList,
+    mobileIcon: ClipboardCheck,
+    color: "from-cyan-500 to-blue-600",
+    activeColor: "text-cyan-600 dark:text-cyan-400",
+    activeBg: "bg-cyan-500/10",
+    iconBg: "bg-gradient-to-br from-cyan-500 to-blue-600",
+    route: "/student/tests",
   },
 ];

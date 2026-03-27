@@ -93,6 +93,33 @@ export interface TestAttempt {
   submittedAt?: string;
 }
 
+export interface AttemptSession {
+  id: string;
+  userId: string;
+  testId: string;
+  startTime: string;
+  expiryTime: string;
+  score: number;
+  totalMarks: number;
+  status: "in_progress" | "submitted" | "expired";
+}
+
+export interface StartTestResponse {
+  attempt: AttemptSession;
+  test: import("./common.types").Test;
+}
+
+export interface SubmitTestResponse {
+  id: string;
+  userId: string;
+  testId: string;
+  score: number;
+  totalMarks: number;
+  percentage: number;
+  status: "submitted";
+  submittedAt: string;
+}
+
 export interface RecruiterCandidate {
   id: string;
   name: string;

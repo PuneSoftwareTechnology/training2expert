@@ -1,6 +1,6 @@
 import { api, extractData } from './api';
 import type { Test } from '@/types/common.types';
-import type { StudentProfile, StudentProfileFull, TestAttempt } from '@/types/student.types';
+import type { StudentProfile, StudentProfileFull, StartTestResponse, SubmitTestResponse } from '@/types/student.types';
 import type { ChangePasswordPayload } from '@/types/user.types';
 
 export const studentService = {
@@ -51,18 +51,13 @@ export const studentService = {
     return extractData<Test[]>(response);
   },
 
-  getTestById: async (testId: string): Promise<Test> => {
-    const response = await api.get(`/student/tests/${testId}`);
-    return extractData<Test>(response);
+  startTest: async (testId: string): Promise<StartTestResponse> => {
+    const response = await api.post(`/student/tests/${testId}/start`);
+    return extractData<StartTestResponse>(response);
   },
 
-  submitTest: async (attempt: TestAttempt): Promise<{ score: number }> => {
-    const response = await api.post(`/student/tests/${attempt.testId}/submit`, attempt);
-    return extractData<{ score: number }>(response);
-  },
-
-  getTestAttempts: async (): Promise<TestAttempt[]> => {
-    const response = await api.get('/student/test-attempts');
-    return extractData<TestAttempt[]>(response);
+  submitTest: async (attemptId: string, testId: string, answers: Record<string, number>): Promise<SubmitTestResponse> => {
+    const response = await api.post(`/student/tests/${testId}/submit`, { attemptId, answers });
+    return extractData<SubmitTestResponse>(response);
   },
 };

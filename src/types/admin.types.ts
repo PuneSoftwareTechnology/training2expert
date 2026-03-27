@@ -116,3 +116,15 @@ export interface PlacementReportData {
   contacted: PlacementRow[];
   courses: string[];
 }
+
+export interface TestAttemptResult {
+  id: string;
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
+  score: number;
+  totalMarks: number;
+  status: "in_progress" | "submitted" | "expired";
+  startTime: string;
+  submittedAt: string | null;
+}

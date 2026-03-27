@@ -22,14 +22,21 @@ export interface TestQuestion {
   question: string;
   options: string[];
   correctOptionIndex?: number;
+  correctAnswer?: string;
+  marks: number;
 }
 
 export interface Test {
   id: string;
   title: string;
+  description?: string;
   course: string;
   durationMinutes: number;
+  endTime?: string;
+  totalMarks: number;
   isActive: boolean;
+  isPublished: boolean;
+  questionCount?: number;
   questions: TestQuestion[];
   createdAt: string;
 }
