@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { Toaster } from 'sonner';
 import type { ReactNode } from 'react';
+import { setQueryClientRef } from '@/store/auth.store';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -16,6 +17,8 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+setQueryClientRef(queryClient);
 
 interface ProvidersProps {
   children: ReactNode;

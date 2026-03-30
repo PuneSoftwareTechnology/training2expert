@@ -36,7 +36,6 @@ import { QueryError } from "@/components/errors/QueryError";
 import { PageTransition } from "@/components/animations/PageTransition";
 import { FilterActions } from "@/components/ui/filter-actions";
 import { useRole } from "@/hooks/useRole";
-import { ROLES } from "@/constants/roles";
 import { cn } from "@/lib/utils";
 import {
   recruiterSchema,
@@ -77,14 +76,6 @@ const EDIT_FORM_FIELDS = FORM_FIELDS.filter((f) => f.name !== "password") as {
   required?: boolean;
 }[];
 
-const ROLE_COLORS: Record<string, string> = {
-  [ROLES.SUPER_ADMIN]:
-    "border-purple-400 bg-purple-500/15 text-purple-700 dark:text-purple-300 dark:border-purple-600",
-  [ROLES.ADMIN]:
-    "border-sky-400 bg-sky-500/15 text-sky-700 dark:text-sky-300 dark:border-sky-600",
-  [ROLES.RECRUITER]:
-    "border-teal-400 bg-teal-500/15 text-teal-700 dark:text-teal-300 dark:border-teal-600",
-};
 
 export default function AccessManagementPage() {
   const queryClient = useQueryClient();
@@ -272,52 +263,41 @@ export default function AccessManagementPage() {
     setDialogOpen(true);
   };
 
-  const RoleBadge = ({ role }: { role?: string }) => {
-    if (!role) return null;
-    return (
-      <Badge
-        variant="outline"
-        className={cn("capitalize font-medium", ROLE_COLORS[role])}
-      >
-        {role.toLowerCase().replace("_", " ")}
-      </Badge>
-    );
-  };
-
   // Columns
   const adminColumns: ColumnDef<AdminAccount>[] = [
     {
       accessorKey: "name",
       header: ({ column }) => <SortableHeader column={column} title="Name" />,
-      cell: ({ getValue }) => (
-        <span className="font-medium">{getValue<string>()}</span>
+      cell: ({ row }) => (
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 rounded-full bg-sky-100 dark:bg-sky-900/50 flex items-center justify-center text-sky-700 dark:text-sky-300 font-semibold text-sm shrink-0">
+            {row.original.name?.charAt(0)?.toUpperCase()}
+          </div>
+          <span className="font-medium">{row.original.name}</span>
+        </div>
       ),
     },
     { accessorKey: "email", header: "Email" },
     {
-      accessorKey: "role",
-      header: "Role",
-      cell: ({ getValue }) => <RoleBadge role={getValue<string>()} />,
-    },
-    {
       id: "actions",
-      header: "Actions",
+      header: "",
       cell: ({ row }) => (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center justify-end gap-1">
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
+            className="h-8 w-8 text-sky-600 hover:text-sky-700 hover:bg-sky-50 dark:text-sky-400 dark:hover:bg-sky-500/10"
             onClick={() => openEditDialog("admin", row.original)}
           >
             <Pencil className="h-4 w-4" />
           </Button>
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
+            className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
             onClick={() =>
               setDeleteData({ id: row.original.id, type: "admin" })
             }
-            className="text-destructive"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -330,8 +310,13 @@ export default function AccessManagementPage() {
     {
       accessorKey: "name",
       header: ({ column }) => <SortableHeader column={column} title="Name" />,
-      cell: ({ getValue }) => (
-        <span className="font-medium">{getValue<string>()}</span>
+      cell: ({ row }) => (
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 rounded-full bg-teal-100 dark:bg-teal-900/50 flex items-center justify-center text-teal-700 dark:text-teal-300 font-semibold text-sm shrink-0">
+            {row.original.name?.charAt(0)?.toUpperCase()}
+          </div>
+          <span className="font-medium">{row.original.name}</span>
+        </div>
       ),
     },
     {
@@ -342,9 +327,11 @@ export default function AccessManagementPage() {
           <span className="text-sm font-medium">
             {row.original.companyName}
           </span>
-          <span className="text-xs text-muted-foreground">
-            {row.original.designation}
-          </span>
+          {row.original.designation && (
+            <span className="text-xs text-muted-foreground">
+              {row.original.designation}
+            </span>
+          )}
         </div>
       ),
     },
@@ -359,29 +346,25 @@ export default function AccessManagementPage() {
       ),
     },
     {
-      accessorKey: "role",
-      header: "Role",
-      cell: ({ getValue }) => <RoleBadge role={getValue<string>()} />,
-    },
-    {
       id: "actions",
-      header: "Actions",
+      header: "",
       cell: ({ row }) => (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center justify-end gap-1">
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
+            className="h-8 w-8 text-teal-600 hover:text-teal-700 hover:bg-teal-50 dark:text-teal-400 dark:hover:bg-teal-500/10"
             onClick={() => openEditDialog("recruiter", row.original)}
           >
             <Pencil className="h-4 w-4" />
           </Button>
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
+            className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
             onClick={() =>
               setDeleteData({ id: row.original.id, type: "recruiter" })
             }
-            className="text-destructive"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -411,11 +394,11 @@ export default function AccessManagementPage() {
               showReset={false}
             />
             {isSuperAdmin && (
-              <Button size="sm" onClick={() => openCreateDialog("admin")}>
+              <Button size="sm" className="bg-sky-600 hover:bg-sky-700 text-white" onClick={() => openCreateDialog("admin")}>
                 <Plus className="mr-2 h-4 w-4" /> Add Admin
               </Button>
             )}
-            <Button size="sm" onClick={() => openCreateDialog("recruiter")}>
+            <Button size="sm" className="bg-teal-600 hover:bg-teal-700 text-white" onClick={() => openCreateDialog("recruiter")}>
               <Plus className="mr-2 h-4 w-4" /> Create Recruiter
             </Button>
           </div>
@@ -446,12 +429,14 @@ export default function AccessManagementPage() {
 
           {isSuperAdmin && (
             <TabsContent value="admins" className="mt-6">
-              <Card>
-                <div className="p-4 border-b flex justify-between items-center bg-muted/30">
-                  <h3 className="font-semibold text-sm">
+              <Card className="border-sky-200 dark:border-sky-800/50 overflow-hidden">
+                <div className="p-4 border-b border-sky-200 dark:border-sky-800/50 flex justify-between items-center bg-sky-50/80 dark:bg-sky-950/30">
+                  <h3 className="font-semibold text-sm text-sky-800 dark:text-sky-300">
                     System Administrators
                   </h3>
-                  <Badge variant="secondary">{admins?.length || 0}</Badge>
+                  <Badge className="bg-sky-100 text-sky-700 border-sky-300 dark:bg-sky-900/50 dark:text-sky-300 dark:border-sky-700">
+                    {admins?.length || 0}
+                  </Badge>
                 </div>
                 <CardContent className="p-0">
                   {loadingAdmins ? (
@@ -471,10 +456,12 @@ export default function AccessManagementPage() {
           )}
 
           <TabsContent value="recruiters" className="mt-6">
-            <Card>
-              <div className="p-4 border-b flex justify-between items-center bg-muted/30">
-                <h3 className="font-semibold text-sm">Registered Recruiters</h3>
-                <Badge variant="secondary">{recruiters?.length || 0}</Badge>
+            <Card className="border-teal-200 dark:border-teal-800/50 overflow-hidden">
+              <div className="p-4 border-b border-teal-200 dark:border-teal-800/50 flex justify-between items-center bg-teal-50/80 dark:bg-teal-950/30">
+                <h3 className="font-semibold text-sm text-teal-800 dark:text-teal-300">Registered Recruiters</h3>
+                <Badge className="bg-teal-100 text-teal-700 border-teal-300 dark:bg-teal-900/50 dark:text-teal-300 dark:border-teal-700">
+                  {recruiters?.length || 0}
+                </Badge>
               </div>
               <CardContent className="p-0">
                 {loadingRecruiters ? (
@@ -787,7 +774,7 @@ export default function AccessManagementPage() {
                     deleteRecruiterMutation.mutate(deleteData.id);
                   }
                 }}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                className="bg-red-600 text-white hover:bg-red-700"
               >
                 Delete Account
               </AlertDialogAction>

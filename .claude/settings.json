@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "additionalDirectories": [
+      "/home/soni/projects/PST/SMS/sms-backend/src/repositories"
+    ]
+  }
+}
