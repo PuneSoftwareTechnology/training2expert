@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useForm, useFieldArray, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -104,6 +104,14 @@ export function EditTestDialog({
     }
   }, [testDetail, open, form]);
 
+  // Ensure the test's current course is always in the dropdown,
+  // even if the courses list hasn't loaded yet or doesn't include it
+  const allCourses = useMemo(() => {
+    if (!testDetail?.course) return courses;
+    if (courses.includes(testDetail.course)) return courses;
+    return [testDetail.course, ...courses];
+  }, [courses, testDetail?.course]);
+
   const updateMutation = useMutation({
     mutationFn: (data: TestFormValues) =>
       adminService.updateTest(testId!, data as unknown as Partial<Test>),
@@ -130,7 +138,7 @@ export function EditTestDialog({
             onSubmit={form.handleSubmit((data) => updateMutation.mutate(data))}
             className="space-y-4"
           >
-            <TestFormFields form={form} courses={courses} />
+            <TestFormFields form={form} courses={allCourses} />
             <Separator />
             <TestQuestionFields form={form} fieldArray={fieldArray} />
             <div className="flex justify-end gap-2">

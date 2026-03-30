@@ -35,17 +35,6 @@ export default function TestAttemptPage() {
   const [startError, setStartError] = useState<string | null>(null);
   const submittedRef = useRef(false);
 
-  // Start test mutation — called once on mount
-  const startMutation = useMutation({
-    mutationFn: () => studentService.startTest(testId!),
-    onSuccess: (data) => {
-      setTestData(data);
-    },
-    onError: (error) => {
-      setStartError(getErrorMessage(error));
-    },
-  });
-
   // Submit test mutation
   const submitMutation = useMutation({
     mutationFn: ({ attemptId, ans }: { attemptId: string; ans: Record<string, number> }) =>
@@ -62,7 +51,16 @@ export default function TestAttemptPage() {
   useEffect(() => {
     if (!startedRef.current && testId) {
       startedRef.current = true;
-      startMutation.mutate();
+      console.log('[TestAttempt] calling startTest...');
+      studentService.startTest(testId)
+        .then((data) => {
+          console.log('[TestAttempt] startTest resolved:', data);
+          setTestData(data);
+        })
+        .catch((error) => {
+          console.log('[TestAttempt] startTest rejected:', error);
+          setStartError(getErrorMessage(error));
+        });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [testId]);
@@ -82,20 +80,16 @@ export default function TestAttemptPage() {
     doSubmit();
   }, [doSubmit]);
 
-  // ─── Loading state ─────────────────────────────────────────
-  if (startMutation.isPending) {
-    return <PageLoader />;
-  }
-
   // ─── Error state ───────────────────────────────────────────
-  if (startError) {
+  const errorMessage = startError;
+  if (errorMessage) {
     return (
       <PageTransition>
         <Card className="mx-auto max-w-md mt-12">
           <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
             <XCircle className="h-12 w-12 text-destructive" />
             <p className="text-lg font-medium">Cannot Start Test</p>
-            <p className="text-sm text-muted-foreground">{startError}</p>
+            <p className="text-sm text-muted-foreground">{errorMessage}</p>
             <Button variant="outline" onClick={() => navigate('/student/tests', { replace: true })}>
               Back to Tests
             </Button>
