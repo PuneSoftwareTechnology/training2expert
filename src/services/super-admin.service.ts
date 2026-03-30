@@ -57,7 +57,7 @@ export const superAdminService = {
     if (data.is_active !== undefined)
       formData.append("is_active", String(data.is_active));
     const response = await api.post("/super-admin/qr", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
+      headers: { "Content-Type": undefined },
     });
     return extractData<QrCode>(response);
   },

@@ -30,7 +30,7 @@ export const studentService = {
 
   uploadCv: async (file: File): Promise<{ url: string }> => {
     const formData = new FormData();
-    formData.append('cv', file);
+    formData.append('file', file);
     const response = await api.post('/student/cv-upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
