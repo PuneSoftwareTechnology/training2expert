@@ -218,7 +218,14 @@ export default function CandidateFilterPage() {
                       <TableCell>{row.course}</TableCell>
                       <TableCell>{row.city ?? '-'}</TableCell>
                       <TableCell>{row.itExperienceYears} yrs</TableCell>
-                      <TableCell>{row.technicalScore}/10</TableCell>
+                      <TableCell>
+                        {row.technicalMarksScored}/{row.technicalTotalMarks}
+                        {row.technicalTotalMarks > 0 && (
+                          <span className="ml-1 text-muted-foreground">
+                            ({Math.round((row.technicalMarksScored / row.technicalTotalMarks) * 100)}%)
+                          </span>
+                        )}
+                      </TableCell>
                       <TableCell>{row.communicationScore}/10</TableCell>
                       <TableCell className="max-w-[120px] truncate text-sm">{row.remarks ?? '-'}</TableCell>
                       <TableCell>

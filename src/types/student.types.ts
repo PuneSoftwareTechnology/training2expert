@@ -47,7 +47,8 @@ export interface Evaluation {
   studentId: string;
   courseId: string;
   courseName: string;
-  technicalScore: number;
+  technicalMarksScored: number;
+  technicalTotalMarks: number;
   communicationScore: number;
   moduleScores?: ModuleScore[];
   projectSubmission?: string;

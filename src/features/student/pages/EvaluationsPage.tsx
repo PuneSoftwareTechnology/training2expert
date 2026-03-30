@@ -57,7 +57,9 @@ export default function EvaluationsPage() {
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg">{evaluation.courseName}</CardTitle>
                   <Badge variant="secondary">
-                    Avg: {((evaluation.technicalScore + evaluation.communicationScore) / 2).toFixed(1)}
+                    {evaluation.technicalTotalMarks > 0
+                      ? `${Math.round((evaluation.technicalMarksScored / evaluation.technicalTotalMarks) * 100)}%`
+                      : 'N/A'}
                   </Badge>
                 </div>
               </CardHeader>
@@ -69,7 +71,14 @@ export default function EvaluationsPage() {
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Technical Score</p>
-                      <p className="text-lg font-semibold">{evaluation.technicalScore}/10</p>
+                      <p className="text-lg font-semibold">
+                        {evaluation.technicalMarksScored}/{evaluation.technicalTotalMarks}
+                        {evaluation.technicalTotalMarks > 0 && (
+                          <span className="ml-1 text-sm text-muted-foreground">
+                            ({Math.round((evaluation.technicalMarksScored / evaluation.technicalTotalMarks) * 100)}%)
+                          </span>
+                        )}
+                      </p>
                     </div>
                   </div>
 

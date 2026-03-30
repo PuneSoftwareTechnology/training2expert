@@ -14,10 +14,9 @@ interface EvaluationSectionProps {
 export default function EvaluationSection({ evaluations }: EvaluationSectionProps) {
   const projectInputRef = useRef<HTMLInputElement>(null);
 
-  const avgTechnical =
-    evaluations && evaluations.length > 0
-      ? Math.round((evaluations.reduce((sum, e) => sum + e.technicalScore, 0) / evaluations.length) * 10)
-      : 0;
+  const totalScored = evaluations?.reduce((sum, e) => sum + e.technicalMarksScored, 0) ?? 0;
+  const totalPossible = evaluations?.reduce((sum, e) => sum + e.technicalTotalMarks, 0) ?? 0;
+  const avgTechnicalPct = totalPossible > 0 ? Math.round((totalScored / totalPossible) * 100) : 0;
   const avgCommunication =
     evaluations && evaluations.length > 0
       ? Math.round((evaluations.reduce((sum, e) => sum + e.communicationScore, 0) / evaluations.length) * 10) / 10
@@ -41,7 +40,7 @@ export default function EvaluationSection({ evaluations }: EvaluationSectionProp
                 Technical Score
               </h3>
               <span className="rounded-lg bg-gradient-to-r from-violet-500 to-purple-600 px-3 py-1 text-lg font-bold text-white shadow-sm">
-                {avgTechnical}%
+                {totalScored}/{totalPossible} ({avgTechnicalPct}%)
               </span>
             </div>
             <div className="space-y-3">
@@ -55,12 +54,15 @@ export default function EvaluationSection({ evaluations }: EvaluationSectionProp
                   >
                     <div className="mb-1 flex items-center justify-between text-sm">
                       <span className="font-medium">{evaluation.courseName}</span>
-                      <span className="font-semibold text-violet-600">{evaluation.technicalScore * 10}%</span>
+                      <span className="font-semibold text-violet-600">
+                        {evaluation.technicalMarksScored}/{evaluation.technicalTotalMarks}
+                        {evaluation.technicalTotalMarks > 0 && ` (${Math.round((evaluation.technicalMarksScored / evaluation.technicalTotalMarks) * 100)}%)`}
+                      </span>
                     </div>
                     <div className="h-2.5 w-full overflow-hidden rounded-full bg-violet-100 dark:bg-violet-900/30">
                       <motion.div
                         initial={{ width: 0 }}
-                        animate={{ width: `${evaluation.technicalScore * 10}%` }}
+                        animate={{ width: `${evaluation.technicalTotalMarks > 0 ? (evaluation.technicalMarksScored / evaluation.technicalTotalMarks) * 100 : 0}%` }}
                         transition={{ duration: 0.8, delay: idx * 0.15, ease: 'easeOut' }}
                         className="h-full rounded-full bg-gradient-to-r from-blue-500 to-violet-500"
                       />

@@ -76,7 +76,8 @@ export interface CandidateReportRow {
   course: string;
   city?: string;
   itExperienceYears: number;
-  technicalScore: number;
+  technicalMarksScored: number;
+  technicalTotalMarks: number;
   communicationScore: number;
   remarks?: string;
   cvUrl?: string;

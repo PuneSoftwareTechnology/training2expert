@@ -1,4 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
   MessageSquare,
   FileText,
@@ -7,6 +9,7 @@ import {
   ExternalLink,
   BookOpen,
   UserCheck,
+  Loader2,
 } from "lucide-react";
 import {
   Dialog,
@@ -24,6 +27,9 @@ import {
   AvatarImage,
 } from "@/components/ui/avatar";
 import { adminService } from "@/services/admin.service";
+import { getErrorMessage } from "@/services/api";
+import { useAuthStore } from "@/store/auth.store";
+import { ROLES } from "@/constants/roles";
 import type { Evaluation } from "@/types/student.types";
 
 interface EvaluationDialogProps {
@@ -58,13 +64,9 @@ export function EvaluationDialog({
   const studentPhoto = profile?.profilePhoto;
 
   // Compute aggregate scores across all evaluations
-  const avgTechnical =
-    evaluations.length > 0
-      ? Math.round(
-          evaluations.reduce((sum, e) => sum + e.technicalScore, 0) /
-            evaluations.length
-        )
-      : 0;
+  const totalScored = evaluations.reduce((sum, e) => sum + e.technicalMarksScored, 0);
+  const totalPossible = evaluations.reduce((sum, e) => sum + e.technicalTotalMarks, 0);
+  const avgTechnicalPct = totalPossible > 0 ? Math.round((totalScored / totalPossible) * 100) : 0;
   const avgCommunication =
     evaluations.length > 0
       ? +(
@@ -80,7 +82,7 @@ export function EvaluationDialog({
           <DialogTitle>Evaluation Details</DialogTitle>
           <DialogDescription>
             View technical scores, communication ratings, project submissions,
-            and trainer remarks for this student. This is a read-only view.
+            and trainer remarks for this student. Communication rating is editable by admins.
           </DialogDescription>
         </DialogHeader>
 
@@ -126,7 +128,7 @@ export function EvaluationDialog({
                 </p>
               </div>
               <Badge variant="secondary" className="ml-auto text-[10px]">
-                Read-only
+                Evaluation
               </Badge>
             </div>
 
@@ -137,7 +139,10 @@ export function EvaluationDialog({
                   Technical Score
                 </p>
                 <p className="mt-1 text-2xl font-bold text-blue-700">
-                  {avgTechnical}%
+                  {totalScored}/{totalPossible}
+                </p>
+                <p className="text-xs text-blue-500">
+                  ({avgTechnicalPct}%)
                 </p>
               </div>
               <div className="rounded-xl border-2 border-amber-200 bg-amber-50/50 p-3 text-center">
@@ -156,7 +161,7 @@ export function EvaluationDialog({
             {/* Per-course evaluations */}
             <div className="space-y-4 px-6 pb-6">
               {evaluations.map((evaluation) => (
-                <EvaluationCard key={evaluation.id} evaluation={evaluation} />
+                <EvaluationCard key={evaluation.id} evaluation={evaluation} studentId={studentId} />
               ))}
             </div>
           </ScrollArea>
@@ -177,7 +182,29 @@ export function EvaluationDialog({
 // Evaluation Card
 // ---------------------------------------------------------------------------
 
-function EvaluationCard({ evaluation }: { evaluation: Evaluation }) {
+function EvaluationCard({ evaluation, studentId }: { evaluation: Evaluation; studentId: string }) {
+  const queryClient = useQueryClient();
+  const user = useAuthStore((s) => s.user);
+  const canEdit = user?.role === ROLES.ADMIN || user?.role === ROLES.SUPER_ADMIN;
+
+  const [hoveredStar, setHoveredStar] = useState<number | null>(null);
+
+  const updateMutation = useMutation({
+    mutationFn: (score: number) =>
+      adminService.updateEvaluation(evaluation.id, { communicationScore: score }),
+    onSuccess: () => {
+      toast.success("Communication rating updated");
+      queryClient.invalidateQueries({ queryKey: ["admin", "student-profile", studentId] });
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const handleStarClick = (starIndex: number) => {
+    if (!canEdit || updateMutation.isPending) return;
+    const newScore = (starIndex + 1) * 2; // each star = 2 points on 0-10 scale
+    updateMutation.mutate(newScore);
+  };
+
   return (
     <div className="rounded-xl border bg-card overflow-hidden">
       {/* Course Header */}
@@ -196,31 +223,41 @@ function EvaluationCard({ evaluation }: { evaluation: Evaluation }) {
           {/* Technical Score */}
           <MetricBar
             label="Technical Mastery"
-            value={evaluation.technicalScore}
-            max={100}
-            suffix="%"
+            value={evaluation.technicalMarksScored}
+            max={evaluation.technicalTotalMarks}
             color="bg-blue-500"
           />
 
-          {/* Communication */}
+          {/* Communication — editable stars for admin/super_admin */}
           <div className="flex items-center justify-between py-2">
             <span className="text-sm">Communication Rating</span>
             <div className="flex items-center gap-1">
+              {updateMutation.isPending && (
+                <Loader2 className="h-3 w-3 animate-spin text-amber-500 mr-1" />
+              )}
               {Array.from({ length: 5 }).map((_, i) => {
-                const filled = evaluation.communicationScore / 2;
+                const filled = hoveredStar !== null
+                  ? hoveredStar + 1
+                  : evaluation.communicationScore / 2;
                 return (
                   <Star
                     key={i}
-                    className={`h-3.5 w-3.5 ${
+                    className={`h-3.5 w-3.5 transition-colors ${
                       i < Math.floor(filled)
                         ? "fill-amber-400 text-amber-400"
                         : i < filled
                           ? "fill-amber-400/50 text-amber-400"
                           : "text-muted-foreground/25"
-                    }`}
+                    } ${canEdit ? "cursor-pointer hover:scale-110 transition-transform" : ""}`}
+                    onMouseEnter={() => canEdit && setHoveredStar(i)}
+                    onMouseLeave={() => canEdit && setHoveredStar(null)}
+                    onClick={() => handleStarClick(i)}
                   />
                 );
               })}
+              <span className="text-xs text-muted-foreground ml-1 tabular-nums">
+                {hoveredStar !== null ? (hoveredStar + 1) * 2 : evaluation.communicationScore}/10
+              </span>
             </div>
           </div>
 
@@ -333,7 +370,7 @@ function MetricBar({
   suffix?: string;
   color?: string;
 }) {
-  const pct = Math.min((value / max) * 100, 100);
+  const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0;
   return (
     <div className="flex items-center justify-between gap-3 py-2">
       <span className="text-sm shrink-0">{label}</span>
@@ -344,9 +381,8 @@ function MetricBar({
             style={{ width: `${pct}%` }}
           />
         </div>
-        <span className="text-xs font-semibold tabular-nums w-10 text-right">
-          {value}
-          {suffix}
+        <span className="text-xs font-semibold tabular-nums text-right whitespace-nowrap">
+          {suffix ? `${value}${suffix}` : `${value}/${max}`}
         </span>
       </div>
     </div>

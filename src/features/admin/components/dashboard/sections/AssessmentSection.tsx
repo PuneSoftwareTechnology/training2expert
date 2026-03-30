@@ -40,8 +40,7 @@ export function AssessmentSection({ data }: AssessmentSectionProps) {
                     ).toFixed(1)
                   : "N/A"}
                 <span className="text-xs font-normal text-muted-foreground">
-                  {" "}
-                  / 10
+                  %
                 </span>
               </p>
             </div>
@@ -101,7 +100,7 @@ export function AssessmentSection({ data }: AssessmentSectionProps) {
         <Card>
           <CardHeader className="pb-1">
             <CardTitle className="text-sm">
-              Technical Score by Course (avg out of 10)
+              Technical Score by Course (avg %)
             </CardTitle>
           </CardHeader>
           <CardContent>
