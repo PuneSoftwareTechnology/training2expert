@@ -268,7 +268,8 @@ export const adminService = {
   // QR Code (Admin — read-only)
   getActiveQrCode: async () => {
     const response = await api.get("/admin/qr-codes");
-    return extractData<QrCode>(response);
+    const qrCodes = extractData<QrCode[]>(response);
+    return qrCodes.find((qr) => qr.is_active) ?? null;
   },
 
   // Recruiter Shortlist

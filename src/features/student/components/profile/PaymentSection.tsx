@@ -5,7 +5,8 @@ import {
   QrCode,
   TrendingUp,
   AlertCircle,
-  FileDown,
+  Copy,
+  Check,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,12 +19,10 @@ import type { PaymentSummary } from "@/types/student.types";
 let donutIdCounter = 0;
 function DonutChart({
   paid,
-  pending,
   total,
   size = 160,
 }: {
   paid: number;
-  pending: number;
   total: number;
   size?: number;
 }) {
@@ -83,6 +82,35 @@ function DonutChart({
   );
 }
 
+function CopyableDetail({ label, value }: { label: string; value: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(value);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <div className="min-w-0">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {label}
+        </p>
+        <p className="truncate text-sm font-semibold">{value}</p>
+      </div>
+      <button
+        onClick={handleCopy}
+        className="shrink-0 rounded-md p-1 text-muted-foreground transition-colors hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-900/30"
+      >
+        {copied ? (
+          <Check className="h-3.5 w-3.5 text-emerald-500" />
+        ) : (
+          <Copy className="h-3.5 w-3.5" />
+        )}
+      </button>
+    </div>
+  );
+}
+
 interface PaymentSectionProps {
   paymentData: PaymentSummary | undefined;
 }
@@ -113,7 +141,7 @@ export default function PaymentSection({ paymentData }: PaymentSectionProps) {
         <Card className="overflow-hidden border border-emerald-100 bg-white shadow-lg shadow-emerald-500/5 dark:border-emerald-900/40 dark:bg-slate-900">
           <div className="h-1 bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400" />
           <CardContent className="flex items-center gap-5 px-5 pt-6 pb-5">
-            <DonutChart paid={paid} pending={pending} total={total} />
+            <DonutChart paid={paid} total={total} />
             <div className="flex-1 space-y-3">
               <div className="rounded-xl bg-slate-50 px-3 py-2 dark:bg-slate-800/50">
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -158,7 +186,6 @@ export default function PaymentSection({ paymentData }: PaymentSectionProps) {
           <CardContent className="flex flex-1 items-center gap-8 px-8 pt-8 pb-7">
             <DonutChart
               paid={paid}
-              pending={pending}
               total={total}
               size={240}
             />
@@ -233,14 +260,16 @@ export default function PaymentSection({ paymentData }: PaymentSectionProps) {
               <br />
               your pending balance payment.
             </p>
-            <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              className="flex items-center gap-2 rounded-lg bg-emerald-50 px-5 py-2.5 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400 dark:hover:bg-emerald-900/50"
-            >
-              <FileDown className="h-4 w-4" />
-              Download Invoice PDF
-            </motion.button>
+            {(paymentData?.qr_upi_id || paymentData?.qr_account_number) && (
+              <div className="w-full space-y-2 rounded-lg border border-emerald-100 bg-emerald-50/50 px-4 py-3 dark:border-emerald-900/30 dark:bg-emerald-950/20">
+                {paymentData.qr_upi_id && (
+                  <CopyableDetail
+                    label="UPI ID"
+                    value={paymentData.qr_upi_id}
+                  />
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       </motion.div>

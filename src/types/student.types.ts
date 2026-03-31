@@ -62,6 +62,9 @@ export interface PaymentSummary {
   pending_amount: number;
   qr_code_url: string;
   qr_bank_name: string;
+  qr_upi_id?: string;
+  qr_account_number?: string;
+  qr_ifsc_code?: string;
   installment1_amount?: number;
   installment1_date?: string;
   installment1_mode?: string;
