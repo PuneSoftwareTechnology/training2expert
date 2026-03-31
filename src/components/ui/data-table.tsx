@@ -29,6 +29,7 @@ interface DataTableProps<TData, TValue> {
   searchValue?: string;
   pageSize?: number;
   emptyMessage?: string;
+  headerClassName?: string;
 }
 
 export function DataTable<TData, TValue>({
@@ -38,6 +39,7 @@ export function DataTable<TData, TValue>({
   searchValue,
   pageSize = 10,
   emptyMessage = "No results found",
+  headerClassName,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -67,9 +69,15 @@ export function DataTable<TData, TValue>({
       <Table>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
+            <TableRow
+              key={headerGroup.id}
+              className={headerClassName ? `${headerClassName} border-0 hover:bg-transparent` : ""}
+            >
               {headerGroup.headers.map((header) => (
-                <TableHead key={header.id}>
+                <TableHead
+                  key={header.id}
+                  className={headerClassName ? "text-white font-semibold text-xs uppercase tracking-wider" : ""}
+                >
                   {header.isPlaceholder
                     ? null
                     : flexRender(
@@ -150,7 +158,7 @@ export function SortableHeader({
     <Button
       variant="ghost"
       size="sm"
-      className="-ml-3 h-8"
+      className="-ml-3 h-8 hover:bg-white/20 hover:text-inherit"
       onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
     >
       {title}

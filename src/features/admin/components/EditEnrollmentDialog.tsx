@@ -31,6 +31,14 @@ import type {
 } from "@/types/common.types";
 import type { Enrollment } from "@/types/admin.types";
 
+/** Convert an ISO timestamp or date string to YYYY-MM-DD for <input type="date"> */
+function toDateInputValue(val: string | null | undefined): string {
+  if (!val) return "";
+  const d = new Date(val);
+  if (isNaN(d.getTime())) return "";
+  return d.toISOString().slice(0, 10);
+}
+
 interface EditFields {
   name: string;
   email: string;
@@ -68,18 +76,18 @@ function enrollmentToFields(e: Enrollment): EditFields {
     course: e.course || "",
     batch: e.batch || "",
     trainer: e.trainer || "",
-    start_date: e.start_date || "",
-    end_date: e.end_date || "",
+    start_date: toDateInputValue(e.start_date),
+    end_date: toDateInputValue(e.end_date),
     completion_status: e.completion_status || "ACTIVE",
     total_fee: Number(e.total_fee) || 0,
     installment1_amount: Number(e.installment1_amount) || 0,
-    installment1_date: e.installment1_date || "",
+    installment1_date: toDateInputValue(e.installment1_date),
     installment1_mode: e.installment1_mode || "",
     installment2_amount: Number(e.installment2_amount) || 0,
-    installment2_date: e.installment2_date || "",
+    installment2_date: toDateInputValue(e.installment2_date),
     installment2_mode: e.installment2_mode || "",
     installment3_amount: Number(e.installment3_amount) || 0,
-    installment3_date: e.installment3_date || "",
+    installment3_date: toDateInputValue(e.installment3_date),
     installment3_mode: e.installment3_mode || "",
     placement_status: e.placement_status || "NOT_PLACED",
     company_name: e.company_name || "",

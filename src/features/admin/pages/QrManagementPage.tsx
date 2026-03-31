@@ -77,7 +77,17 @@ export default function QrManagementPage() {
       <div className="space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">QR & Bank Management</h2>
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 p-2.5 shadow-md shadow-indigo-200/50">
+              <QrCode className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold">QR & Bank Management</h2>
+              <p className="text-sm text-muted-foreground">
+                Manage payment QR codes and bank details
+              </p>
+            </div>
+          </div>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -89,7 +99,10 @@ export default function QrManagementPage() {
               />
               Refresh
             </Button>
-            <Button onClick={() => setDialogOpen(true)}>
+            <Button
+              onClick={() => setDialogOpen(true)}
+              className="bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-200/50 hover:from-indigo-600 hover:to-violet-700"
+            >
               <Plus className="mr-2" /> Add New QR
             </Button>
           </div>
@@ -99,16 +112,16 @@ export default function QrManagementPage() {
         {isLoading ? (
           <TableSkeleton rows={3} columns={5} />
         ) : (
-          <Card>
+          <Card className="border-indigo-200/60 overflow-hidden">
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[100px]">QR PREVIEW</TableHead>
-                    <TableHead>BANK DETAILS</TableHead>
-                    <TableHead>UPI & ACCOUNT</TableHead>
-                    <TableHead className="w-[100px]">STATUS</TableHead>
-                    <TableHead className="w-[100px]">ACTIONS</TableHead>
+                  <TableRow className="bg-gradient-to-r from-indigo-500 to-violet-600 border-0 hover:bg-transparent">
+                    <TableHead className="w-[100px] text-white font-semibold text-xs uppercase tracking-wider">QR PREVIEW</TableHead>
+                    <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">BANK DETAILS</TableHead>
+                    <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">UPI & ACCOUNT</TableHead>
+                    <TableHead className="w-[100px] text-white font-semibold text-xs uppercase tracking-wider">STATUS</TableHead>
+                    <TableHead className="w-[100px] text-white font-semibold text-xs uppercase tracking-wider">ACTIONS</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -194,7 +207,7 @@ export default function QrManagementPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            className="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-600"
                             onClick={() => setDeleteId(qr.id)}
                           >
                             <Trash2 className="h-4 w-4" />

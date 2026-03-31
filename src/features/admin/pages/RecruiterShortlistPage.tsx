@@ -8,6 +8,7 @@ import { DataTable, SortableHeader } from '@/components/ui/data-table';
 import { TableSkeleton } from '@/components/loaders/TableSkeleton';
 import { QueryError } from '@/components/errors/QueryError';
 import { PageTransition } from '@/components/animations/PageTransition';
+import { FilterActions } from '@/components/ui/filter-actions';
 import { adminService } from '@/services/admin.service';
 import { formatDate } from '@/utils/format';
 import type { RecruiterShortlist } from '@/types/admin.types';
@@ -43,10 +44,27 @@ export default function RecruiterShortlistPage() {
     <PageTransition>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold sm:text-2xl">Recruiter Shortlist</h2>
-          {items.length > 0 && (
-            <Badge variant="outline">{data?.total ?? items.length} record{(data?.total ?? items.length) !== 1 ? 's' : ''}</Badge>
-          )}
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl bg-gradient-to-br from-purple-500 to-violet-600 p-2.5 shadow-md shadow-purple-200/50">
+              <ListChecks className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold sm:text-2xl">Recruiter Shortlist</h2>
+              <p className="text-sm text-muted-foreground">
+                Students shortlisted by recruiters
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {items.length > 0 && (
+              <Badge variant="outline">{data?.total ?? items.length} record{(data?.total ?? items.length) !== 1 ? 's' : ''}</Badge>
+            )}
+            <FilterActions
+              onRefresh={() => refetch()}
+              isFetching={isLoading}
+              showReset={false}
+            />
+          </div>
         </div>
 
         {isLoading ? (
@@ -62,9 +80,9 @@ export default function RecruiterShortlistPage() {
           <>
             {/* Desktop table */}
             <div className="hidden md:block">
-              <Card>
+              <Card className="border-purple-200/60 overflow-hidden">
                 <CardContent className="p-0">
-                  <DataTable columns={columns} data={items} emptyMessage="No shortlist records" />
+                  <DataTable columns={columns} data={items} emptyMessage="No shortlist records" headerClassName="bg-gradient-to-r from-purple-500 to-violet-600" />
                 </CardContent>
               </Card>
             </div>

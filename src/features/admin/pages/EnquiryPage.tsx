@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Search, RefreshCw, Pencil, Trash2 } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
 import type { ColumnDef } from "@tanstack/react-table";
 
@@ -22,7 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
@@ -38,6 +38,7 @@ import { DataTable, SortableHeader } from "@/components/ui/data-table";
 import { TableSkeleton } from "@/components/loaders/TableSkeleton";
 import { QueryError } from "@/components/errors/QueryError";
 import { PageTransition } from "@/components/animations/PageTransition";
+import { FilterActions } from "@/components/ui/filter-actions";
 
 import {
   enquirySchema,
@@ -261,7 +262,7 @@ export default function EnquiryPage() {
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className="h-8 w-8 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
               onClick={() => openEdit(e)}
             >
               <Pencil className="h-4 w-4" />
@@ -269,7 +270,7 @@ export default function EnquiryPage() {
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-destructive hover:text-destructive"
+              className="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-600"
               onClick={() => setDeleteId(e.id)}
             >
               <Trash2 className="h-4 w-4" />
@@ -287,29 +288,40 @@ export default function EnquiryPage() {
   return (
     <PageTransition>
       <div className="space-y-4">
+        {/* Header */}
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">Enquiry Management</h2>
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 p-2.5 shadow-md shadow-amber-200/50">
+              <ClipboardList className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold">Enquiry Management</h2>
+              <p className="text-sm text-muted-foreground">
+                Track and manage all student enquiries
+              </p>
+            </div>
+          </div>
           <div className="flex items-center gap-2">
+            <FilterActions
+              onReset={() =>
+                setFilters({ fromDate: "", toDate: "", lead: "", demo: "" })
+              }
+              onRefresh={() => refetch()}
+              isFetching={isFetching}
+            />
             <Button
-              variant="outline"
-              onClick={() => refetch()}
-              disabled={isFetching}
+              onClick={openCreate}
+              className="bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-md shadow-amber-200/50 hover:from-amber-600 hover:to-orange-700"
             >
-              <RefreshCw
-                className={`mr-2 ${isFetching ? "animate-spin" : ""}`}
-              />{" "}
-              Refresh
-            </Button>
-            <Button onClick={openCreate}>
               <Plus className="mr-2" /> Add Enquiry
             </Button>
           </div>
         </div>
 
         {/* Filters */}
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex flex-wrap items-end gap-4">
+        <Card className="border-amber-200/60 bg-gradient-to-r from-amber-100 to-orange-200">
+          <CardContent className="pb-3">
+            <div className="flex flex-wrap items-center gap-4">
               {(["fromDate", "toDate"] as const).map((key) => (
                 <div key={key} className="space-y-1">
                   <Label className="text-xs">
@@ -348,15 +360,6 @@ export default function EnquiryPage() {
                   </Select>
                 </div>
               ))}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  setFilters({ fromDate: "", toDate: "", lead: "", demo: "" })
-                }
-              >
-                <Search className="mr-1 h-3.5 w-3.5" /> Reset
-              </Button>
             </div>
           </CardContent>
         </Card>
@@ -365,12 +368,13 @@ export default function EnquiryPage() {
         {isLoading ? (
           <TableSkeleton rows={8} columns={9} />
         ) : (
-          <Card>
+          <Card className="border-amber-200/60 overflow-hidden">
             <CardContent className="p-0">
               <DataTable
                 columns={columns}
                 data={data?.items ?? []}
                 emptyMessage="No enquiries found"
+                headerClassName="bg-gradient-to-r from-amber-500 to-orange-600"
               />
             </CardContent>
           </Card>

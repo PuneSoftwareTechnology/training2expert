@@ -232,10 +232,11 @@ export default function ProfileDetailsSection({
       }
     }
     const current = educationForm.getValues("certifications") ?? [];
-    educationForm.setValue("certifications", [
-      ...current,
-      { name: certInput.trim(), certificate: certificateUrl },
-    ], { shouldDirty: true });
+    educationForm.setValue(
+      "certifications",
+      [...current, { name: certInput.trim(), certificate: certificateUrl }],
+      { shouldDirty: true },
+    );
     setCertInput("");
     setCertFile(null);
     if (certFileInputRef.current) certFileInputRef.current.value = "";
@@ -294,7 +295,7 @@ export default function ProfileDetailsSection({
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-5 flex items-center gap-3 rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 px-4 py-3 dark:border-amber-800 dark:from-amber-950/40 dark:to-orange-950/30"
+          className="mb-5 flex items-center gap-3 rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 px-4 py-3 dark:border-amber-800 dark:from-amber-9100 dark:to-orange-950/30"
         >
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/50">
             <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />

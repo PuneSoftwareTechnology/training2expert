@@ -88,11 +88,16 @@ export default function TestManagementPage() {
     <PageTransition>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold">Test Management</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Create and manage assessments for your students
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl bg-gradient-to-br from-teal-500 to-cyan-600 p-2.5 shadow-md shadow-teal-200/50">
+              <FileText className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold">Test Management</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Create and manage assessments for your students
+              </p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <FilterActions
@@ -103,7 +108,7 @@ export default function TestManagementPage() {
             <Button
               size="lg"
               onClick={() => setCreateDialogOpen(true)}
-              className="shadow-md"
+              className="bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-md shadow-teal-200/50 hover:from-teal-600 hover:to-cyan-700"
             >
               <Plus className="mr-2 h-4 w-4" /> Create Test
             </Button>

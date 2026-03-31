@@ -115,7 +115,7 @@ export default function ManageAdminsPage() {
           variant="ghost"
           size="sm"
           onClick={() => setDeleteId(row.original.id)}
-          className="text-destructive hover:text-destructive"
+          className="text-red-500 hover:text-red-600 hover:bg-red-50"
         >
           <Trash2 className="h-4 w-4" />
         </Button>
@@ -129,14 +129,25 @@ export default function ManageAdminsPage() {
     <PageTransition>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">
-            {isSuperAdmin ? "Manage Administrators" : "Manage Admins"}
-          </h2>
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 p-2.5 shadow-md shadow-sky-200/50">
+              <UserCog className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold">
+                {isSuperAdmin ? "Manage Administrators" : "Manage Admins"}
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                System administrator accounts
+              </p>
+            </div>
+          </div>
           <Button
             onClick={() => {
               form.reset();
               setDialogOpen(true);
             }}
+            className="bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-md shadow-sky-200/50 hover:from-sky-600 hover:to-blue-700"
           >
             <Plus className="mr-2 h-4 w-4" /> Create Admin
           </Button>
@@ -152,12 +163,13 @@ export default function ManageAdminsPage() {
             </CardContent>
           </Card>
         ) : (
-          <Card>
+          <Card className="border-sky-200/60 overflow-hidden">
             <CardContent className="p-0">
               <DataTable
                 columns={columns}
                 data={admins}
                 emptyMessage="No admin accounts"
+                headerClassName="bg-gradient-to-r from-sky-500 to-blue-600"
               />
             </CardContent>
           </Card>

@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, Trash2, Pencil } from "lucide-react";
+import { Plus, Trash2, Pencil, Shield } from "lucide-react";
 import { toast } from "sonner";
 import type { ColumnDef } from "@tanstack/react-table";
 
@@ -381,13 +381,18 @@ export default function AccessManagementPage() {
     <PageTransition>
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">
-              Access Management
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Manage system administrators and recruiter accounts.
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl bg-gradient-to-br from-sky-500 to-teal-600 p-2.5 shadow-md shadow-sky-200/50">
+              <Shield className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight">
+                Access Management
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Manage system administrators and recruiter accounts.
+              </p>
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <FilterActions
@@ -450,6 +455,7 @@ export default function AccessManagementPage() {
                       columns={adminColumns}
                       data={admins}
                       emptyMessage="No administrators found"
+                      headerClassName="bg-gradient-to-r from-sky-500 to-blue-600"
                     />
                   )}
                 </CardContent>
@@ -475,6 +481,7 @@ export default function AccessManagementPage() {
                     columns={recruiterColumns}
                     data={recruiters}
                     emptyMessage="No recruiters found"
+                    headerClassName="bg-gradient-to-r from-teal-500 to-emerald-600"
                   />
                 )}
               </CardContent>

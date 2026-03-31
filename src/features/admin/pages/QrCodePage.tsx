@@ -52,7 +52,17 @@ export default function QrCodePage() {
   return (
     <PageTransition>
       <div className="space-y-4">
-        <h2 className="text-2xl font-bold">Active QR Code</h2>
+        <div className="flex items-center gap-3">
+          <div className="rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 p-2.5 shadow-md shadow-indigo-200/50">
+            <QrCode className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold">Active QR Code</h2>
+            <p className="text-sm text-muted-foreground">
+              Current payment QR code details
+            </p>
+          </div>
+        </div>
 
         {qrCode ? (
           <Card className="max-w-md">

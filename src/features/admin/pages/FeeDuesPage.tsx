@@ -10,6 +10,7 @@ import { DataTable, SortableHeader } from "@/components/ui/data-table";
 import { TableSkeleton } from "@/components/loaders/TableSkeleton";
 import { QueryError } from "@/components/errors/QueryError";
 import { PageTransition } from "@/components/animations/PageTransition";
+import { FilterActions } from "@/components/ui/filter-actions";
 
 import { adminService } from "@/services/admin.service";
 import { formatCurrency } from "@/utils/format";
@@ -139,7 +140,16 @@ export default function FeeDuesPage() {
 
   const downloadCsv = () => {
     if (filteredData.length === 0) return;
-    const headers = ["Status", "Name", "Course", "Phone No", "Total Fees", "Paid Amt", "Pending Amt", "No of Days"];
+    const headers = [
+      "Status",
+      "Name",
+      "Course",
+      "Phone No",
+      "Total Fees",
+      "Paid Amt",
+      "Pending Amt",
+      "No of Days",
+    ];
     const rows = filteredData.map((r) => [
       r.completionStatus,
       r.name,
@@ -150,7 +160,9 @@ export default function FeeDuesPage() {
       Number(r.pendingAmount),
       r.daysSinceLastPayment,
     ]);
-    const csv = [headers, ...rows].map((row) => row.map((v) => `"${v}"`).join(",")).join("\n");
+    const csv = [headers, ...rows]
+      .map((row) => row.map((v) => `"${v}"`).join(","))
+      .join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -167,19 +179,29 @@ export default function FeeDuesPage() {
   return (
     <PageTransition>
       <div className="space-y-4">
-        <div className="flex items-center justify-between ">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">
-              Fee Dues Report
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Students with pending fee payments.
-            </p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl bg-gradient-to-br from-rose-500 to-red-600 p-2.5 shadow-md shadow-rose-200/50">
+              <IndianRupee className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight">
+                Fee Dues Report
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Students with pending fee payments.
+              </p>
+            </div>
           </div>
+          <FilterActions
+            onReset={() => setDaysFilter(null)}
+            onRefresh={() => refetch()}
+            isFetching={isLoading}
+          />
         </div>
 
         {/* Filters & Search */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-white rounded-md border p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-md border border-rose-200/60 bg-gradient-to-r from-rose-100 to-red-100 p-4">
           <div className="flex gap-2">
             <Button
               variant={daysFilter === null ? "default" : "outline"}
@@ -229,12 +251,13 @@ export default function FeeDuesPage() {
         {isLoading ? (
           <TableSkeleton rows={6} columns={8} />
         ) : (
-          <Card>
+          <Card className="border-rose-200/60 overflow-hidden">
             <CardContent className="p-0">
               <DataTable
                 columns={columns}
                 data={filteredData}
                 emptyMessage="No fee dues found."
+                headerClassName="bg-gradient-to-r from-rose-500 to-red-600"
               />
             </CardContent>
           </Card>

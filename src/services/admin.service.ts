@@ -229,6 +229,14 @@ export const adminService = {
     return extractData<{ message: string }>(response);
   },
 
+  updateCandidateRemark: async (enrollmentId: string, studentId: string, remark: string) => {
+    const response = await api.put(`/admin/reports/candidates/${enrollmentId}/remark`, {
+      studentId,
+      remark,
+    });
+    return extractData<{ remarks: string }>(response);
+  },
+
   getFeeDuesReport: async (filters: { page?: number; limit?: number } = {}) => {
     const response = await api.get("/admin/reports/fee-dues", { params: filters });
     const result = extractData<

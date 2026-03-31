@@ -36,6 +36,7 @@ import {
 import { TableSkeleton } from "@/components/loaders/TableSkeleton";
 import { QueryError } from "@/components/errors/QueryError";
 import { PageTransition } from "@/components/animations/PageTransition";
+import { FilterActions } from "@/components/ui/filter-actions";
 
 import { adminService } from "@/services/admin.service";
 import { getErrorMessage } from "@/services/api";
@@ -106,7 +107,9 @@ export default function EnrollmentPage() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editEnrollment, setEditEnrollment] = useState<Enrollment | null>(null);
   const [profileStudentId, setProfileStudentId] = useState<string | null>(null);
-  const [evaluationStudentId, setEvaluationStudentId] = useState<string | null>(null);
+  const [evaluationStudentId, setEvaluationStudentId] = useState<string | null>(
+    null,
+  );
 
   // Active filter tags
   const activeFilters: { label: string; onRemove: () => void }[] = [];
@@ -201,17 +204,36 @@ export default function EnrollmentPage() {
         {/* Page Header */}
         {/* ================================================================ */}
         <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">
-              Enrollment Hub
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Monitoring {totalItems.toLocaleString()} active student records
-              and financial health.
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 p-2.5 shadow-md shadow-blue-200/50">
+              <GraduationCap className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">
+                Enrollment Hub
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Monitoring {totalItems.toLocaleString()} active student records
+                and financial health.
+              </p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button size="sm" onClick={() => setAddDialogOpen(true)}>
+            <FilterActions
+              onReset={() => {
+                setFilterStatus("ALL");
+                setFilterInstitute("ALL");
+                setFilterCourse("");
+                setSearchQuery("");
+              }}
+              onRefresh={() => refetch()}
+              isFetching={isRefetching}
+            />
+            <Button
+              size="sm"
+              onClick={() => setAddDialogOpen(true)}
+              className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md shadow-blue-200/50 hover:from-blue-600 hover:to-indigo-700"
+            >
               <Plus className="mr-2 h-4 w-4" />
               New Enrollment
             </Button>
@@ -221,7 +243,7 @@ export default function EnrollmentPage() {
         {/* ================================================================ */}
         {/* Active Filters + Actions Bar */}
         {/* ================================================================ */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-blue-200/60 bg-gradient-to-r from-blue-100 to-indigo-100 p-3">
           <div className="flex items-center gap-2">
             {activeFilters.length > 0 && (
               <>
@@ -316,7 +338,7 @@ export default function EnrollmentPage() {
         {isLoading ? (
           <TableSkeleton rows={8} columns={12} />
         ) : (
-          <Card className="overflow-hidden">
+          <Card className="overflow-hidden border-blue-200/60">
             <CardContent className="p-0">
               <div className="overflow-x-auto">
                 <Table className="min-w-[2800px]">
