@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, FileText } from "lucide-react";
+import { Plus, FileText, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -35,18 +35,22 @@ export default function TestManagementPage() {
   const [attemptsTestId, setAttemptsTestId] = useState<string | null>(null);
   const [attemptsTestTitle, setAttemptsTestTitle] = useState("");
   const [deleteTestId, setDeleteTestId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const {
-    data: tests,
+    data,
     isLoading,
     isFetching,
     isError,
     error,
     refetch,
   } = useQuery({
-    queryKey: ["admin", "tests"],
-    queryFn: adminService.getTests,
+    queryKey: ["admin", "tests", currentPage],
+    queryFn: () => adminService.getTests({ page: currentPage }),
   });
+
+  const tests = data?.items ?? [];
+  const totalPages = data?.totalPages ?? 1;
 
   const toggleMutation = useMutation({
     mutationFn: adminService.toggleTestActive,
@@ -144,6 +148,43 @@ export default function TestManagementPage() {
                 isDeleting={deleteMutation.isPending}
               />
             ))}
+          </div>
+        )}
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 pt-4">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((p) => p - 1)}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+              const page = i + 1;
+              return (
+                <Button
+                  key={page}
+                  variant={currentPage === page ? "default" : "outline"}
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setCurrentPage(page)}
+                >
+                  {page}
+                </Button>
+              );
+            })}
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage((p) => p + 1)}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
         )}
 

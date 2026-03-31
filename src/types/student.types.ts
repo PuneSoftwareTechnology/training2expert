@@ -80,9 +80,16 @@ export interface CvTemplate {
   downloadUrl: string;
 }
 
+export interface ProjectSubmission {
+  id: string;
+  url: string;
+  createdAt: string;
+}
+
 export interface StudentProfileFull extends StudentProfile {
   payments: PaymentSummary | null;
   evaluations: Evaluation[];
+  projectSubmissions: ProjectSubmission[];
   cvTemplates: CvTemplate[];
   cv: { url: string } | null;
 }

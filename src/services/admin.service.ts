@@ -187,7 +187,7 @@ export const adminService = {
     const response = await api.get("/admin/reports/candidates", {
       params: filters,
     });
-    return extractData<{ items: CandidateReportRow[]; courses: string[]; cities: string[] }>(
+    return extractData<{ items: CandidateReportRow[]; total: number; page: number; totalPages: number; courses: string[]; cities: string[] }>(
       response,
     );
   },
@@ -229,9 +229,16 @@ export const adminService = {
     return extractData<{ message: string }>(response);
   },
 
-  getFeeDuesReport: async () => {
-    const response = await api.get("/admin/reports/fee-dues");
-    return extractData<FeeDueRow[]>(response);
+  getFeeDuesReport: async (filters: { page?: number; limit?: number } = {}) => {
+    const response = await api.get("/admin/reports/fee-dues", { params: filters });
+    const result = extractData<
+      | FeeDueRow[]
+      | { items: FeeDueRow[]; total: number; page: number; totalPages: number }
+    >(response);
+    if (Array.isArray(result)) {
+      return { items: result, total: result.length, page: 1, totalPages: 1 };
+    }
+    return result;
   },
 
   getEnrollmentFigures: async (institute: string, year: number) => {
@@ -260,20 +267,34 @@ export const adminService = {
 
   // QR Code (Admin — read-only)
   getActiveQrCode: async () => {
-    const response = await api.get("/admin/qr-code");
+    const response = await api.get("/admin/qr-codes");
     return extractData<QrCode>(response);
   },
 
   // Recruiter Shortlist
-  getRecruiterShortlist: async () => {
-    const response = await api.get("/admin/recruiter-shortlist");
-    return extractData<RecruiterShortlist[]>(response);
+  getRecruiterShortlist: async (filters: { page?: number; limit?: number } = {}) => {
+    const response = await api.get("/admin/recruiter-shortlist", { params: filters });
+    const result = extractData<
+      | RecruiterShortlist[]
+      | { items: RecruiterShortlist[]; total: number; page: number; totalPages: number }
+    >(response);
+    if (Array.isArray(result)) {
+      return { items: result, total: result.length, page: 1, totalPages: 1 };
+    }
+    return result;
   },
 
   // Access Management
-  getRecruiters: async () => {
-    const response = await api.get("/admin/recruiters");
-    return extractData<RecruiterAccount[]>(response);
+  getRecruiters: async (filters: { page?: number; limit?: number } = {}) => {
+    const response = await api.get("/admin/recruiters", { params: filters });
+    const result = extractData<
+      | RecruiterAccount[]
+      | { items: RecruiterAccount[]; total: number; page: number; totalPages: number }
+    >(response);
+    if (Array.isArray(result)) {
+      return { items: result, total: result.length, page: 1, totalPages: 1 };
+    }
+    return result;
   },
 
   createRecruiter: async (data: {
@@ -308,9 +329,16 @@ export const adminService = {
   },
 
   // Tests
-  getTests: async () => {
-    const response = await api.get("/admin/tests");
-    return extractData<Test[]>(response);
+  getTests: async (filters: { page?: number; limit?: number } = {}) => {
+    const response = await api.get("/admin/tests", { params: filters });
+    const result = extractData<
+      | Test[]
+      | { items: Test[]; total: number; page: number; totalPages: number }
+    >(response);
+    if (Array.isArray(result)) {
+      return { items: result, total: result.length, page: 1, totalPages: 1 };
+    }
+    return result;
   },
 
   getTestById: async (id: string) => {
@@ -346,8 +374,15 @@ export const adminService = {
     return extractData<{ message: string }>(response);
   },
 
-  getTestAttempts: async (testId: string) => {
-    const response = await api.get(`/admin/tests/${testId}/attempts`);
-    return extractData<TestAttemptResult[]>(response);
+  getTestAttempts: async (testId: string, filters: { page?: number; limit?: number } = {}) => {
+    const response = await api.get(`/admin/tests/${testId}/attempts`, { params: filters });
+    const result = extractData<
+      | TestAttemptResult[]
+      | { items: TestAttemptResult[]; total: number; page: number; totalPages: number }
+    >(response);
+    if (Array.isArray(result)) {
+      return { items: result, total: result.length, page: 1, totalPages: 1 };
+    }
+    return result;
   },
 };

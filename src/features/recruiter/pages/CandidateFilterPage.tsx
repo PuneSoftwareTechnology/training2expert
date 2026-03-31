@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Download, Star, Search, AlertCircle, MapPin, Briefcase, Users, CheckSquare } from 'lucide-react';
+import { Download, Star, Search, AlertCircle, MapPin, Briefcase, Users, CheckSquare, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ColumnDef } from '@tanstack/react-table';
 
@@ -26,15 +26,20 @@ export default function CandidateFilterPage() {
   const queryClient = useQueryClient();
   const [filters, setFilters] = useState(INITIAL_FILTERS);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const setFilter = (key: keyof typeof INITIAL_FILTERS, value: string) => setFilters((f) => ({ ...f, [key]: value }));
+  const [currentPage, setCurrentPage] = useState(1);
+  const setFilter = (key: keyof typeof INITIAL_FILTERS, value: string) => {
+    setFilters((f) => ({ ...f, [key]: value }));
+    setCurrentPage(1);
+  };
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['recruiter', 'candidates', filters],
+    queryKey: ['recruiter', 'candidates', filters, currentPage],
     queryFn: () =>
       recruiterService.getCandidates({
         course: filters.course || undefined,
         city: filters.city || undefined,
         minExperience: filters.minExp ? Number(filters.minExp) : undefined,
+        page: currentPage,
       }),
   });
 
@@ -327,6 +332,44 @@ export default function CandidateFilterPage() {
                 </Card>
               ))}
             </div>
+
+            {/* Pagination */}
+            {(data?.totalPages ?? 1) > 1 && (
+              <div className="flex items-center justify-center gap-2 pt-4">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => p - 1)}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                {Array.from({ length: Math.min(data?.totalPages ?? 1, 5) }, (_, i) => {
+                  const page = i + 1;
+                  return (
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setCurrentPage(page)}
+                    >
+                      {page}
+                    </Button>
+                  );
+                })}
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  disabled={currentPage === (data?.totalPages ?? 1)}
+                  onClick={() => setCurrentPage((p) => p + 1)}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </>
         )}
       </div>

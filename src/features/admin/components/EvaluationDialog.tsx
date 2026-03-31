@@ -158,6 +158,42 @@ export function EvaluationDialog({
               </div>
             </div>
 
+            {/* Project Submissions */}
+            {profile?.projectSubmissions && profile.projectSubmissions.length > 0 && (
+              <div className="px-6 pb-2">
+                <div className="mb-2 flex items-center gap-2">
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Project Submissions
+                  </p>
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                    {profile.projectSubmissions.length} Project{profile.projectSubmissions.length > 1 ? 's' : ''}
+                  </Badge>
+                </div>
+                <div className="space-y-1.5">
+                  {profile.projectSubmissions.map((project, idx) => (
+                    <Button
+                      key={project.id}
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-start gap-2"
+                      onClick={() => window.open(project.url, "_blank")}
+                    >
+                      <div className="flex h-7 w-7 items-center justify-center rounded-md bg-green-100">
+                        <FileText className="h-3.5 w-3.5 text-green-600" />
+                      </div>
+                      <div className="text-left min-w-0 flex-1">
+                        <p className="text-xs font-medium">Project {idx + 1}</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {new Date(project.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <ExternalLink className="ml-auto h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Per-course evaluations */}
             <div className="space-y-4 px-6 pb-6">
               {evaluations.map((evaluation) => (
@@ -275,39 +311,6 @@ function EvaluationCard({ evaluation, studentId }: { evaluation: Evaluation; stu
               />
             ))}
         </div>
-
-        {/* Submission Log */}
-        {evaluation.projectSubmission && (
-          <div>
-            <div className="mb-2 flex items-center gap-2">
-              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Submission Log
-              </p>
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                1 Project
-              </Badge>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full justify-start gap-2"
-              onClick={() =>
-                window.open(evaluation.projectSubmission, "_blank")
-              }
-            >
-              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-green-100">
-                <FileText className="h-3.5 w-3.5 text-green-600" />
-              </div>
-              <div className="text-left">
-                <p className="text-xs font-medium">Project Submission</p>
-                <p className="text-[10px] text-muted-foreground">
-                  View uploaded file
-                </p>
-              </div>
-              <ExternalLink className="ml-auto h-3.5 w-3.5 text-muted-foreground" />
-            </Button>
-          </div>
-        )}
 
         {/* Scope for Improvement */}
         {evaluation.scopeForImprovement && (

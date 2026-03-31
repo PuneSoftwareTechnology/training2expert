@@ -53,7 +53,7 @@ export default function ShortlistPage() {
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
-  const items = data ?? [];
+  const items = data?.items ?? [];
   const allSelected = items.length > 0 && items.every((i) => selectedIds.has(i.studentId));
 
   const toggleSelect = (studentId: string) => {
@@ -147,8 +147,8 @@ export default function ShortlistPage() {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-bold sm:text-xl">My Shortlist</h2>
-            {data && data.length > 0 && (
-              <Badge variant="outline">{data.length} candidate{data.length !== 1 ? 's' : ''}</Badge>
+            {items.length > 0 && (
+              <Badge variant="outline">{data?.total ?? items.length} candidate{(data?.total ?? items.length) !== 1 ? 's' : ''}</Badge>
             )}
           </div>
 
@@ -190,7 +190,7 @@ export default function ShortlistPage() {
 
         {isLoading ? (
           <TableSkeleton rows={5} columns={5} />
-        ) : !data || data.length === 0 ? (
+        ) : items.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center gap-2 py-12 text-center">
               <ListChecks className="h-10 w-10 text-muted-foreground" />
@@ -203,7 +203,7 @@ export default function ShortlistPage() {
             <div className="hidden md:block">
               <Card>
                 <CardContent className="p-0">
-                  <DataTable columns={columns} data={data} emptyMessage="No candidates shortlisted yet" />
+                  <DataTable columns={columns} data={items} emptyMessage="No candidates shortlisted yet" />
                 </CardContent>
               </Card>
             </div>
@@ -215,7 +215,7 @@ export default function ShortlistPage() {
                 <Checkbox checked={allSelected} onCheckedChange={toggleSelectAll} aria-label="Select all" />
                 <span className="text-xs text-muted-foreground">Select all</span>
               </div>
-              {data.map((item) => (
+              {items.map((item) => (
                 <Card key={item.id} className={selectedIds.has(item.studentId) ? 'border-primary/50 bg-primary/5' : ''}>
                   <CardContent className="p-3">
                     <div className="flex items-start gap-2">

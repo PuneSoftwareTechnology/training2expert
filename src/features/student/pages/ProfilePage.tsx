@@ -34,7 +34,7 @@ export default function ProfilePage() {
       <div className="space-y-12 pb-8">
         <ProfileDetailsSection profile={profile} />
         <PaymentSection paymentData={profile.payments ?? undefined} />
-        <EvaluationSection evaluations={profile.evaluations} />
+        <EvaluationSection evaluations={profile.evaluations} projectSubmissions={profile.projectSubmissions} />
         <CareerResumeSection templates={profile.cvTemplates} myCv={profile.cv ?? undefined} />
       </div>
     </PageTransition>

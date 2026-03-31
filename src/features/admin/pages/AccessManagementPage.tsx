@@ -93,7 +93,7 @@ export default function AccessManagementPage() {
 
   // Queries
   const {
-    data: recruiters,
+    data: recruiterData,
     isLoading: loadingRecruiters,
     isError: isRecruiterError,
     error: recruiterError,
@@ -101,11 +101,12 @@ export default function AccessManagementPage() {
     isFetching: isFetchingRecruiters,
   } = useQuery({
     queryKey: ["admin", "recruiters"],
-    queryFn: adminService.getRecruiters,
+    queryFn: () => adminService.getRecruiters(),
   });
+  const recruiters = recruiterData?.items ?? [];
 
   const {
-    data: admins,
+    data: adminData,
     isLoading: loadingAdmins,
     isError: isAdminError,
     error: adminError,
@@ -113,9 +114,10 @@ export default function AccessManagementPage() {
     isFetching: isFetchingAdmins,
   } = useQuery({
     queryKey: ["admin", "admins"],
-    queryFn: superAdminService.getAdmins,
+    queryFn: () => superAdminService.getAdmins(),
     enabled: isSuperAdmin,
   });
+  const admins = adminData?.items ?? [];
 
   const isFetching = isFetchingRecruiters || isFetchingAdmins;
   const isError = isRecruiterError || isAdminError;
@@ -446,7 +448,7 @@ export default function AccessManagementPage() {
                   ) : (
                     <DataTable
                       columns={adminColumns}
-                      data={admins || []}
+                      data={admins}
                       emptyMessage="No administrators found"
                     />
                   )}
@@ -460,7 +462,7 @@ export default function AccessManagementPage() {
               <div className="p-4 border-b border-teal-200 dark:border-teal-800/50 flex justify-between items-center bg-teal-50/80 dark:bg-teal-950/30">
                 <h3 className="font-semibold text-sm text-teal-800 dark:text-teal-300">Registered Recruiters</h3>
                 <Badge className="bg-teal-100 text-teal-700 border-teal-300 dark:bg-teal-900/50 dark:text-teal-300 dark:border-teal-700">
-                  {recruiters?.length || 0}
+                  {recruiterData?.total ?? recruiters.length}
                 </Badge>
               </div>
               <CardContent className="p-0">
@@ -471,7 +473,7 @@ export default function AccessManagementPage() {
                 ) : (
                   <DataTable
                     columns={recruiterColumns}
-                    data={recruiters || []}
+                    data={recruiters}
                     emptyMessage="No recruiters found"
                   />
                 )}

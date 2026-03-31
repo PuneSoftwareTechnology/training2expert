@@ -55,7 +55,7 @@ export default function ManageAdminsPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const {
-    data: admins,
+    data: adminData,
     isLoading,
     isError,
     error,
@@ -64,6 +64,7 @@ export default function ManageAdminsPage() {
     queryKey: ["admin", "admins"],
     queryFn: superAdminService.getAdmins,
   });
+  const admins = adminData?.items ?? [];
 
   const form = useForm<AdminFormValues>({ resolver: zodResolver(adminSchema) });
 
@@ -143,7 +144,7 @@ export default function ManageAdminsPage() {
 
         {isLoading ? (
           <TableSkeleton rows={4} columns={5} />
-        ) : !admins || admins.length === 0 ? (
+        ) : admins.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center gap-2 py-12 text-center">
               <UserCog className="h-10 w-10 text-muted-foreground" />

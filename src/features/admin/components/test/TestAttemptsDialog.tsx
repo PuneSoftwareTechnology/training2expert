@@ -39,11 +39,13 @@ export function TestAttemptsDialog({
   testId,
   testTitle,
 }: TestAttemptsDialogProps) {
-  const { data: attempts, isLoading } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["admin", "tests", testId, "attempts"],
     queryFn: () => adminService.getTestAttempts(testId!),
     enabled: !!testId && open,
   });
+
+  const attempts = data?.items ?? [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -55,10 +57,10 @@ export function TestAttemptsDialog({
             </div>
             Attempts — {testTitle}
           </DialogTitle>
-          {attempts && attempts.length > 0 && (
+          {attempts.length > 0 && (
             <p className="text-sm text-muted-foreground">
-              {attempts.length} total attempt
-              {attempts.length !== 1 ? "s" : ""}
+              {data?.total ?? attempts.length} total attempt
+              {(data?.total ?? attempts.length) !== 1 ? "s" : ""}
             </p>
           )}
         </DialogHeader>
@@ -66,7 +68,7 @@ export function TestAttemptsDialog({
           <div className="flex items-center justify-center py-16">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
-        ) : !attempts || attempts.length === 0 ? (
+        ) : attempts.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-16 text-center">
             <div className="rounded-full bg-muted p-4">
               <Eye className="h-6 w-6 text-muted-foreground" />

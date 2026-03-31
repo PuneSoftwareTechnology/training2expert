@@ -3,9 +3,16 @@ import type { AdminAccount, QrCode } from "@/types/super-admin.types";
 
 export const superAdminService = {
   // Admin Management
-  getAdmins: async () => {
-    const response = await api.get("/super-admin/admins");
-    return extractData<AdminAccount[]>(response);
+  getAdmins: async (filters: { page?: number; limit?: number } = {}) => {
+    const response = await api.get("/super-admin/admins", { params: filters });
+    const result = extractData<
+      | AdminAccount[]
+      | { items: AdminAccount[]; total: number; page: number; totalPages: number }
+    >(response);
+    if (Array.isArray(result)) {
+      return { items: result, total: result.length, page: 1, totalPages: 1 };
+    }
+    return result;
   },
 
   createAdmin: async (data: {

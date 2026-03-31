@@ -16,7 +16,7 @@ interface CandidateFilters {
 export const recruiterService = {
   getCandidates: async (filters: CandidateFilters = {}) => {
     const response = await api.get('/recruiter/candidates', { params: filters });
-    return extractData<{ items: RecruiterCandidate[]; courses: string[]; cities: string[]; experienceYears: number[] }>(response);
+    return extractData<{ items: RecruiterCandidate[]; total: number; page: number; totalPages: number; courses: string[]; cities: string[]; experienceYears: number[] }>(response);
   },
 
   downloadCv: async (studentId: string) => {
@@ -49,9 +49,16 @@ export const recruiterService = {
     return extractData<{ removed: number }>(response);
   },
 
-  getShortlist: async () => {
-    const response = await api.get('/recruiter/shortlist');
-    return extractData<RecruiterShortlist[]>(response);
+  getShortlist: async (filters: { page?: number; limit?: number } = {}) => {
+    const response = await api.get('/recruiter/shortlist', { params: filters });
+    const result = extractData<
+      | RecruiterShortlist[]
+      | { items: RecruiterShortlist[]; total: number; page: number; totalPages: number }
+    >(response);
+    if (Array.isArray(result)) {
+      return { items: result, total: result.length, page: 1, totalPages: 1 };
+    }
+    return result;
   },
 
   sendEmail: async (studentId: string, subject: string, body: string) => {

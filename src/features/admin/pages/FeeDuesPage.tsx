@@ -117,14 +117,16 @@ export default function FeeDuesPage() {
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["admin", "reports", "fee-dues"],
-    queryFn: () => adminService.getFeeDuesReport(),
+    queryFn: () => adminService.getFeeDuesReport({ limit: 100 }),
   });
 
+  const allRows = data?.items ?? [];
+
   const filteredData = useMemo(() => {
-    if (!data) return [];
-    if (daysFilter === null) return data;
-    return data.filter((r) => r.daysSinceLastPayment >= daysFilter);
-  }, [data, daysFilter]);
+    if (!allRows.length) return [];
+    if (daysFilter === null) return allRows;
+    return allRows.filter((r) => r.daysSinceLastPayment >= daysFilter);
+  }, [allRows, daysFilter]);
 
   const summary = useMemo(() => {
     if (filteredData.length === 0) return { count: 0, totalPending: 0 };

@@ -33,6 +33,8 @@ export default function RecruiterShortlistPage() {
     queryFn: adminService.getRecruiterShortlist,
   });
 
+  const items = data?.items ?? [];
+
   if (isError) {
     return <QueryError error={error} onRetry={refetch} />;
   }
@@ -42,14 +44,14 @@ export default function RecruiterShortlistPage() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold sm:text-2xl">Recruiter Shortlist</h2>
-          {data && data.length > 0 && (
-            <Badge variant="outline">{data.length} record{data.length !== 1 ? 's' : ''}</Badge>
+          {items.length > 0 && (
+            <Badge variant="outline">{data?.total ?? items.length} record{(data?.total ?? items.length) !== 1 ? 's' : ''}</Badge>
           )}
         </div>
 
         {isLoading ? (
           <TableSkeleton rows={6} columns={4} />
-        ) : !data || data.length === 0 ? (
+        ) : items.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center gap-2 py-12 text-center">
               <ListChecks className="h-10 w-10 text-muted-foreground" />
@@ -62,14 +64,14 @@ export default function RecruiterShortlistPage() {
             <div className="hidden md:block">
               <Card>
                 <CardContent className="p-0">
-                  <DataTable columns={columns} data={data} emptyMessage="No shortlist records" />
+                  <DataTable columns={columns} data={items} emptyMessage="No shortlist records" />
                 </CardContent>
               </Card>
             </div>
 
             {/* Mobile cards */}
             <div className="space-y-3 md:hidden">
-              {data.map((item) => (
+              {items.map((item) => (
                 <Card key={item.id}>
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between gap-2">
