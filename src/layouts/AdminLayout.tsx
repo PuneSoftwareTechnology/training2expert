@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import type { ReactNode } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard,
   ClipboardList,
@@ -18,6 +18,7 @@ import {
   Menu,
   ChevronLeft,
   Settings,
+  X,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -123,6 +124,21 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const { sidebarCollapsed, toggleSidebar } = useUiStore();
   const { isSuperAdmin } = useRole();
   const [showLogout, setShowLogout] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 768px)");
+    setIsMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => {
+      setIsMobile(e.matches);
+      if (e.matches) setMobileMenuOpen(false);
+    };
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  const closeMobileMenu = useCallback(() => setMobileMenuOpen(false), []);
 
   const handleLogout = () => {
     logout();
@@ -135,19 +151,24 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     return true;
   });
 
-  return (
-    <div className="flex h-screen overflow-hidden bg-background">
-      <motion.aside
-        animate={{ width: sidebarCollapsed ? 64 : 256 }}
-        transition={{ duration: 0.2, ease: "easeInOut" }}
-        className="flex flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground"
-      >
-        <div className="flex h-14 items-center justify-between px-4">
-          {!sidebarCollapsed && (
-            <h1 className="text-lg font-bold text-sidebar-primary">
-              SMS {isSuperAdmin ? "Super Admin" : "Admin"}
-            </h1>
-          )}
+  const sidebarContent = (
+    <>
+      <div className="flex h-14 items-center justify-between px-4">
+        {(isMobile || !sidebarCollapsed) && (
+          <h1 className="text-lg font-bold text-sidebar-primary">
+            SMS {isSuperAdmin ? "Super Admin" : "Admin"}
+          </h1>
+        )}
+        {isMobile ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={closeMobileMenu}
+            className="h-8 w-8 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        ) : (
           <Button
             variant="ghost"
             size="icon"
@@ -160,64 +181,121 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               <ChevronLeft className="h-4 w-4" />
             )}
           </Button>
-        </div>
+        )}
+      </div>
 
-        <Separator className="bg-sidebar-border" />
+      <Separator className="bg-sidebar-border" />
 
-        <ScrollArea className="flex-1 px-2 py-2">
-          <nav className="flex flex-col gap-1">
-            {filteredItems.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={({ isActive }) =>
-                  cn(
-                    "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                    isActive
-                      ? "bg-sidebar-accent text-sidebar-primary"
-                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                    sidebarCollapsed && "justify-center px-2",
-                  )
-                }
-                title={sidebarCollapsed ? item.label : undefined}
-              >
-                {item.icon}
-                {!sidebarCollapsed && <span>{item.label}</span>}
-              </NavLink>
-            ))}
-          </nav>
-        </ScrollArea>
+      <ScrollArea className="flex-1 px-2 py-2">
+        <nav className="flex flex-col gap-1">
+          {filteredItems.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              onClick={isMobile ? closeMobileMenu : undefined}
+              className={({ isActive }) =>
+                cn(
+                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  isActive
+                    ? "bg-sidebar-accent text-sidebar-primary"
+                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                  !isMobile && sidebarCollapsed && "justify-center px-2",
+                )
+              }
+              title={!isMobile && sidebarCollapsed ? item.label : undefined}
+            >
+              {item.icon}
+              {(isMobile || !sidebarCollapsed) && <span>{item.label}</span>}
+            </NavLink>
+          ))}
+        </nav>
+      </ScrollArea>
 
-        <Separator className="bg-sidebar-border" />
+      <Separator className="bg-sidebar-border" />
 
-        <div className="p-2">
-          {!sidebarCollapsed && user && (
-            <p className="mb-2 truncate px-3 text-xs text-sidebar-foreground/60">
-              {user.name} (
-              {user.role
-                .replace("_", " ")
-                .toLowerCase()
-                .replace(/\b\w/g, (l) => l.toUpperCase())}
-              )
-            </p>
+      <div className="p-2">
+        {(isMobile || !sidebarCollapsed) && user && (
+          <p className="mb-2 truncate px-3 text-xs text-sidebar-foreground/60">
+            {user.name} (
+            {user.role
+              .replace("_", " ")
+              .toLowerCase()
+              .replace(/\b\w/g, (l) => l.toUpperCase())}
+            )
+          </p>
+        )}
+        <Button
+          variant="ghost"
+          onClick={() => setShowLogout(true)}
+          className={cn(
+            "w-full text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-destructive",
+            !isMobile && sidebarCollapsed
+              ? "justify-center px-2"
+              : "justify-start gap-3 px-3",
           )}
+        >
+          <LogOut className="h-4 w-4" />
+          {(isMobile || !sidebarCollapsed) && <span>Logout</span>}
+        </Button>
+      </div>
+    </>
+  );
+
+  return (
+    <div className="flex h-screen overflow-hidden bg-background">
+      {/* Desktop sidebar */}
+      {!isMobile && (
+        <motion.aside
+          animate={{ width: sidebarCollapsed ? 64 : 256 }}
+          transition={{ duration: 0.2, ease: "easeInOut" }}
+          className="hidden md:flex flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground"
+        >
+          {sidebarContent}
+        </motion.aside>
+      )}
+
+      {/* Mobile header */}
+      {isMobile && (
+        <header className="fixed inset-x-0 top-0 z-40 flex h-14 items-center justify-between border-b bg-sidebar px-4 text-sidebar-foreground">
+          <h1 className="text-lg font-bold text-sidebar-primary">
+            SMS {isSuperAdmin ? "Super Admin" : "Admin"}
+          </h1>
           <Button
             variant="ghost"
-            onClick={() => setShowLogout(true)}
-            className={cn(
-              "w-full text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-destructive",
-              sidebarCollapsed
-                ? "justify-center px-2"
-                : "justify-start gap-3 px-3",
-            )}
+            size="icon"
+            onClick={() => setMobileMenuOpen(true)}
+            className="h-8 w-8 text-sidebar-foreground hover:bg-sidebar-accent"
           >
-            <LogOut className="h-4 w-4" />
-            {!sidebarCollapsed && <span>Logout</span>}
+            <Menu className="h-4 w-4" />
           </Button>
-        </div>
-      </motion.aside>
+        </header>
+      )}
 
-      <main className="flex-1 overflow-auto">
+      {/* Mobile sidebar overlay */}
+      <AnimatePresence>
+        {isMobile && mobileMenuOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.5 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-40 bg-black"
+              onClick={closeMobileMenu}
+            />
+            <motion.aside
+              initial={{ x: -256 }}
+              animate={{ x: 0 }}
+              exit={{ x: -256 }}
+              transition={{ duration: 0.2, ease: "easeInOut" }}
+              className="fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-sidebar text-sidebar-foreground shadow-xl"
+            >
+              {sidebarContent}
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+
+      <main className={cn("flex-1 overflow-auto", isMobile && "pt-14")}>
         <div className="p-6">{children}</div>
       </main>
 

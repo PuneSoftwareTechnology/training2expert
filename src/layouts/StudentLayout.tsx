@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, type ReactNode } from "react";
+import { useState, useEffect, useRef, useCallback, type ReactNode } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -149,45 +149,44 @@ export function StudentLayout({ children }: StudentLayoutProps) {
     }
   };
 
-  // Scroll spy: update active section based on which section is in view
+  // Scroll spy: find which section's top is closest to (but above) viewport top
+  const updateActiveFromScroll = useCallback(() => {
+    if (isScrollingRef.current || isTestsRoute) return;
+
+    const sectionIds = visibleSidebarItems
+      .filter((item) => !("route" in item && item.route))
+      .map((item) => item.id);
+
+    const offset = 100; // account for mobile header
+    let currentId: string | null = null;
+
+    for (const id of sectionIds) {
+      const el = document.getElementById(`section-${id}`);
+      if (!el) continue;
+      const top = el.getBoundingClientRect().top;
+      if (top <= offset) {
+        currentId = id;
+      }
+    }
+
+    // If no section has scrolled past the offset, pick the first one
+    if (!currentId && sectionIds.length > 0) {
+      currentId = sectionIds[0];
+    }
+
+    if (currentId) {
+      setActiveSection(currentId);
+    }
+  }, [visibleSidebarItems, isTestsRoute]);
+
   useEffect(() => {
-    const sectionIds = visibleSidebarItems.map((item) => item.id);
-    const elements = sectionIds
-      .map((id) => document.getElementById(`section-${id}`))
-      .filter(Boolean) as HTMLElement[];
+    if (isTestsRoute) return;
 
-    if (elements.length === 0) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (isScrollingRef.current) return;
-
-        // Find the most visible section
-        let bestEntry: IntersectionObserverEntry | null = null;
-        for (const entry of entries) {
-          if (
-            entry.isIntersecting &&
-            (!bestEntry ||
-              entry.intersectionRatio > bestEntry.intersectionRatio)
-          ) {
-            bestEntry = entry;
-          }
-        }
-
-        if (bestEntry) {
-          const id = bestEntry.target.id.replace("section-", "");
-          setActiveSection(id);
-        }
-      },
-      {
-        threshold: [0.1, 0.3, 0.5, 0.7],
-        rootMargin: "-80px 0px -40% 0px",
-      },
-    );
-
-    elements.forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
-  }, [visibleSidebarItems]);
+    window.addEventListener("scroll", updateActiveFromScroll, { passive: true });
+    // Run once on mount to set initial state
+    updateActiveFromScroll();
+    return () => window.removeEventListener("scroll", updateActiveFromScroll);
+  }, [updateActiveFromScroll, isTestsRoute]);
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-blue-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
