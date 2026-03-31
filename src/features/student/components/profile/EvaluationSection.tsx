@@ -49,7 +49,7 @@ export default function EvaluationSection({ evaluations, projectSubmissions }: E
       <div className="mb-4 h-px bg-gradient-to-r from-transparent via-violet-300/50 to-transparent md:mb-8 dark:via-violet-700/30" />
       <SectionHeader icon={Award} gradient="from-violet-500 to-purple-600" title="Academic Evaluation" subtitle="Performance scores & feedback" />
 
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0} className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-3">
+      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0} className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* Technical Score */}
         <Card className="overflow-hidden border border-violet-100 bg-white shadow-lg shadow-violet-500/5 dark:border-violet-900/40 dark:bg-slate-900">
           <div className="h-1 bg-gradient-to-r from-blue-500 via-violet-500 to-purple-500" />
@@ -134,16 +134,31 @@ export default function EvaluationSection({ evaluations, projectSubmissions }: E
             <p className="mt-3 text-xs text-muted-foreground">Manually updated by Trainer</p>
           </CardContent>
         </Card>
+      </motion.div>
 
-        {/* Project Submissions */}
+      {/* Project Submissions — full width below */}
+      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0.5} className="mb-6">
         <Card className="overflow-hidden border border-sky-100 bg-white shadow-lg shadow-sky-500/5 dark:border-sky-900/40 dark:bg-slate-900">
           <div className="h-1 bg-gradient-to-r from-sky-400 via-cyan-400 to-teal-400" />
           <CardContent className="pt-6">
-            <h3 className="mb-4 text-center font-semibold">Project Submissions</h3>
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="flex items-center gap-2 font-semibold">
+                <Upload className="h-4 w-4 text-sky-500" />
+                Project Submissions
+              </h3>
+              <motion.div
+                whileHover={projectUploadMutation.isPending ? {} : { scale: 1.05 }}
+                className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-sky-300 px-3 py-1.5 text-sm font-medium text-sky-600 transition-colors hover:bg-sky-50 dark:border-sky-700 dark:text-sky-400 dark:hover:bg-sky-950/30"
+                onClick={() => !projectUploadMutation.isPending && projectInputRef.current?.click()}
+              >
+                <CloudUpload className={`h-4 w-4 ${projectUploadMutation.isPending ? 'animate-pulse' : ''}`} />
+                {projectUploadMutation.isPending ? 'Uploading...' : 'Upload PDF'}
+              </motion.div>
+              <input ref={projectInputRef} type="file" accept=".pdf" className="hidden" onChange={handleProjectUpload} />
+            </div>
 
-            {/* List of submitted projects */}
-            {hasProjects && (
-              <div className="mb-4 space-y-2">
+            {hasProjects ? (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {projectSubmissions.map((project, idx) => (
                   <motion.a
                     key={project.id}
@@ -153,37 +168,27 @@ export default function EvaluationSection({ evaluations, projectSubmissions }: E
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.1 }}
-                    className="flex items-center gap-3 rounded-lg border border-emerald-100 bg-emerald-50/50 px-3 py-2 transition-colors hover:bg-emerald-100/70 dark:border-emerald-900/30 dark:bg-emerald-950/20 dark:hover:bg-emerald-900/30"
+                    className="flex items-center gap-3 rounded-lg border border-emerald-100 bg-emerald-50/50 px-4 py-3 transition-colors hover:bg-emerald-100/70 dark:border-emerald-900/30 dark:bg-emerald-950/20 dark:hover:bg-emerald-900/30"
                   >
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/40">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/40">
                       <Upload className="h-4 w-4 text-emerald-600" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">Project {idx + 1}</p>
-                      <p className="text-[10px] text-muted-foreground">
+                      <p className="text-xs text-muted-foreground">
                         {new Date(project.createdAt).toLocaleDateString()}
                       </p>
                     </div>
                   </motion.a>
                 ))}
               </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/10 py-8">
+                <CloudUpload className="mb-2 h-8 w-8 text-muted-foreground/30" />
+                <p className="text-sm text-muted-foreground">No projects submitted yet</p>
+                <p className="text-xs text-muted-foreground">Upload a PDF (max 10MB)</p>
+              </div>
             )}
-
-            {/* Upload new project */}
-            <div className="flex flex-col items-center space-y-2">
-              <motion.div
-                whileHover={projectUploadMutation.isPending ? {} : { scale: 1.05, borderColor: 'rgb(56 189 248 / 0.5)' }}
-                className="flex h-14 w-14 cursor-pointer items-center justify-center rounded-2xl border-2 border-dashed border-muted-foreground/20 transition-colors"
-                onClick={() => !projectUploadMutation.isPending && projectInputRef.current?.click()}
-              >
-                <CloudUpload className={`h-6 w-6 ${projectUploadMutation.isPending ? 'animate-pulse text-sky-400' : 'text-muted-foreground/40'}`} />
-              </motion.div>
-              <p className="text-sm font-medium text-muted-foreground">
-                {projectUploadMutation.isPending ? 'Uploading...' : 'Upload PDF'}
-              </p>
-              <p className="text-xs text-muted-foreground">Maximum 10MB</p>
-              <input ref={projectInputRef} type="file" accept=".pdf" className="hidden" onChange={handleProjectUpload} />
-            </div>
           </CardContent>
         </Card>
       </motion.div>
