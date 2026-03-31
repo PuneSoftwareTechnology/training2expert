@@ -51,14 +51,11 @@ export default function TestAttemptPage() {
   useEffect(() => {
     if (!startedRef.current && testId) {
       startedRef.current = true;
-      console.log('[TestAttempt] calling startTest...');
       studentService.startTest(testId)
         .then((data) => {
-          console.log('[TestAttempt] startTest resolved:', data);
           setTestData(data);
         })
         .catch((error) => {
-          console.log('[TestAttempt] startTest rejected:', error);
           setStartError(getErrorMessage(error));
         });
     }

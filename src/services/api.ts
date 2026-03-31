@@ -42,10 +42,6 @@ api.interceptors.response.use(
         url.includes("/forgot-password") ||
         url.includes("/reset-password");
 
-      console.warn(
-        `[api] 🔒 401 Unauthorized → ${error.config?.method?.toUpperCase()} ${url}`,
-      );
-
       if (!isAuthRoute) {
         try {
           const stored = localStorage.getItem("auth-storage");
@@ -55,27 +51,13 @@ api.interceptors.response.use(
             : null;
 
           if (token) {
-            console.warn(
-              "[api] 🔴 401 with token present → session expired. Clearing storage & redirecting to /login",
-            );
             localStorage.removeItem("auth-storage");
             window.location.href = "/login";
-          } else {
-            console.log(
-              "[api] 🟡 401 but token already cleared → user logged out intentionally. Skipping redirect.",
-            );
           }
         } catch {
-          console.error(
-            "[api] 💥 Error parsing auth-storage on 401, forcing redirect",
-          );
           localStorage.removeItem("auth-storage");
           window.location.href = "/login";
         }
-      } else {
-        console.log(
-          `[api] ℹ️  401 on auth route (${url}) — ignoring, component will handle it`,
-        );
       }
     }
     return Promise.reject(error);
