@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Check, Download, Mail, MessageSquare, Pencil, Users, X } from "lucide-react";
 import { toast } from "sonner";
+import JSZip from "jszip";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,6 +48,7 @@ export default function CandidateFilterPage() {
   const [minComm, setMinComm] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [emailDialog, setEmailDialog] = useState(false);
+  const [emailTargetIds, setEmailTargetIds] = useState<string[]>([]);
   const [commentDialog, setCommentDialog] = useState(false);
   const [emailSubject, setEmailSubject] = useState("");
   const [emailBody, setEmailBody] = useState("");
@@ -73,7 +75,20 @@ export default function CandidateFilterPage() {
   });
 
   const downloadBulkMutation = useMutation({
-    mutationFn: () => adminService.downloadBulkCvs(selectedIds),
+    mutationFn: async () => {
+      const cvs = await adminService.downloadBulkCvs(selectedIds);
+      if (!cvs.length) throw new Error("No CVs found for selected candidates");
+      const zip = new JSZip();
+      await Promise.all(
+        cvs.map(async (cv) => {
+          // Proxy through backend to avoid S3 CORS issues
+          const blob = await adminService.downloadCv(cv.studentId);
+          const fileName = `${cv.name.replace(/\s+/g, "_")}_${cv.course.replace(/\s+/g, "_")}.pdf`;
+          zip.file(fileName, blob);
+        }),
+      );
+      return zip.generateAsync({ type: "blob" });
+    },
     onSuccess: (blob) => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -88,15 +103,23 @@ export default function CandidateFilterPage() {
 
   const sendEmailMutation = useMutation({
     mutationFn: () =>
-      adminService.sendBulkEmail(selectedIds, emailSubject, emailBody),
+      adminService.sendBulkEmail(emailTargetIds, emailSubject, emailBody),
     onSuccess: () => {
-      toast.success("Emails sent");
+      toast.success("Email(s) sent");
       setEmailDialog(false);
+      setEmailTargetIds([]);
       setEmailSubject("");
       setEmailBody("");
     },
     onError: (error) => toast.error(getErrorMessage(error)),
   });
+
+  const openEmailDialog = (ids: string[]) => {
+    setEmailTargetIds(ids);
+    setEmailSubject("Regarding Your Application - PST");
+    setEmailBody("");
+    setEmailDialog(true);
+  };
 
   const updateRemarkMutation = useMutation({
     mutationFn: ({ enrollmentId, studentId, remark }: { enrollmentId: string; studentId: string; remark: string }) =>
@@ -156,7 +179,7 @@ export default function CandidateFilterPage() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `${name}_${course}.pdf`;
+      link.download = `${name.replace(/\s+/g, "_")}_${course.replace(/\s+/g, "_")}.pdf`;
       link.click();
       URL.revokeObjectURL(url);
     } catch (error) {
@@ -267,13 +290,13 @@ export default function CandidateFilterPage() {
         </Card>
 
         {selectedIds.length > 0 && (
-          <div className="flex items-center gap-3 rounded-lg border bg-primary/5 p-3">
-            <span className="text-sm font-medium">
+          <div className="flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50/50 p-3">
+            <span className="text-sm font-semibold text-emerald-800">
               {selectedIds.length} selected
             </span>
             <Button
               size="sm"
-              variant="outline"
+              className="bg-emerald-600 text-white hover:bg-emerald-700"
               onClick={() => downloadBulkMutation.mutate()}
               loading={downloadBulkMutation.isPending}
             >
@@ -286,14 +309,14 @@ export default function CandidateFilterPage() {
             </Button>
             <Button
               size="sm"
-              variant="outline"
-              onClick={() => setEmailDialog(true)}
+              className="bg-blue-600 text-white hover:bg-blue-700"
+              onClick={() => openEmailDialog(selectedIds)}
             >
               <Mail className="mr-1 h-3.5 w-3.5" /> Send Email
             </Button>
             <Button
               size="sm"
-              variant="outline"
+              className="bg-amber-500 text-white hover:bg-amber-600"
               onClick={() => setCommentDialog(true)}
             >
               <MessageSquare className="mr-1 h-3.5 w-3.5" /> Add Comment
@@ -451,7 +474,7 @@ export default function CandidateFilterPage() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <div className="flex gap-1">
+                        <div className="flex gap-1.5">
                           {row.cvUrl && (
                             <button
                               className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 transition-colors hover:bg-emerald-100"
@@ -466,6 +489,12 @@ export default function CandidateFilterPage() {
                               <Download className="h-3 w-3" /> Download CV
                             </button>
                           )}
+                          <button
+                            className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-100"
+                            onClick={() => openEmailDialog([row.id])}
+                          >
+                            <Mail className="h-3 w-3" /> Send Email
+                          </button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -489,7 +518,9 @@ export default function CandidateFilterPage() {
         <Dialog open={emailDialog} onOpenChange={setEmailDialog}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Send Bulk Email</DialogTitle>
+              <DialogTitle>
+                Send Email{emailTargetIds.length > 1 ? ` to ${emailTargetIds.length} candidates` : ""}
+              </DialogTitle>
             </DialogHeader>
             <div className="space-y-3">
               <div className="space-y-1">

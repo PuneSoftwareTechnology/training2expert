@@ -199,13 +199,11 @@ export const adminService = {
     return response.data as Blob;
   },
 
-  downloadBulkCvs: async (studentIds: string[]): Promise<Blob> => {
-    const response = await api.post(
-      "/admin/reports/candidates/download-cvs",
-      { studentIds },
-      { responseType: "blob" },
-    );
-    return response.data as Blob;
+  downloadBulkCvs: async (studentIds: string[]) => {
+    const response = await api.post("/admin/reports/candidates/download-cvs", {
+      studentIds,
+    });
+    return extractData<{ studentId: string; fileUrl: string; name: string; course: string }[]>(response);
   },
 
   sendBulkEmail: async (
