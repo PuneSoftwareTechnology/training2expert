@@ -170,6 +170,45 @@ export default function PaymentSection({ paymentData }: PaymentSectionProps) {
             </div>
           </CardContent>
         </Card>
+
+        {/* QR Code for mobile */}
+        <Card className="mt-4 overflow-hidden border border-emerald-100 bg-white shadow-lg dark:border-emerald-900/40 dark:bg-slate-900">
+          <div className="h-1 bg-gradient-to-r from-emerald-400 to-teal-400" />
+          <CardContent className="flex flex-col items-center gap-4 pt-6">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/40 dark:to-teal-900/30">
+                <QrCode className="h-5 w-5 text-emerald-600" />
+              </div>
+              <h3 className="text-xl font-semibold">Scan to Pay</h3>
+            </div>
+            {paymentData?.qr_code_url ? (
+              <img
+                src={paymentData.qr_code_url}
+                alt="Payment QR Code"
+                className="h-52 w-52 rounded-xl border-2 border-dashed border-emerald-200 object-contain p-3 dark:border-emerald-800"
+              />
+            ) : (
+              <div className="flex h-40 w-40 items-center justify-center rounded-xl border-2 border-dashed border-muted-foreground/20 bg-muted/20">
+                <p className="text-sm text-muted-foreground">No QR available</p>
+              </div>
+            )}
+            <p className="text-center text-sm text-muted-foreground">
+              Use any UPI app to scan and complete
+              <br />
+              your pending balance payment.
+            </p>
+            {(paymentData?.qr_upi_id || paymentData?.qr_account_number) && (
+              <div className="w-full space-y-2 rounded-lg border border-emerald-100 bg-emerald-50/50 px-4 py-3 dark:border-emerald-900/30 dark:bg-emerald-950/20">
+                {paymentData.qr_upi_id && (
+                  <CopyableDetail
+                    label="UPI ID"
+                    value={paymentData.qr_upi_id}
+                  />
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </motion.div>
 
       {/* ─── Desktop: Donut + Stats + QR ─── */}

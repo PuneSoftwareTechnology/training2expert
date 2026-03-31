@@ -3,13 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
   Download,
-  Upload,
   Search,
   X,
-  Users,
-  DollarSign,
-  AlertCircle,
-  Award,
   Info,
   BookOpen,
   CreditCard,
@@ -216,67 +211,10 @@ export default function EnrollmentPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => refetch()}
-              disabled={isRefetching}
-            >
-              <Upload className="mr-2 h-4 w-4" />
-              Import
-            </Button>
             <Button size="sm" onClick={() => setAddDialogOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
               New Enrollment
             </Button>
-          </div>
-        </div>
-
-        {/* ================================================================ */}
-        {/* Quick Stats */}
-        {/* ================================================================ */}
-        <div className="grid grid-cols-4 gap-3">
-          <div className="flex items-center gap-2.5 rounded-lg border bg-card px-3 py-2">
-            <div className="rounded-md bg-blue-100 p-1.5">
-              <Users className="h-3.5 w-3.5 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-[11px] text-muted-foreground">
-                Total Enrollment
-              </p>
-              <p className="text-sm font-bold leading-none">
-                {totalItems.toLocaleString()}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2.5 rounded-lg border bg-card px-3 py-2">
-            <div className="rounded-md bg-green-100 p-1.5">
-              <DollarSign className="h-3.5 w-3.5 text-green-600" />
-            </div>
-            <div>
-              <p className="text-[11px] text-muted-foreground">Fee Collected</p>
-              <p className="text-sm font-bold leading-none">-</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2.5 rounded-lg border bg-card px-3 py-2">
-            <div className="rounded-md bg-red-100 p-1.5">
-              <AlertCircle className="h-3.5 w-3.5 text-red-600" />
-            </div>
-            <div>
-              <p className="text-[11px] text-muted-foreground">Pending Dues</p>
-              <p className="text-sm font-bold leading-none text-destructive">
-                -
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2.5 rounded-lg border bg-card px-3 py-2">
-            <div className="rounded-md bg-purple-100 p-1.5">
-              <Award className="h-3.5 w-3.5 text-purple-600" />
-            </div>
-            <div>
-              <p className="text-[11px] text-muted-foreground">Placements</p>
-              <p className="text-sm font-bold leading-none">-</p>
-            </div>
           </div>
         </div>
 
