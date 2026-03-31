@@ -31,7 +31,7 @@ export default function ProfilePage() {
 
   return (
     <PageTransition>
-      <div className="space-y-12 pb-8">
+      <div className="mx-auto max-w-5xl space-y-10 pb-8">
         <ProfileDetailsSection profile={profile} />
         <PaymentSection paymentData={profile.payments ?? undefined} />
         <EvaluationSection evaluations={profile.evaluations} projectSubmissions={profile.projectSubmissions} />
