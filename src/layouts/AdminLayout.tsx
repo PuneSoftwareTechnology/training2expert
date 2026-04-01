@@ -106,6 +106,11 @@ const NAV_ITEMS: NavItem[] = [
     icon: <FileText className="h-4 w-4" />,
   },
   {
+    label: "Resume Templates",
+    path: ROUTES.ADMIN_RESUME_TEMPLATES,
+    icon: <FileText className="h-4 w-4" />,
+  },
+  {
     label: "QR Management",
     path: ROUTES.ADMIN_QR_MANAGEMENT,
     icon: <Settings className="h-4 w-4" />,

@@ -20,7 +20,7 @@ import type {
   TestAttemptResult,
 } from "@/types/admin.types";
 import type { QrCode } from "@/types/super-admin.types";
-import type { StudentProfileFull, Evaluation } from "@/types/student.types";
+import type { StudentProfileFull, Evaluation, CvTemplate } from "@/types/student.types";
 import type { DashboardData, DashboardPeriod } from "@/types/dashboard.types";
 
 interface EnquiryFilters {
@@ -153,10 +153,9 @@ export const adminService = {
     return extractData<Installment>(response);
   },
 
-  sendReceipt: async (enrollmentId: string, installmentId: string, receiptPdf?: string) => {
+  sendReceipt: async (enrollmentId: string, installmentId: string) => {
     const response = await api.post(
       `/admin/enrollments/${enrollmentId}/installments/${installmentId}/send-receipt`,
-      { receiptPdf },
     );
     return extractData<{ message: string }>(response);
   },
@@ -392,5 +391,23 @@ export const adminService = {
       return { items: result, total: result.length, page: 1, totalPages: 1 };
     }
     return result;
+  },
+
+  // ─── CV / Resume Templates ─────────────────────────────────────
+  getResumeTemplates: async () => {
+    const response = await api.get("/admin/cv-templates");
+    return extractData<CvTemplate[]>(response);
+  },
+
+  uploadResumeTemplate: async (data: FormData) => {
+    const response = await api.post("/admin/cv-templates", data, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return extractData<CvTemplate>(response);
+  },
+
+  deleteResumeTemplate: async (id: string) => {
+    const response = await api.delete(`/admin/cv-templates/${id}`);
+    return extractData<null>(response);
   },
 };

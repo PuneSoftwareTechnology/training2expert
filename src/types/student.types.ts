@@ -89,9 +89,12 @@ export interface PaymentSummary {
 
 export interface CvTemplate {
   id: string;
+  title: string;
   course: string;
   experienceLevel: "FRESHER" | "EXPERIENCED";
+  originalFilename: string;
   downloadUrl: string;
+  createdAt: string;
 }
 
 export interface ProjectSubmission {

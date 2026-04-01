@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { CloudUpload, Eye, FolderUp } from 'lucide-react';
+import { CloudUpload, Eye, FolderUp, Download, FileDown } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -35,22 +35,12 @@ export default function CareerResumeSection({ templates, myCv }: CareerResumeSec
     if (file) cvUploadMutation.mutate(file);
   };
 
-  const handleDownloadTemplate = (url: string, course: string, level: string) => {
+  const handleDownloadTemplate = (url: string, filename: string) => {
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${course}_${level}_Template`;
+    link.download = filename;
     link.click();
   };
-
-  const templatesByCourse =
-    templates?.reduce(
-      (acc, t) => {
-        if (!acc[t.course]) acc[t.course] = [];
-        acc[t.course].push(t);
-        return acc;
-      },
-      {} as Record<string, CvTemplate[]>,
-    ) ?? {};
 
   return (
     <section id="section-cv" className="scroll-mt-20">
@@ -63,38 +53,54 @@ export default function CareerResumeSection({ templates, myCv }: CareerResumeSec
           <div className="h-1 bg-gradient-to-r from-orange-400 to-rose-500" />
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg font-semibold">Download Templates</CardTitle>
+              <div className="flex items-center gap-2">
+                <FileDown className="h-5 w-5 text-orange-500" />
+                <CardTitle className="text-lg font-semibold">Resume Templates</CardTitle>
+              </div>
               <Badge className="rounded-lg bg-gradient-to-r from-rose-500 to-red-500 text-xs text-white shadow-sm">Required</Badge>
             </div>
+            <p className="text-xs text-muted-foreground">Download a template, fill in your details, and upload your completed resume below</p>
           </CardHeader>
           <CardContent>
-            {Object.keys(templatesByCourse).length > 0 ? (
-              <div className="divide-y divide-border/50">
-                {Object.entries(templatesByCourse).map(([course, courseTemplates]) => (
-                  <div key={course} className="flex items-center justify-between py-4 first:pt-0 last:pb-0">
-                    <div>
-                      <p className="font-medium">{course}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {course.includes('SAP') ? 'Finance & Controlling Professional Template'
-                          : course.includes('Data') ? 'Business Intelligence & Viz Template'
-                          : course.includes('Cyber') ? 'Security Analyst & Pentesting Template'
-                          : 'Professional Template'}
-                      </p>
+            {templates && templates.length > 0 ? (
+              <div className="space-y-2.5">
+                {templates.map((template) => (
+                  <motion.div
+                    key={template.id}
+                    whileHover={{ x: 2 }}
+                    className="group flex items-center justify-between rounded-xl border border-orange-100 bg-orange-50/50 px-4 py-3 transition-colors hover:border-orange-200 hover:bg-orange-50 dark:border-orange-900/30 dark:bg-orange-950/20 dark:hover:bg-orange-950/30"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-orange-100 text-orange-600 dark:bg-orange-900/40 dark:text-orange-400">
+                        <FileDown className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{template.title}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <Badge
+                            variant="secondary"
+                            className={`text-[10px] px-1.5 py-0 ${
+                              template.experienceLevel === 'FRESHER'
+                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                            }`}
+                          >
+                            {template.experienceLevel === 'FRESHER' ? 'Fresher' : 'Experienced'}
+                          </Badge>
+                          <span className="text-[10px] text-muted-foreground">.docx</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      {courseTemplates.map((template) => (
-                        <Button
-                          key={template.id}
-                          variant="outline"
-                          size="sm"
-                          className="rounded-lg"
-                          onClick={() => handleDownloadTemplate(template.downloadUrl, template.course, template.experienceLevel)}
-                        >
-                          {template.experienceLevel === 'FRESHER' ? 'Fresher' : 'Experienced'}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="rounded-lg border-orange-200 text-orange-600 hover:bg-orange-100 hover:text-orange-700 dark:border-orange-800 dark:text-orange-400 dark:hover:bg-orange-900/40"
+                      onClick={() => handleDownloadTemplate(template.downloadUrl, template.originalFilename || `${template.title}.docx`)}
+                    >
+                      <Download className="mr-1.5 h-3.5 w-3.5" />
+                      Download
+                    </Button>
+                  </motion.div>
                 ))}
               </div>
             ) : (

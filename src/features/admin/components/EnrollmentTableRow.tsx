@@ -1,5 +1,4 @@
-import { memo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { memo, useState } from "react";
 import {
   Eye,
   Send,
@@ -36,7 +35,7 @@ import {
   PAYMENT_MODES,
 } from "@/constants/courses";
 import ReceiptDialog from "./ReceiptDialog";
-import PaymentReceipt, { type ReceiptData } from "./PaymentReceipt";
+import { type ReceiptData } from "./PaymentReceipt";
 import type {
   EnrollmentStatus,
   CompletionStatus,
@@ -114,34 +113,11 @@ function InstallmentCells({
 }) {
   const [receiptOpen, setReceiptOpen] = useState(false);
   const [sending, setSending] = useState(false);
-  const hiddenReceiptRef = useRef<HTMLDivElement>(null);
 
   async function handleSendReceipt() {
     setSending(true);
     try {
-      let receiptPdf: string | undefined;
-
-      const el = hiddenReceiptRef.current;
-      if (el) {
-        const html2pdf = (await import("html2pdf.js")).default;
-        const opt = {
-          margin: 0,
-          image: { type: "jpeg", quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true },
-          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" as const },
-        };
-        const blob: Blob = await html2pdf().set(opt).from(el).outputPdf("blob");
-        receiptPdf = await new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            const base64 = (reader.result as string).split(",")[1];
-            resolve(base64);
-          };
-          reader.readAsDataURL(blob);
-        });
-      }
-
-      await adminService.sendReceipt(enrollmentId, installmentNumber, receiptPdf);
+      await adminService.sendReceipt(enrollmentId, installmentNumber);
       toast.success(`${label} installment receipt sent to ${studentEmail}`);
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -164,17 +140,6 @@ function InstallmentCells({
 
   return (
     <>
-      {/* Hidden receipt for PDF generation — portaled to body to avoid invalid DOM nesting */}
-      {createPortal(
-        <div
-          style={{ position: "fixed", left: "-9999px", top: 0 }}
-          aria-hidden="true"
-        >
-          <PaymentReceipt ref={hiddenReceiptRef} data={receiptData} />
-        </div>,
-        document.body,
-      )}
-
       <TableCell className={cn("text-sm font-medium", cellClassName)}>
         {formatCurrency(amount)}
       </TableCell>
