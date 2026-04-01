@@ -14,10 +14,6 @@ const ForgotPasswordPage = lazy(
 const ResetPasswordPage = lazy(
   () => import("@/features/auth/pages/ResetPasswordPage"),
 );
-const VerifyEmailPage = lazy(
-  () => import("@/features/auth/pages/VerifyEmailPage"),
-);
-
 const StudentRoutes = lazy(() => import("@/features/student/StudentRoutes"));
 const AdminRoutes = lazy(() => import("@/features/admin/AdminRoutes"));
 const RecruiterRoutes = lazy(
@@ -61,15 +57,6 @@ export function AppRouter() {
             </GuestRoute>
           }
         />
-        <Route
-          path={ROUTES.VERIFY_EMAIL}
-          element={
-            <GuestRoute>
-              <VerifyEmailPage />
-            </GuestRoute>
-          }
-        />
-
         {/* Student routes */}
         <Route
           path="/student/*"

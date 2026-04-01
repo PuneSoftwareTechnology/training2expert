@@ -65,21 +65,42 @@ export default function EvaluationsPage() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-md bg-primary/10 p-2">
-                      <BarChart3 className="h-4 w-4 text-primary" />
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-md bg-primary/10 p-2">
+                        <BarChart3 className="h-4 w-4 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Technical Score (Accumulated)</p>
+                        <p className="text-lg font-semibold">
+                          {evaluation.technicalMarksScored}/{evaluation.technicalTotalMarks}
+                          {evaluation.technicalTotalMarks > 0 && (
+                            <span className="ml-1 text-sm text-muted-foreground">
+                              ({Math.round((evaluation.technicalMarksScored / evaluation.technicalTotalMarks) * 100)}%)
+                            </span>
+                          )}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Technical Score</p>
-                      <p className="text-lg font-semibold">
-                        {evaluation.technicalMarksScored}/{evaluation.technicalTotalMarks}
-                        {evaluation.technicalTotalMarks > 0 && (
-                          <span className="ml-1 text-sm text-muted-foreground">
-                            ({Math.round((evaluation.technicalMarksScored / evaluation.technicalTotalMarks) * 100)}%)
-                          </span>
-                        )}
-                      </p>
-                    </div>
+
+                    {/* Individual Test Scores */}
+                    {evaluation.testScores && evaluation.testScores.length > 0 && (
+                      <div className="ml-11 space-y-1.5 border-l-2 border-primary/20 pl-3">
+                        {evaluation.testScores.map((test) => (
+                          <div key={test.testId} className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">{test.testName}</span>
+                            <span className="font-medium">
+                              {test.score}/{test.totalMarks}
+                              {test.totalMarks > 0 && (
+                                <span className="ml-1 text-xs text-muted-foreground">
+                                  ({Math.round((test.score / test.totalMarks) * 100)}%)
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-3">

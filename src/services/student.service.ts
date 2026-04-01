@@ -46,13 +46,13 @@ export const studentService = {
     return extractData<{ url: string }>(response);
   },
 
-  uploadCertificate: async (file: File): Promise<{ url: string }> => {
+  uploadCertificate: async (file: File): Promise<{ url: string; key: string }> => {
     const formData = new FormData();
     formData.append('file', file);
     const response = await api.post('/student/certificate-upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
-    return extractData<{ url: string }>(response);
+    return extractData<{ url: string; key: string }>(response);
   },
 
   getAvailableTests: async (): Promise<Test[]> => {

@@ -18,6 +18,9 @@ import {
   Phone,
   Calendar,
   User,
+  MapPin,
+  Clock,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -41,6 +44,16 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 import {
   basicDetailsSchema,
@@ -97,6 +110,7 @@ export default function ProfileDetailsSection({
   const [certFile, setCertFile] = useState<File | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [certDialogOpen, setCertDialogOpen] = useState(false);
+  const [certDeleteIndex, setCertDeleteIndex] = useState<number | null>(null);
 
   // Listen for edit toggle from mobile hamburger menu
   const toggleEdit = useCallback(() => setEditMode((prev) => !prev), []);
@@ -190,7 +204,7 @@ export default function ProfileDetailsSection({
       graduationYear: toYear(education.graduationYear),
       postGraduation: education.postGraduation || undefined,
       pgYear: toYear(education.pgYear),
-      certifications: education.certifications,
+      certifications: education.certifications?.map(({ certificateDisplayUrl: _, ...rest }) => rest),
       employmentStatus: work.employmentStatus || undefined,
       lastWorkedYear: toYear(work.lastWorkedYear),
       itExperienceYears: toNum(work.itExperienceYears) ?? 0,
@@ -222,11 +236,13 @@ export default function ProfileDetailsSection({
 
   const addCertification = async () => {
     if (!certInput.trim()) return;
-    let certificateUrl: string | undefined;
+    let certificateKey: string | undefined;
+    let certificateDisplayUrl: string | undefined;
     if (certFile) {
       try {
         const res = await certUploadMutation.mutateAsync(certFile);
-        certificateUrl = res.url;
+        certificateKey = res.key;
+        certificateDisplayUrl = res.url;
       } catch {
         return;
       }
@@ -234,7 +250,7 @@ export default function ProfileDetailsSection({
     const current = educationForm.getValues("certifications") ?? [];
     educationForm.setValue(
       "certifications",
-      [...current, { name: certInput.trim(), certificate: certificateUrl }],
+      [...current, { name: certInput.trim(), certificate: certificateKey, certificateDisplayUrl }],
       { shouldDirty: true },
     );
     setCertInput("");
@@ -243,13 +259,15 @@ export default function ProfileDetailsSection({
     setCertDialogOpen(false);
   };
 
-  const removeCertification = (index: number) => {
+  const confirmRemoveCertification = () => {
+    if (certDeleteIndex === null) return;
     const current = educationForm.getValues("certifications") ?? [];
     educationForm.setValue(
       "certifications",
-      current.filter((_, i) => i !== index),
+      current.filter((_, i) => i !== certDeleteIndex),
       { shouldDirty: true },
     );
+    setCertDeleteIndex(null);
   };
 
   return (
@@ -295,7 +313,7 @@ export default function ProfileDetailsSection({
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-5 flex items-center gap-3 rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 px-4 py-3 dark:border-amber-800 dark:from-amber-9100 dark:to-orange-950/30"
+          className="mb-3 flex items-center gap-3 rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 px-3 py-2.5 sm:mb-5 sm:px-4 sm:py-3 dark:border-amber-800 dark:from-amber-9100 dark:to-orange-950/30"
         >
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/50">
             <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
@@ -316,10 +334,20 @@ export default function ProfileDetailsSection({
       >
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-purple-800 dark:bg-cyan-900">
           {/* Gradient banner */}
-          <div className="relative h-28 bg-gradient-to-br from-purple-800 via-cyan-700 to-cyan-600 sm:h-32 dark:from-slate-800 dark:via-slate-750 dark:to-slate-700">
+          <div className="relative h-28 bg-gradient-to-br from-purple-800 via-cyan-700 to-cyan-600 sm:h-40 dark:from-slate-800 dark:via-slate-750 dark:to-slate-700">
             <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-indigo-500/10 to-transparent" />
 
-            {/* Desktop edit controls - inside banner */}
+            {/* Decorative shapes */}
+            <div className="pointer-events-none absolute inset-0 overflow-hidden">
+              <div className="absolute -right-6 -top-6 h-32 w-32 rounded-full bg-white/[0.07]" />
+              <div className="absolute -bottom-4 -right-10 h-24 w-24 rounded-full bg-white/[0.05]" />
+              <div className="absolute left-1/4 top-2 h-16 w-16 rounded-full bg-white/[0.06]" />
+              <div className="absolute bottom-3 left-[15%] h-10 w-10 rounded-full bg-white/[0.04]" />
+              <div className="absolute right-1/3 top-1/2 h-12 w-12 rounded-full bg-white/[0.05]" />
+              <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+            </div>
+
+            {/* Desktop edit controls - top right */}
             <div className="absolute right-4 top-4 hidden items-center gap-2 md:flex">
               {isVerified ? (
                 <Badge className="rounded-full border-0 bg-white/20 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">
@@ -366,14 +394,14 @@ export default function ProfileDetailsSection({
           </div>
 
           {/* Profile info row */}
-          <div className="relative px-4 pb-5 sm:px-6">
+          <div className="relative px-4 pb-4 sm:px-6 sm:pb-5">
             {/* Avatar - overlapping the banner */}
-            <div className="-mt-14 mb-4 flex flex-col items-center gap-4 sm:-mt-16 sm:flex-row sm:items-end sm:gap-5">
+            <div className="-mt-12 mb-3 flex flex-col items-center gap-3 sm:-mt-18 sm:mb-4 sm:flex-row sm:items-end sm:gap-5">
               <div className="relative shrink-0">
                 <div className="rounded-full border-4 border-white bg-white shadow-lg dark:border-slate-900">
-                  <Avatar className="h-24 w-24 sm:h-28 sm:w-28">
+                  <Avatar className="h-20 w-20 sm:h-28 sm:w-28">
                     <AvatarImage src={profile.profilePhoto} />
-                    <AvatarFallback className="bg-gradient-to-br from-slate-600 to-slate-700 text-3xl font-bold text-white sm:text-4xl">
+                    <AvatarFallback className="bg-gradient-to-br from-slate-600 to-slate-700 text-2xl font-bold text-white sm:text-4xl">
                       {profile.name?.charAt(0).toUpperCase() ?? "S"}
                     </AvatarFallback>
                   </Avatar>
@@ -451,6 +479,38 @@ export default function ProfileDetailsSection({
                 </div>
               </div>
             </div>
+
+            {/* Quick info pills */}
+            {(profile.city || profile.itExperienceYears > 0 || profile.itExperienceMonths > 0 || profile.certifications?.length > 0 || profile.graduation) && (
+              <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+                {profile.city && (
+                  <div className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-purple-50 to-cyan-50 px-3 py-1.5 text-xs font-medium text-slate-700 dark:from-purple-900/20 dark:to-cyan-900/20 dark:text-slate-300">
+                    <MapPin className="h-3 w-3 shrink-0 text-purple-500 dark:text-purple-400" />
+                    {profile.city}{profile.area ? `, ${profile.area}` : ""}
+                  </div>
+                )}
+                {(profile.itExperienceYears > 0 || profile.itExperienceMonths > 0) && (
+                  <div className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-purple-50 to-cyan-50 px-3 py-1.5 text-xs font-medium text-slate-700 dark:from-purple-900/20 dark:to-cyan-900/20 dark:text-slate-300">
+                    <Clock className="h-3 w-3 shrink-0 text-cyan-600 dark:text-cyan-400" />
+                    {profile.itExperienceYears > 0
+                      ? `${profile.itExperienceYears}y ${profile.itExperienceMonths}m IT Exp`
+                      : `${profile.itExperienceMonths}m IT Exp`}
+                  </div>
+                )}
+                {profile.certifications?.length > 0 && (
+                  <div className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-purple-50 to-cyan-50 px-3 py-1.5 text-xs font-medium text-slate-700 dark:from-purple-900/20 dark:to-cyan-900/20 dark:text-slate-300">
+                    <Award className="h-3 w-3 shrink-0 text-amber-500 dark:text-amber-400" />
+                    {profile.certifications.length} Certification{profile.certifications.length > 1 ? "s" : ""}
+                  </div>
+                )}
+                {profile.graduation && (
+                  <div className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-purple-50 to-cyan-50 px-3 py-1.5 text-xs font-medium text-slate-700 dark:from-purple-900/20 dark:to-cyan-900/20 dark:text-slate-300">
+                    <GraduationCap className="h-3 w-3 shrink-0 text-blue-500 dark:text-blue-400" />
+                    {profile.graduation}{profile.graduationYear ? ` '${String(profile.graduationYear).slice(-2)}` : ""}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </motion.div>
@@ -461,7 +521,7 @@ export default function ProfileDetailsSection({
         initial="hidden"
         animate="visible"
         custom={1}
-        className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3"
+        className="mt-4 grid grid-cols-1 gap-3 sm:mt-5 sm:gap-5 md:grid-cols-2 lg:grid-cols-3"
       >
         {/* Personal Details */}
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
@@ -631,19 +691,23 @@ export default function ProfileDetailsSection({
                             <span className="min-w-0 flex-1 truncate text-xs font-medium">
                               {cert.name}
                             </span>
-                            {cert.certificate && (
-                              <a
-                                href={cert.certificate}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="shrink-0 text-[11px] text-blue-600 underline"
-                              >
-                                View
-                              </a>
-                            )}
+                            {(() => {
+                              const url = cert.certificateDisplayUrl || cert.certificate;
+                              return url?.startsWith("http") ? (
+                                <a
+                                  href={url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 shrink-0 rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-medium text-blue-600 transition-colors hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/40"
+                                >
+                                  <ExternalLink className="h-3 w-3" />
+                                  View
+                                </a>
+                              ) : null;
+                            })()}
                             <button
                               type="button"
-                              onClick={() => removeCertification(i)}
+                              onClick={() => setCertDeleteIndex(i)}
                               className="shrink-0 text-slate-400 hover:text-red-500"
                             >
                               <X className="h-3.5 w-3.5" />
@@ -657,6 +721,38 @@ export default function ProfileDetailsSection({
                       No certifications added yet
                     </p>
                   )}
+
+                  {/* Delete Certification Confirmation */}
+                  <AlertDialog
+                    open={certDeleteIndex !== null}
+                    onOpenChange={(open) => {
+                      if (!open) setCertDeleteIndex(null);
+                    }}
+                  >
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Certification</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to remove{" "}
+                          <span className="font-semibold text-foreground">
+                            {certDeleteIndex !== null
+                              ? (educationForm.getValues("certifications") ?? [])[certDeleteIndex]?.name
+                              : ""}
+                          </span>
+                          ? This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={confirmRemoveCertification}
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
 
                   {/* Add Certification Dialog */}
                   <Dialog
@@ -809,22 +905,25 @@ export default function ProfileDetailsSection({
                       {(profile.certifications ?? []).map((cert, i) => {
                         const c =
                           typeof cert === "string" ? { name: cert } : cert;
-                        return (
+                        return c.certificate?.startsWith("http") ? (
+                          <a
+                            key={i}
+                            href={c.certificate}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-violet-50 px-3 py-1.5 text-xs font-medium text-violet-700 transition-colors hover:bg-violet-100 dark:bg-violet-900/20 dark:text-violet-300 dark:hover:bg-violet-900/40"
+                          >
+                            <Award className="h-3 w-3 shrink-0" />
+                            {c.name}
+                            <ExternalLink className="h-3 w-3 shrink-0 opacity-50" />
+                          </a>
+                        ) : (
                           <span
                             key={i}
-                            className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2.5 py-1 text-xs font-medium text-violet-700 dark:bg-violet-900/20 dark:text-violet-300"
+                            className="inline-flex items-center gap-1.5 rounded-full bg-violet-50 px-3 py-1.5 text-xs font-medium text-violet-700 dark:bg-violet-900/20 dark:text-violet-300"
                           >
+                            <Award className="h-3 w-3 shrink-0" />
                             {c.name}
-                            {c.certificate && (
-                              <a
-                                href={c.certificate}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-600 hover:text-blue-800 dark:text-blue-400"
-                              >
-                                <Upload className="h-3 w-3" />
-                              </a>
-                            )}
                           </span>
                         );
                       })}

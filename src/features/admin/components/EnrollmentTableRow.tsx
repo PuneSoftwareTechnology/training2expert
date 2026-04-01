@@ -1,4 +1,5 @@
-import { memo, useState } from "react";
+import { memo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Eye,
   Send,
@@ -8,8 +9,11 @@ import {
   Trash2,
   User,
   ClipboardList,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { adminService } from "@/services/admin.service";
+import { getErrorMessage } from "@/services/api";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,7 +36,7 @@ import {
   PAYMENT_MODES,
 } from "@/constants/courses";
 import ReceiptDialog from "./ReceiptDialog";
-import type { ReceiptData } from "./PaymentReceipt";
+import PaymentReceipt, { type ReceiptData } from "./PaymentReceipt";
 import type {
   EnrollmentStatus,
   CompletionStatus,
@@ -94,6 +98,8 @@ function InstallmentCells({
   studentName,
   studentEmail,
   receiptData,
+  enrollmentId,
+  installmentNumber,
 }: {
   amount?: number;
   date?: string;
@@ -103,8 +109,46 @@ function InstallmentCells({
   studentName: string;
   studentEmail: string;
   receiptData: ReceiptData;
+  enrollmentId: string;
+  installmentNumber: string;
 }) {
   const [receiptOpen, setReceiptOpen] = useState(false);
+  const [sending, setSending] = useState(false);
+  const hiddenReceiptRef = useRef<HTMLDivElement>(null);
+
+  async function handleSendReceipt() {
+    setSending(true);
+    try {
+      let receiptPdf: string | undefined;
+
+      const el = hiddenReceiptRef.current;
+      if (el) {
+        const html2pdf = (await import("html2pdf.js")).default;
+        const opt = {
+          margin: 0,
+          image: { type: "jpeg", quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true },
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" as const },
+        };
+        const blob: Blob = await html2pdf().set(opt).from(el).outputPdf("blob");
+        receiptPdf = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const base64 = (reader.result as string).split(",")[1];
+            resolve(base64);
+          };
+          reader.readAsDataURL(blob);
+        });
+      }
+
+      await adminService.sendReceipt(enrollmentId, installmentNumber, receiptPdf);
+      toast.success(`${label} installment receipt sent to ${studentEmail}`);
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setSending(false);
+    }
+  }
 
   if (!amount) {
     return (
@@ -120,6 +164,17 @@ function InstallmentCells({
 
   return (
     <>
+      {/* Hidden receipt for PDF generation — portaled to body to avoid invalid DOM nesting */}
+      {createPortal(
+        <div
+          style={{ position: "fixed", left: "-9999px", top: 0 }}
+          aria-hidden="true"
+        >
+          <PaymentReceipt ref={hiddenReceiptRef} data={receiptData} />
+        </div>,
+        document.body,
+      )}
+
       <TableCell className={cn("text-sm font-medium", cellClassName)}>
         {formatCurrency(amount)}
       </TableCell>
@@ -172,7 +227,7 @@ function InstallmentCells({
               <AlertDialogTitle>Send {label} Installment Receipt</AlertDialogTitle>
               <AlertDialogDescription>
                 You are about to send the {label.toLowerCase()} installment receipt
-                via email to{" "}
+                with PDF attachment via email to{" "}
                 <span className="font-semibold text-foreground">
                   {studentName}
                 </span>{" "}
@@ -186,8 +241,10 @@ function InstallmentCells({
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
-                onClick={() => toast.info("Send receipt triggered")}
+                onClick={handleSendReceipt}
+                disabled={sending}
               >
+                {sending && <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />}
                 Yes, Send
               </AlertDialogAction>
             </AlertDialogFooter>
@@ -399,6 +456,8 @@ export const EnrollmentTableRow = memo(function EnrollmentTableRow({
         label="1st"
         studentName={enrollment.name}
         studentEmail={enrollment.email}
+        enrollmentId={enrollment.id}
+        installmentNumber="1"
         receiptData={{
           enrollmentId: enrollment.id,
           studentName: enrollment.name,
@@ -423,6 +482,8 @@ export const EnrollmentTableRow = memo(function EnrollmentTableRow({
         label="2nd"
         studentName={enrollment.name}
         studentEmail={enrollment.email}
+        enrollmentId={enrollment.id}
+        installmentNumber="2"
         receiptData={{
           enrollmentId: enrollment.id,
           studentName: enrollment.name,
@@ -448,6 +509,8 @@ export const EnrollmentTableRow = memo(function EnrollmentTableRow({
         label="3rd"
         studentName={enrollment.name}
         studentEmail={enrollment.email}
+        enrollmentId={enrollment.id}
+        installmentNumber="3"
         receiptData={{
           enrollmentId: enrollment.id,
           studentName: enrollment.name,

@@ -9,6 +9,8 @@ export * from "./super-admin.types";
 export interface Certification {
   name: string;
   certificate?: string;
+  /** Presigned display URL (not persisted — used for immediate viewing after upload) */
+  certificateDisplayUrl?: string;
 }
 
 export interface StudentProfile {
@@ -42,6 +44,14 @@ export interface ModuleScore {
   score: number;
 }
 
+export interface TestScore {
+  testId: string;
+  testName: string;
+  score: number;
+  totalMarks: number;
+  submittedAt: string;
+}
+
 export interface Evaluation {
   id: string;
   studentId: string;
@@ -51,6 +61,7 @@ export interface Evaluation {
   technicalTotalMarks: number;
   communicationScore: number;
   moduleScores?: ModuleScore[];
+  testScores?: TestScore[];
   projectSubmission?: string;
   scopeForImprovement: string;
   trainerRemark: string;

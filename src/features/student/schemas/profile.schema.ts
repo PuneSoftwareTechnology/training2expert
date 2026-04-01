@@ -15,6 +15,7 @@ export const educationSchema = z.object({
   certifications: z.array(z.object({
     name: z.string(),
     certificate: z.string().optional(),
+    certificateDisplayUrl: z.string().optional(),
   })).default([]),
 });
 

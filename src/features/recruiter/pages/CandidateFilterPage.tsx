@@ -1,15 +1,18 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Download, Star, Search, AlertCircle, MapPin, Briefcase, Users, CheckSquare, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Download, Star, Search, AlertCircle, MapPin, Briefcase, Users, CheckSquare, ChevronLeft, ChevronRight, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ColumnDef } from '@tanstack/react-table';
 
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DataTable, SortableHeader } from '@/components/ui/data-table';
 import { TableSkeleton } from '@/components/loaders/TableSkeleton';
 import { QueryError } from '@/components/errors/QueryError';
@@ -68,6 +71,30 @@ export default function CandidateFilterPage() {
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
+
+  // Email dialog state
+  const [emailDialog, setEmailDialog] = useState(false);
+  const [emailTargetId, setEmailTargetId] = useState('');
+  const [emailTargetName, setEmailTargetName] = useState('');
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailBody, setEmailBody] = useState('');
+
+  const sendEmailMutation = useMutation({
+    mutationFn: () => recruiterService.sendEmail(emailTargetId, emailSubject, emailBody),
+    onSuccess: () => {
+      toast.success('Email sent');
+      setEmailDialog(false);
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const openEmailDialog = (candidate: RecruiterCandidate) => {
+    setEmailTargetId(candidate.id);
+    setEmailTargetName(candidate.name);
+    setEmailSubject('');
+    setEmailBody('');
+    setEmailDialog(true);
+  };
 
   const courses = data?.courses ?? [];
   const cities = data?.cities ?? [];
@@ -162,6 +189,9 @@ export default function CandidateFilterPage() {
                 <Download className="mr-1 h-3.5 w-3.5" /> CV
               </Button>
             )}
+            <Button variant="outline" size="sm" onClick={() => openEmailDialog(c)} title="Send Email">
+              <Mail className="mr-1 h-3.5 w-3.5" /> Email
+            </Button>
             {!c.isShortlisted ? (
               <Button variant="default" size="sm" onClick={() => shortlistMutation.mutate({ studentId: c.id, course: c.course })} loading={shortlistMutation.isPending}>
                 {!shortlistMutation.isPending && <Star className="mr-1 h-3.5 w-3.5" />} Shortlist
@@ -320,6 +350,9 @@ export default function CandidateFilterPage() {
                               <Download className="mr-1 h-3 w-3" /> CV
                             </Button>
                           )}
+                          <Button variant="outline" size="sm" className="h-7 flex-1 text-xs" onClick={() => openEmailDialog(c)}>
+                            <Mail className="mr-1 h-3 w-3" /> Email
+                          </Button>
                           {!c.isShortlisted && (
                             <Button variant="default" size="sm" className="h-7 flex-1 text-xs" onClick={() => shortlistMutation.mutate({ studentId: c.id, course: c.course })} loading={shortlistMutation.isPending}>
                               {!shortlistMutation.isPending && <Star className="mr-1 h-3 w-3" />} Shortlist
@@ -372,6 +405,45 @@ export default function CandidateFilterPage() {
             )}
           </>
         )}
+        {/* Email Dialog */}
+        <Dialog open={emailDialog} onOpenChange={setEmailDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Send Email to {emailTargetName}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label>Subject</Label>
+                <Input
+                  value={emailSubject}
+                  onChange={(e) => setEmailSubject(e.target.value)}
+                  placeholder="Enter subject..."
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>Body</Label>
+                <Textarea
+                  value={emailBody}
+                  onChange={(e) => setEmailBody(e.target.value)}
+                  rows={4}
+                  placeholder="Enter email body..."
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setEmailDialog(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => sendEmailMutation.mutate()}
+                  loading={sendEmailMutation.isPending}
+                  disabled={!emailSubject.trim() || !emailBody.trim()}
+                >
+                  {sendEmailMutation.isPending ? 'Sending...' : 'Send'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </PageTransition>
   );

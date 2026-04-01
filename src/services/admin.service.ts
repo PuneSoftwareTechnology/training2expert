@@ -153,9 +153,10 @@ export const adminService = {
     return extractData<Installment>(response);
   },
 
-  sendReceipt: async (enrollmentId: string, installmentId: string) => {
+  sendReceipt: async (enrollmentId: string, installmentId: string, receiptPdf?: string) => {
     const response = await api.post(
       `/admin/enrollments/${enrollmentId}/installments/${installmentId}/send-receipt`,
+      { receiptPdf },
     );
     return extractData<{ message: string }>(response);
   },

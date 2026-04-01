@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { CloudUpload, FolderUp } from 'lucide-react';
+import { CloudUpload, Eye, FolderUp } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -54,10 +54,10 @@ export default function CareerResumeSection({ templates, myCv }: CareerResumeSec
 
   return (
     <section id="section-cv" className="scroll-mt-20">
-      <div className="mb-4 h-px bg-gradient-to-r from-transparent via-orange-300/50 to-transparent md:mb-8 dark:via-orange-700/30" />
+      <div className="mb-4 h-px bg-gradient-to-r from-transparent via-orange-300/50 to-transparent md:mb-6 dark:via-orange-700/30" />
       <SectionHeader icon={FolderUp} gradient="from-orange-500 to-rose-600" title="Career & Resume" subtitle="Templates & CV upload" />
 
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0} className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
+      <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0} className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-[1fr_320px]">
         {/* Templates */}
         <Card className="overflow-hidden border border-orange-100 bg-white shadow-lg dark:border-orange-900/40 dark:bg-slate-900">
           <div className="h-1 bg-gradient-to-r from-orange-400 to-rose-500" />
@@ -106,23 +106,24 @@ export default function CareerResumeSection({ templates, myCv }: CareerResumeSec
         {/* Upload CV */}
         <motion.div whileHover={{ y: -4 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
           <Card className="overflow-hidden border border-violet-500/30 bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700 text-white shadow-xl shadow-violet-500/30">
-            <CardContent className="flex flex-col items-center justify-center gap-4 py-10">
+            <CardContent className="flex flex-col items-center justify-center gap-3 py-6 sm:gap-4 sm:py-10">
               <motion.div
                 animate={{ y: [0, -6, 0] }}
                 transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
-                className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm"
+                className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm sm:h-16 sm:w-16"
               >
-                <CloudUpload className="h-8 w-8" />
+                <CloudUpload className="h-6 w-6 sm:h-8 sm:w-8" />
               </motion.div>
               <div className="text-center">
-                <h3 className="text-xl font-bold">Upload Your CV</h3>
-                <p className="mt-1 text-sm text-white/70">
+                <h3 className="text-lg font-bold sm:text-xl">Upload Your CV</h3>
+                <p className="mt-1 text-xs text-white/70 sm:text-sm">
                   Once uploaded, our recruitment team will review your profile for placement opportunities.
                 </p>
               </div>
               {myCv?.url && (
-                <a href={myCv.url} target="_blank" rel="noopener noreferrer" className="text-sm underline text-white/80 hover:text-white">
-                  View current CV
+                <a href={myCv.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-4 py-1.5 text-sm font-medium text-white backdrop-blur-sm hover:bg-white/30 transition-colors">
+                  <Eye className="h-4 w-4" />
+                  View Current CV
                 </a>
               )}
               <input ref={cvInputRef} type="file" accept=".pdf" className="hidden" onChange={handleCvUpload} />
@@ -133,7 +134,8 @@ export default function CareerResumeSection({ templates, myCv }: CareerResumeSec
                   onClick={() => cvInputRef.current?.click()}
                   loading={cvUploadMutation.isPending}
                 >
-                  {cvUploadMutation.isPending ? 'Uploading...' : 'Select Resume File'}
+                  <CloudUpload className="mr-1.5 h-4 w-4" />
+                  {cvUploadMutation.isPending ? 'Uploading...' : 'Upload Resume File'}
                 </Button>
               </motion.div>
               <p className="text-[10px] font-semibold uppercase tracking-widest text-white/40">PDF format only</p>

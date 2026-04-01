@@ -3,8 +3,6 @@ export const ROUTES = {
   SIGNUP: "/signup",
   FORGOT_PASSWORD: "/forgot-password",
   RESET_PASSWORD: "/reset-password",
-  VERIFY_EMAIL: "/verify-email",
-
   STUDENT_DASHBOARD: "/student",
   STUDENT_PROFILE: "/student/profile",
   STUDENT_PAYMENTS: "/student/payments",

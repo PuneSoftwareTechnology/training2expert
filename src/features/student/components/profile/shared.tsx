@@ -19,14 +19,14 @@ export function SectionHeader({
   subtitle?: string;
 }) {
   return (
-    <div className="mb-4 flex items-center gap-3 md:mb-6">
+    <div className="mb-3 flex items-center gap-2.5 sm:mb-4 sm:gap-3 md:mb-6">
       <div
-        className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${gradient} text-white shadow-lg`}
+        className={`flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br sm:h-11 sm:w-11 ${gradient} text-white shadow-lg`}
       >
-        <Icon className="h-5 w-5" />
+        <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
       </div>
       <div>
-        <h2 className="text-2xl font-bold">{title}</h2>
+        <h2 className="text-xl font-bold sm:text-2xl">{title}</h2>
         {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
       </div>
     </div>

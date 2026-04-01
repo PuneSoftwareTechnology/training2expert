@@ -23,11 +23,6 @@ export const authService = {
     return extractData<{ message: string }>(response);
   },
 
-  verifyEmail: async (token: string): Promise<{ message: string }> => {
-    const response = await api.post("/auth/verify-email", { token });
-    return extractData<{ message: string }>(response);
-  },
-
   forgotPassword: async (
     payload: ForgotPasswordPayload,
   ): Promise<{ message: string }> => {

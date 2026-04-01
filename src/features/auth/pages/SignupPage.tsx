@@ -31,7 +31,7 @@ export default function SignupPage() {
   const signupMutation = useMutation({
     mutationFn: authService.signup,
     onSuccess: () => {
-      toast.success('Account activated! You can now login.');
+      toast.success('Account activated! You can now sign in.');
       navigate(ROUTES.LOGIN);
     },
     onError: (error) => {
