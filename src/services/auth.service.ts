@@ -26,14 +26,14 @@ export const authService = {
   forgotPassword: async (
     payload: ForgotPasswordPayload,
   ): Promise<{ message: string }> => {
-    const response = await api.post("/auth/forgot-password", payload);
+    const response = await api.post("/public/forgot-password", payload);
     return extractData<{ message: string }>(response);
   },
 
   resetPassword: async (
     payload: ResetPasswordPayload,
   ): Promise<{ message: string }> => {
-    const response = await api.post("/auth/reset-password", payload);
+    const response = await api.post("/public/reset-password", payload);
     return extractData<{ message: string }>(response);
   },
 

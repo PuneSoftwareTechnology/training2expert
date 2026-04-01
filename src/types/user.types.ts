@@ -27,9 +27,8 @@ export interface ForgotPasswordPayload {
 }
 
 export interface ResetPasswordPayload {
-  email: string;
-  code: string;
-  newPassword: string;
+  token: string;
+  password: string;
 }
 
 export interface ChangePasswordPayload {

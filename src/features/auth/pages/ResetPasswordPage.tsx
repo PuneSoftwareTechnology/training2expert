@@ -1,12 +1,11 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { KeyRound } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,6 +18,8 @@ import { AuthLayout } from '@/layouts/AuthLayout';
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token');
 
   const {
     register,
@@ -29,7 +30,11 @@ export default function ResetPasswordPage() {
   });
 
   const mutation = useMutation({
-    mutationFn: authService.resetPassword,
+    mutationFn: (data: ResetPasswordFormValues) =>
+      authService.resetPassword({
+        token: token!,
+        password: data.newPassword,
+      }),
     onSuccess: () => {
       toast.success('Password reset successfully');
       navigate(ROUTES.LOGIN);
@@ -40,47 +45,38 @@ export default function ResetPasswordPage() {
   });
 
   const onSubmit = (data: ResetPasswordFormValues) => {
-    mutation.mutate({
-      email: data.email,
-      code: data.code,
-      newPassword: data.newPassword,
-    });
+    mutation.mutate(data);
   };
+
+  if (!token) {
+    return (
+      <AuthLayout>
+        <Card className="shadow-lg shadow-primary/[0.04]">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl font-bold">Invalid Link</CardTitle>
+            <CardDescription>
+              This password reset link is invalid or has expired.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center">
+            <Link to={ROUTES.FORGOT_PASSWORD} className="text-primary hover:underline">
+              Request a new reset link
+            </Link>
+          </CardContent>
+        </Card>
+      </AuthLayout>
+    );
+  }
 
   return (
     <AuthLayout>
         <Card className="shadow-lg shadow-primary/[0.04]">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold">Reset Password</CardTitle>
-            <CardDescription>Enter the code sent to your email</CardDescription>
+            <CardDescription>Enter your new password</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={(e) => { e.preventDefault(); handleSubmit(onSubmit)(e); }} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  {...register('email')}
-                />
-                {errors.email && (
-                  <p className="text-sm text-destructive">{errors.email.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="code">Reset Code</Label>
-                <Input
-                  id="code"
-                  placeholder="Enter the code"
-                  {...register('code')}
-                />
-                {errors.code && (
-                  <p className="text-sm text-destructive">{errors.code.message}</p>
-                )}
-              </div>
-
               <div className="space-y-2">
                 <Label htmlFor="newPassword">New Password</Label>
                 <PasswordInput

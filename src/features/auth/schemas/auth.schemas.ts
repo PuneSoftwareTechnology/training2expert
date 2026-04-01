@@ -29,8 +29,6 @@ export const forgotPasswordSchema = z.object({
 
 export const resetPasswordSchema = z
   .object({
-    email: z.string().email('Invalid email address'),
-    code: z.string().min(1, 'Code is required'),
     newPassword: passwordSchema,
     confirmPassword: z.string(),
   })
