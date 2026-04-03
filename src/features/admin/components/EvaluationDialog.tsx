@@ -159,7 +159,7 @@ export function EvaluationDialog({
                 </p>
                 <p className="mt-1 text-2xl font-bold text-blue-700">
                   {totalScored}/{totalPossible}{" "}
-                  <p className="text-xs text-blue-500">({avgTechnicalPct}%)</p>
+                  <span className="text-xs text-blue-500">({avgTechnicalPct}%)</span>
                 </p>
               </div>
               <div className="rounded-xl border-2 border-amber-200 bg-amber-50/50 p-3 text-center">
@@ -336,12 +336,36 @@ function EvaluationCard({
           </p>
         </div>
 
-        {/* Scores row — Technical + Communication side by side */}
-        <div className="grid grid-cols-2 divide-x divide-blue-100">
-          {/* Technical Mastery */}
-          <div className="p-4 space-y-2">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-blue-500">
-              Technical Mastery
+        {/* Module-wise Technical Scores */}
+        {evaluation.testScores && evaluation.testScores.length > 0 ? (
+          <div className="px-4 py-3 space-y-1 border-b border-blue-100">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-blue-500">
+                Module-wise Scores
+              </p>
+              <span className="text-[10px] font-semibold text-blue-600 tabular-nums">
+                Total: {evaluation.technicalMarksScored}/{evaluation.technicalTotalMarks}
+                {evaluation.technicalTotalMarks > 0 && (
+                  <span className="ml-1 text-blue-400">
+                    ({Math.round((evaluation.technicalMarksScored / evaluation.technicalTotalMarks) * 100)}%)
+                  </span>
+                )}
+              </span>
+            </div>
+            {evaluation.testScores.map((ts) => (
+              <MetricBar
+                key={ts.testId}
+                label={ts.testName}
+                value={ts.score}
+                max={ts.totalMarks}
+                color="bg-gradient-to-r from-blue-400 to-blue-600"
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="px-4 py-3 border-b border-blue-100">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-blue-500 mb-2">
+              Technical Score
             </p>
             <div className="flex items-end gap-1.5">
               <span className="text-2xl font-bold text-blue-700 tabular-nums leading-none">
@@ -351,7 +375,7 @@ function EvaluationCard({
                 / {evaluation.technicalTotalMarks}
               </span>
             </div>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-blue-100">
+            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-blue-100">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-blue-400 to-blue-600 transition-all duration-500"
                 style={{
@@ -359,80 +383,75 @@ function EvaluationCard({
                 }}
               />
             </div>
-            <p className="text-[10px] text-blue-400 tabular-nums">
+            <p className="mt-1 text-[10px] text-blue-400 tabular-nums">
               {evaluation.technicalTotalMarks > 0
-                ? Math.round(
-                    (evaluation.technicalMarksScored /
-                      evaluation.technicalTotalMarks) *
-                      100,
-                  )
-                : 0}
-              % achieved
+                ? Math.round((evaluation.technicalMarksScored / evaluation.technicalTotalMarks) * 100)
+                : 0}% achieved
             </p>
           </div>
+        )}
 
-          {/* Communication Rating */}
-          <div className="p-4 space-y-2">
-            <div className="flex items-center gap-1.5">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-purple-500">
-                Communication Rating
-              </p>
-              {canEdit && (
-                <span className="flex items-center gap-0.5 rounded-full bg-purple-100 px-1.5 py-0.5 text-[9px] font-semibold text-purple-600">
-                  <Pencil className="h-2.5 w-2.5" />
-                  Editable
-                </span>
-              )}
-            </div>
-            <div className="flex items-end gap-1.5">
-              <span className="text-2xl font-bold text-purple-600 tabular-nums leading-none">
-                {hoveredStar !== null
-                  ? (hoveredStar + 1) * 2
-                  : evaluation.communicationScore}
-              </span>
-              <span className="text-sm text-purple-400 font-medium leading-none pb-0.5">
-                / 10
-              </span>
-            </div>
-            <div
-              className={`flex items-center gap-1.5 rounded-lg px-2 py-1.5 ${canEdit ? "bg-purple-50 border border-dashed border-purple-300" : ""}`}
-            >
-              {updateMutation.isPending && (
-                <Loader2 className="h-3 w-3 animate-spin text-purple-500 mr-1" />
-              )}
-              {Array.from({ length: 5 }).map((_, i) => {
-                const filled =
-                  hoveredStar !== null
-                    ? hoveredStar + 1
-                    : evaluation.communicationScore / 2;
-                return (
-                  <Star
-                    key={i}
-                    className={`h-5 w-5 transition-all ${
-                      i < Math.floor(filled)
-                        ? "fill-purple-400 text-purple-400 drop-shadow-sm"
-                        : i < filled
-                          ? "fill-purple-400/50 text-purple-400"
-                          : canEdit
-                            ? "text-purple-200 hover:text-purple-300"
-                            : "text-muted-foreground/20"
-                    } ${canEdit ? "cursor-pointer hover:scale-130 active:scale-95 transition-transform" : ""}`}
-                    onMouseEnter={() => canEdit && setHoveredStar(i)}
-                    onMouseLeave={() => canEdit && setHoveredStar(null)}
-                    onClick={() => handleStarClick(i)}
-                  />
-                );
-              })}
-            </div>
+        {/* Communication Rating */}
+        <div className="px-4 py-3">
+          <div className="flex items-center gap-1.5 mb-2">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-purple-500">
+              Communication Rating
+            </p>
             {canEdit && (
-              <p className="text-[10px] text-purple-500 italic">
-                ↑ Click stars to rate
-              </p>
+              <span className="flex items-center gap-0.5 rounded-full bg-purple-100 px-1.5 py-0.5 text-[9px] font-semibold text-purple-600">
+                <Pencil className="h-2.5 w-2.5" />
+                Editable
+              </span>
             )}
           </div>
+          <div className="flex items-end gap-1.5">
+            <span className="text-2xl font-bold text-purple-600 tabular-nums leading-none">
+              {hoveredStar !== null
+                ? (hoveredStar + 1) * 2
+                : evaluation.communicationScore}
+            </span>
+            <span className="text-sm text-purple-400 font-medium leading-none pb-0.5">
+              / 10
+            </span>
+          </div>
+          <div
+            className={`mt-2 flex items-center gap-1.5 rounded-lg px-2 py-1.5 ${canEdit ? "bg-purple-50 border border-dashed border-purple-300" : ""}`}
+          >
+            {updateMutation.isPending && (
+              <Loader2 className="h-3 w-3 animate-spin text-purple-500 mr-1" />
+            )}
+            {Array.from({ length: 5 }).map((_, i) => {
+              const filled =
+                hoveredStar !== null
+                  ? hoveredStar + 1
+                  : evaluation.communicationScore / 2;
+              return (
+                <Star
+                  key={i}
+                  className={`h-5 w-5 transition-all ${
+                    i < Math.floor(filled)
+                      ? "fill-purple-400 text-purple-400 drop-shadow-sm"
+                      : i < filled
+                        ? "fill-purple-400/50 text-purple-400"
+                        : canEdit
+                          ? "text-purple-200 hover:text-purple-300"
+                          : "text-muted-foreground/20"
+                  } ${canEdit ? "cursor-pointer hover:scale-130 active:scale-95 transition-transform" : ""}`}
+                  onMouseEnter={() => canEdit && setHoveredStar(i)}
+                  onMouseLeave={() => canEdit && setHoveredStar(null)}
+                  onClick={() => handleStarClick(i)}
+                />
+              );
+            })}
+          </div>
+          {canEdit && (
+            <p className="mt-1 text-[10px] text-purple-500 italic">
+              ↑ Click stars to rate
+            </p>
+          )}
         </div>
 
-        {/* Module Scores (full-width under the row) */}
+        {/* Module Scores (if available separately from test scores) */}
         {evaluation.moduleScores && evaluation.moduleScores.length > 0 && (
           <div className="border-t border-blue-100 px-4 py-3 space-y-1">
             <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-400 mb-2">

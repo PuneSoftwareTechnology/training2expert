@@ -200,7 +200,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
             </div>
             <div>
               <span className="text-base font-bold tracking-tight text-white">
-                Student Management System
+                Training2Expert
               </span>
               <p className="text-[10px] font-medium uppercase tracking-widest text-slate-400">
                 Student

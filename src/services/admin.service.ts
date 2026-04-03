@@ -167,17 +167,17 @@ export const adminService = {
     return extractData<{ message: string }>(response);
   },
 
-  // Approval
-  approveStudent: async (enrollmentId: string) => {
-    const response = await api.post(
-      `/admin/enrollments/${enrollmentId}/approve`,
+  // Approval — flips is_approved on the users table
+  approveStudent: async (studentId: string) => {
+    const response = await api.patch(
+      `/admin/students/${studentId}/approve`,
     );
     return extractData<{ message: string }>(response);
   },
 
-  rejectStudent: async (enrollmentId: string) => {
-    const response = await api.post(
-      `/admin/enrollments/${enrollmentId}/reject`,
+  unapproveStudent: async (studentId: string) => {
+    const response = await api.patch(
+      `/admin/students/${studentId}/unapprove`,
     );
     return extractData<{ message: string }>(response);
   },

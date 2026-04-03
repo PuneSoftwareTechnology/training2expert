@@ -161,7 +161,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       <div className="flex h-14 items-center justify-between px-4">
         {(isMobile || !sidebarCollapsed) && (
           <h1 className="text-lg font-bold text-sidebar-primary">
-            SMS {isSuperAdmin ? "Super Admin" : "Admin"}
+            Training2Expert {isSuperAdmin ? "Super Admin" : "Admin"}
           </h1>
         )}
         {isMobile ? (
@@ -263,7 +263,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       {isMobile && (
         <header className="fixed inset-x-0 top-0 z-40 flex h-14 items-center justify-between border-b bg-sidebar px-4 text-sidebar-foreground">
           <h1 className="text-lg font-bold text-sidebar-primary">
-            SMS {isSuperAdmin ? "Super Admin" : "Admin"}
+            Training2Expert {isSuperAdmin ? "Super Admin" : "Admin"}
           </h1>
           <Button
             variant="ghost"

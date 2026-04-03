@@ -169,8 +169,21 @@ export default function EnrollmentPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<Enrollment> }) =>
-      adminService.updateEnrollment(id, data),
+    mutationFn: async ({ id, data }: { id: string; data: Partial<Enrollment> }) => {
+      const result = await adminService.updateEnrollment(id, data);
+
+      // Sync is_approved on the user when enrollment_status changes
+      const enrollment = editEnrollment;
+      if (enrollment?.student_id && data.enrollment_status) {
+        if (data.enrollment_status === "APPROVED") {
+          await adminService.approveStudent(enrollment.student_id);
+        } else {
+          await adminService.unapproveStudent(enrollment.student_id);
+        }
+      }
+
+      return result;
+    },
     onSuccess: () => {
       toast.success("Enrollment updated successfully");
       setEditEnrollment(null);
