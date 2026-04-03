@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Check, Download, Mail, MessageSquare, Pencil, Users, X } from "lucide-react";
 import { toast } from "sonner";
-import JSZip from "jszip";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -75,20 +74,7 @@ export default function CandidateFilterPage() {
   });
 
   const downloadBulkMutation = useMutation({
-    mutationFn: async () => {
-      const cvs = await adminService.downloadBulkCvs(selectedIds);
-      if (!cvs.length) throw new Error("No CVs found for selected candidates");
-      const zip = new JSZip();
-      await Promise.all(
-        cvs.map(async (cv) => {
-          // Proxy through backend to avoid S3 CORS issues
-          const blob = await adminService.downloadCv(cv.studentId);
-          const fileName = `${cv.name.replace(/\s+/g, "_")}_${cv.course.replace(/\s+/g, "_")}.pdf`;
-          zip.file(fileName, blob);
-        }),
-      );
-      return zip.generateAsync({ type: "blob" });
-    },
+    mutationFn: () => adminService.downloadBulkCvs(selectedIds),
     onSuccess: (blob) => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
