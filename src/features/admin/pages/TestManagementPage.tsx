@@ -1,10 +1,16 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, FileText, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, FileText, ChevronLeft, ChevronRight, FileSpreadsheet, PenLine } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,6 +28,7 @@ import { FilterActions } from "@/components/ui/filter-actions";
 import { adminService } from "@/services/admin.service";
 import { getErrorMessage } from "@/services/api";
 import { CreateTestDialog } from "../components/test/CreateTestDialog";
+import { CsvTestUploadDialog } from "../components/test/CsvTestUploadDialog";
 import { EditTestDialog } from "../components/test/EditTestDialog";
 import { ViewTestDialog } from "../components/test/ViewTestDialog";
 import { TestAttemptsDialog } from "../components/test/TestAttemptsDialog";
@@ -30,6 +37,7 @@ import { TestCard } from "../components/test/TestCard";
 export default function TestManagementPage() {
   const queryClient = useQueryClient();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [csvDialogOpen, setCsvDialogOpen] = useState(false);
   const [editingTestId, setEditingTestId] = useState<string | null>(null);
   const [viewingTestId, setViewingTestId] = useState<string | null>(null);
   const [attemptsTestId, setAttemptsTestId] = useState<string | null>(null);
@@ -105,13 +113,26 @@ export default function TestManagementPage() {
               isFetching={isFetching}
               showReset={false}
             />
-            <Button
-              size="lg"
-              onClick={() => setCreateDialogOpen(true)}
-              className="bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-md shadow-teal-200/50 hover:from-teal-600 hover:to-cyan-700"
-            >
-              <Plus className="mr-2 h-4 w-4" /> Create Test
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="lg"
+                  className="bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-md shadow-teal-200/50 hover:from-teal-600 hover:to-cyan-700"
+                >
+                  <Plus className="mr-2 h-4 w-4" /> Create Test
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuItem onClick={() => setCreateDialogOpen(true)}>
+                  <PenLine className="mr-2 h-4 w-4" />
+                  Create Manually
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setCsvDialogOpen(true)}>
+                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                  Upload CSV
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
@@ -196,6 +217,10 @@ export default function TestManagementPage() {
         <CreateTestDialog
           open={createDialogOpen}
           onOpenChange={setCreateDialogOpen}
+        />
+        <CsvTestUploadDialog
+          open={csvDialogOpen}
+          onOpenChange={setCsvDialogOpen}
         />
         <EditTestDialog
           open={!!editingTestId}

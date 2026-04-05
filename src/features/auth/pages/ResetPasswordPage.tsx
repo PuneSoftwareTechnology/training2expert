@@ -2,8 +2,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { KeyRound } from 'lucide-react';
+import { KeyRound, ShieldAlert, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
+import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { PasswordInput } from '@/components/ui/password-input';
@@ -20,6 +21,7 @@ export default function ResetPasswordPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const {
     register,
@@ -36,8 +38,9 @@ export default function ResetPasswordPage() {
         password: data.newPassword,
       }),
     onSuccess: () => {
+      setIsSuccess(true);
       toast.success('Password reset successfully');
-      navigate(ROUTES.LOGIN);
+      setTimeout(() => navigate(ROUTES.LOGIN), 2000);
     },
     onError: (error) => {
       toast.error(getErrorMessage(error));
@@ -52,16 +55,52 @@ export default function ResetPasswordPage() {
     return (
       <AuthLayout>
         <Card className="shadow-lg shadow-primary/[0.04]">
-          <CardHeader className="text-center">
+          <CardHeader className="text-center space-y-3">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
+              <ShieldAlert className="h-7 w-7 text-destructive" />
+            </div>
             <CardTitle className="text-2xl font-bold">Invalid Link</CardTitle>
+            <CardDescription className="text-sm">
+              This password reset link is invalid or has expired. Please request a new one to continue.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button asChild className="w-full">
+              <Link to={ROUTES.FORGOT_PASSWORD}>
+                Request a New Reset Link
+              </Link>
+            </Button>
+            <p className="text-center text-sm text-muted-foreground">
+              <Link to={ROUTES.LOGIN} className="inline-flex items-center gap-1 text-primary hover:underline">
+                <ArrowLeft className="h-3.5 w-3.5" />
+                Back to Login
+              </Link>
+            </p>
+          </CardContent>
+        </Card>
+      </AuthLayout>
+    );
+  }
+
+  if (isSuccess) {
+    return (
+      <AuthLayout>
+        <Card className="shadow-lg shadow-primary/[0.04]">
+          <CardHeader className="text-center space-y-3">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
+              <CheckCircle2 className="h-7 w-7 text-green-600" />
+            </div>
+            <CardTitle className="text-2xl font-bold">Password Reset</CardTitle>
             <CardDescription>
-              This password reset link is invalid or has expired.
+              Your password has been reset successfully. Redirecting to login...
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center">
-            <Link to={ROUTES.FORGOT_PASSWORD} className="text-primary hover:underline">
-              Request a new reset link
-            </Link>
+            <Button asChild variant="outline" className="w-full">
+              <Link to={ROUTES.LOGIN}>
+                Go to Login
+              </Link>
+            </Button>
           </CardContent>
         </Card>
       </AuthLayout>
@@ -70,54 +109,60 @@ export default function ResetPasswordPage() {
 
   return (
     <AuthLayout>
-        <Card className="shadow-lg shadow-primary/[0.04]">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold">Reset Password</CardTitle>
-            <CardDescription>Enter your new password</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={(e) => { e.preventDefault(); handleSubmit(onSubmit)(e); }} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="newPassword">New Password</Label>
-                <PasswordInput
-                  id="newPassword"
-                  placeholder="Min 8 characters"
-                  {...register('newPassword')}
-                />
-                {errors.newPassword && (
-                  <p className="text-sm text-destructive">{errors.newPassword.message}</p>
-                )}
-              </div>
+      <Card className="shadow-lg shadow-primary/[0.04]">
+        <CardHeader className="text-center space-y-3">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+            <KeyRound className="h-7 w-7 text-primary" />
+          </div>
+          <CardTitle className="text-2xl font-bold">Reset Password</CardTitle>
+          <CardDescription>
+            Create a new password for your account
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={(e) => { e.preventDefault(); handleSubmit(onSubmit)(e); }} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">New Password</Label>
+              <PasswordInput
+                id="newPassword"
+                placeholder="Min 8 characters"
+                {...register('newPassword')}
+              />
+              {errors.newPassword && (
+                <p className="text-sm text-destructive">{errors.newPassword.message}</p>
+              )}
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <PasswordInput
-                  id="confirmPassword"
-                  placeholder="Re-enter password"
-                  {...register('confirmPassword')}
-                />
-                {errors.confirmPassword && (
-                  <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
-                )}
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <PasswordInput
+                id="confirmPassword"
+                placeholder="Re-enter password"
+                {...register('confirmPassword')}
+              />
+              {errors.confirmPassword && (
+                <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
+              )}
+            </div>
 
-              <Button
-                type="submit"
-                className="w-full"
-                loading={mutation.isPending}
-              >
-                {!mutation.isPending && <KeyRound className="mr-2 h-4 w-4" />}
-                {mutation.isPending ? 'Resetting...' : 'Reset Password'}
-              </Button>
+            <Button
+              type="submit"
+              className="w-full"
+              loading={mutation.isPending}
+            >
+              {!mutation.isPending && <KeyRound className="mr-2 h-4 w-4" />}
+              {mutation.isPending ? 'Resetting...' : 'Reset Password'}
+            </Button>
 
-              <p className="text-center text-sm text-muted-foreground">
-                <Link to={ROUTES.LOGIN} className="text-primary hover:underline">
-                  Back to Login
-                </Link>
-              </p>
-            </form>
-          </CardContent>
-        </Card>
+            <p className="text-center text-sm text-muted-foreground">
+              <Link to={ROUTES.LOGIN} className="inline-flex items-center gap-1 text-primary hover:underline">
+                <ArrowLeft className="h-3.5 w-3.5" />
+                Back to Login
+              </Link>
+            </p>
+          </form>
+        </CardContent>
+      </Card>
     </AuthLayout>
   );
 }

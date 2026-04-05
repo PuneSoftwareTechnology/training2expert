@@ -206,8 +206,8 @@ export function EvaluationDialog({
                             <FileText className="h-3.5 w-3.5 text-emerald-600" />
                           </div>
                           <div className="text-left min-w-0 flex-1">
-                            <p className="text-xs font-medium">
-                              Project {idx + 1}
+                            <p className="text-xs font-medium truncate">
+                              {project.originalFilename || `Project ${idx + 1}`}
                             </p>
                             <p className="text-[10px] text-muted-foreground">
                               {new Date(project.createdAt).toLocaleDateString()}

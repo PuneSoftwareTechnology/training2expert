@@ -100,6 +100,7 @@ export interface CvTemplate {
 export interface ProjectSubmission {
   id: string;
   url: string;
+  originalFilename: string;
   createdAt: string;
 }
 

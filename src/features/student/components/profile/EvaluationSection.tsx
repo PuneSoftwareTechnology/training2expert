@@ -272,7 +272,7 @@ export default function EvaluationSection({ evaluations, projectSubmissions }: E
                       <Upload className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">Project {idx + 1}</p>
+                      <p className="truncate text-sm font-medium">{project.originalFilename || `Project ${idx + 1}`}</p>
                       <p className="text-xs text-muted-foreground">
                         {new Date(project.createdAt).toLocaleDateString()}
                       </p>
