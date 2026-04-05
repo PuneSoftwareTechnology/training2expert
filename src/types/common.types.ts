@@ -1,5 +1,5 @@
 export type EmploymentStatus = "WORKING" | "NON_WORKING" | "FRESHER";
-export type CompletionStatus = "ACTIVE" | "DROPOUT" | "COMPLETED";
+export type CompletionStatus = "IN_PROGRESS" | "ACTIVE" | "DROPOUT" | "COMPLETED";
 export type EnrollmentStatus = "NEW" | "APPROVED" | "REJECTED";
 export type LeadStatus = "PROSPECTIVE" | "NON_PROSPECTIVE" | "ENROLLED";
 export type DemoStatus = "DONE" | "PENDING";

@@ -8,6 +8,7 @@ export const EMPLOYMENT_STATUSES = [
 ] as const;
 
 export const COMPLETION_STATUSES = [
+  { value: "IN_PROGRESS", label: "In Progress" },
   { value: "ACTIVE", label: "Active" },
   { value: "DROPOUT", label: "Dropout" },
   { value: "COMPLETED", label: "Completed" },

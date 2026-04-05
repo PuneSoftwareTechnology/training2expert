@@ -40,9 +40,93 @@ import { FilterActions } from "@/components/ui/filter-actions";
 
 import { adminService } from "@/services/admin.service";
 import { getErrorMessage } from "@/services/api";
+import { formatDate } from "@/utils/format";
 import { ENROLLMENT_STATUSES, INSTITUTES } from "@/constants/courses";
 import type { EnrollmentStatus, Institute } from "@/types/common.types";
 import type { Enrollment } from "@/types/admin.types";
+
+function exportEnrollmentsCsv(items: Enrollment[]) {
+  const headers = [
+    "Name",
+    "Email",
+    "Phone",
+    "Enrollment Status",
+    "Institute",
+    "Course",
+    "Batch",
+    "Trainer",
+    "Start Date",
+    "End Date",
+    "Completion Status",
+    "Total Fee",
+    "Installment 1 Amount",
+    "Installment 1 Date",
+    "Installment 1 Mode",
+    "Installment 2 Amount",
+    "Installment 2 Date",
+    "Installment 2 Mode",
+    "Installment 3 Amount",
+    "Installment 3 Date",
+    "Installment 3 Mode",
+    "Pending Amount",
+    "Placement Status",
+    "Company Name",
+  ];
+
+  const escape = (v: unknown) => {
+    const s = v == null ? "" : String(v);
+    return s.includes(",") || s.includes('"') || s.includes("\n")
+      ? `"${s.replace(/"/g, '""')}"`
+      : s;
+  };
+
+  const fmtDate = (v?: string | null) => (v ? formatDate(v) : "");
+
+  const rows = items.map((e) => {
+    const paid =
+      (Number(e.installment1_amount) || 0) +
+      (Number(e.installment2_amount) || 0) +
+      (Number(e.installment3_amount) || 0);
+    const pending = (Number(e.total_fee) || 0) - paid;
+    return [
+      e.name,
+      e.email,
+      e.phone,
+      e.enrollment_status,
+      e.institute,
+      e.course,
+      e.batch,
+      e.trainer,
+      fmtDate(e.start_date),
+      fmtDate(e.end_date),
+      e.completion_status,
+      e.total_fee,
+      e.installment1_amount ?? "",
+      fmtDate(e.installment1_date),
+      e.installment1_mode ?? "",
+      e.installment2_amount ?? "",
+      fmtDate(e.installment2_date),
+      e.installment2_mode ?? "",
+      e.installment3_amount ?? "",
+      fmtDate(e.installment3_date),
+      e.installment3_mode ?? "",
+      pending,
+      e.placement_status,
+      e.company_name ?? "",
+    ]
+      .map(escape)
+      .join(",");
+  });
+
+  const csv = [headers.join(","), ...rows].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `enrollments_${new Date().toISOString().split("T")[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 import { AddCandidateDialog } from "../components/AddCandidateDialog";
 import { EditEnrollmentDialog } from "../components/EditEnrollmentDialog";
@@ -203,6 +287,18 @@ export default function EnrollmentPage() {
 
   const courses = data?.courses ?? [];
 
+  // Client-side search filter across visible columns
+  const filteredItems = (() => {
+    const items = data?.items ?? [];
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((e) =>
+      [e.name, e.email, e.phone, e.course, e.batch, e.trainer, e.institute, e.enrollment_status, e.completion_status, e.placement_status, e.company_name]
+        .filter(Boolean)
+        .some((v) => v!.toLowerCase().includes(q)),
+    );
+  })();
+
   const totalItems = data?.total ?? data?.items?.length ?? 0;
   const totalPages = data?.totalPages ?? 1;
 
@@ -338,7 +434,17 @@ export default function EnrollmentPage() {
               </SelectContent>
             </Select>
             {/* Export */}
-            <Button variant="outline" size="sm">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!filteredItems.length}
+              onClick={() => {
+                if (filteredItems.length) {
+                  exportEnrollmentsCsv(filteredItems);
+                  toast.success("CSV exported");
+                }
+              }}
+            >
               <Download className="mr-2 h-4 w-4" />
               Export Data
             </Button>
@@ -508,8 +614,8 @@ export default function EnrollmentPage() {
                   </TableHeader>
 
                   <TableBody>
-                    {data?.items && data.items.length > 0 ? (
-                      data.items.map((enrollment, index) => (
+                    {filteredItems.length > 0 ? (
+                      filteredItems.map((enrollment, index) => (
                         <EnrollmentTableRow
                           key={enrollment.id}
                           enrollment={enrollment}

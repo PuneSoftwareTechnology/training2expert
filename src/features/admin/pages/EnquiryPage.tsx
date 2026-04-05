@@ -166,23 +166,26 @@ export default function EnquiryPage() {
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
-  const onSubmit = (data: EnquiryFormValues) => {
+  const onSubmit = (values: EnquiryFormValues) => {
+    const { enquiry_date, ...rest } = values;
+    const payload = { ...rest, enquiryDate: enquiry_date };
     editingEnquiry
-      ? updateMutation.mutate({ id: editingEnquiry.id, data })
-      : createMutation.mutate(data);
+      ? updateMutation.mutate({ id: editingEnquiry.id, data: payload as unknown as Partial<EnquiryFormValues> })
+      : createMutation.mutate(payload as unknown as EnquiryFormValues);
   };
 
   const openEdit = (enquiry: Enquiry) => {
     setEditingEnquiry(enquiry);
+    const raw = enquiry as unknown as Record<string, string>;
     form.reset({
-      enquiry_date: enquiry.enquiry_date,
+      enquiry_date: (raw.enquiry_date ?? "").split("T")[0],
       name: enquiry.name,
       phone: enquiry.phone,
       email: enquiry.email ?? "",
       course: enquiry.course ?? "",
       institute: enquiry.institute,
-      leadStatus: enquiry.leadStatus,
-      demoStatus: enquiry.demoStatus,
+      leadStatus: (raw.lead_status ?? enquiry.leadStatus) as EnquiryFormValues["leadStatus"],
+      demoStatus: (raw.demo_status ?? enquiry.demoStatus) as EnquiryFormValues["demoStatus"],
     });
     setDialogOpen(true);
   };

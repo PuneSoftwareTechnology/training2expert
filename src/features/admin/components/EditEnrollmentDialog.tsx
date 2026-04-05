@@ -78,7 +78,7 @@ function enrollmentToFields(e: Enrollment): EditFields {
     trainer: e.trainer || "",
     start_date: toDateInputValue(e.start_date),
     end_date: toDateInputValue(e.end_date),
-    completion_status: e.completion_status || "ACTIVE",
+    completion_status: e.completion_status || "IN_PROGRESS",
     total_fee: Number(e.total_fee) || 0,
     installment1_amount: Number(e.installment1_amount) || 0,
     installment1_date: toDateInputValue(e.installment1_date),
