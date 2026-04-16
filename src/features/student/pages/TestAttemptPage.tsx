@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Send, CheckCircle, XCircle, Trophy } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -34,6 +34,7 @@ export default function TestAttemptPage() {
   const [testData, setTestData] = useState<StartTestResponse | null>(null);
   const [startError, setStartError] = useState<string | null>(null);
   const submittedRef = useRef(false);
+  const queryClient = useQueryClient();
 
   // Submit test mutation
   const submitMutation = useMutation({
@@ -41,6 +42,7 @@ export default function TestAttemptPage() {
       studentService.submitTest(attemptId, testId!, ans),
     onSuccess: (data) => {
       setResult(data);
+      queryClient.invalidateQueries({ queryKey: ["student"] });
       toast.success('Test submitted successfully!');
     },
     onError: (error) => toast.error(getErrorMessage(error)),

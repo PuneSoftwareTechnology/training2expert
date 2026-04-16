@@ -7,11 +7,13 @@ export const basicDetailsSchema = z.object({
   area: z.string().optional(),
 });
 
+const currentYear = new Date().getFullYear();
+
 export const educationSchema = z.object({
   graduation: z.string().optional(),
-  graduationYear: z.coerce.number().min(1980).max(2030).optional(),
+  graduationYear: z.coerce.number().min(1980).max(currentYear + 6, `Year must not be greater than ${currentYear + 6}`).optional(),
   postGraduation: z.string().optional(),
-  pgYear: z.coerce.number().min(1980).max(2030).optional(),
+  pgYear: z.coerce.number().min(1980).max(currentYear + 6, `Year must not be greater than ${currentYear + 6}`).optional(),
   certifications: z.array(z.object({
     name: z.string(),
     certificate: z.string().optional(),
@@ -21,7 +23,7 @@ export const educationSchema = z.object({
 
 export const workExperienceSchema = z.object({
   employmentStatus: z.enum(['WORKING', 'NON_WORKING', 'FRESHER']),
-  lastWorkedYear: z.coerce.number().min(1980).max(2030).optional(),
+  lastWorkedYear: z.coerce.number().min(1980, 'Year must be 1980 or later').max(currentYear, `Year must not be greater than ${currentYear}`).optional(),
   itExperienceYears: z.coerce.number().min(0).max(50).default(0),
   itExperienceMonths: z.coerce.number().min(0).max(11).default(0),
   nonItExperienceYears: z.coerce.number().min(0).max(50).default(0),

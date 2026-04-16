@@ -55,10 +55,11 @@ export function StudentLayout({ children }: StudentLayoutProps) {
   const logout = useAuthStore((s) => s.logout);
   const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
-  const profileData = queryClient.getQueryData<StudentProfileFull>([
-    "student",
-    "profile",
-  ]);
+  const { data: profileData } = useQuery({
+    queryKey: ["student", "profile"],
+    queryFn: studentService.getProfile,
+    staleTime: 5 * 60 * 1000,
+  });
   const isVerified = profileData?.enrollmentStatus === "APPROVED";
   const [showLogout, setShowLogout] = useState(false);
   const [activeSection, setActiveSection] = useState("profile");

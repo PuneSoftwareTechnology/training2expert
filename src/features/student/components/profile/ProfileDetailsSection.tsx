@@ -185,12 +185,19 @@ export default function ProfileDetailsSection({
     const n = Number(v);
     return Number.isNaN(n) ? undefined : n;
   };
-  const toYear = (v: unknown) => {
+  const toYear = (v: unknown, allowFuture = false) => {
     const n = Number(v);
-    return n >= 1980 && n <= 2030 ? n : undefined;
+    const max = allowFuture ? new Date().getFullYear() + 6 : new Date().getFullYear();
+    return n >= 1980 && n <= max ? n : undefined;
   };
 
-  const onSaveAll = () => {
+  const onSaveAll = async () => {
+    const [basicValid, workValid] = await Promise.all([
+      basicForm.trigger(),
+      workForm.trigger(),
+    ]);
+    if (!basicValid || !workValid) return;
+
     const basic = basicForm.getValues();
     const education = educationForm.getValues();
     const work = workForm.getValues();
@@ -201,10 +208,12 @@ export default function ProfileDetailsSection({
       city: basic.city || undefined,
       area: basic.area || undefined,
       graduation: education.graduation || undefined,
-      graduationYear: toYear(education.graduationYear),
+      graduationYear: toYear(education.graduationYear, true),
       postGraduation: education.postGraduation || undefined,
-      pgYear: toYear(education.pgYear),
-      certifications: education.certifications?.map(({ certificateDisplayUrl: _, ...rest }) => rest),
+      pgYear: toYear(education.pgYear, true),
+      certifications: education.certifications?.map(
+        ({ certificateDisplayUrl: _, ...rest }) => rest,
+      ),
       employmentStatus: work.employmentStatus || undefined,
       lastWorkedYear: toYear(work.lastWorkedYear),
       itExperienceYears: toNum(work.itExperienceYears) ?? 0,
@@ -250,7 +259,14 @@ export default function ProfileDetailsSection({
     const current = educationForm.getValues("certifications") ?? [];
     educationForm.setValue(
       "certifications",
-      [...current, { name: certInput.trim(), certificate: certificateKey, certificateDisplayUrl }],
+      [
+        ...current,
+        {
+          name: certInput.trim(),
+          certificate: certificateKey,
+          certificateDisplayUrl,
+        },
+      ],
       { shouldDirty: true },
     );
     setCertInput("");
@@ -428,7 +444,7 @@ export default function ProfileDetailsSection({
 
               {/* Name + meta */}
               <div className="flex-1 text-center sm:pb-1 sm:text-left">
-                <h1 className="text-xl font-bold text-foreground sm:text-2xl">
+                <h1 className="inline-block rounded-full bg-slate-800/80 px-4  text-xl font-bold text-white sm:text-2xl">
                   {profile.name || "Student"}
                 </h1>
                 <div className="mt-1 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-muted-foreground sm:justify-start">
@@ -481,15 +497,21 @@ export default function ProfileDetailsSection({
             </div>
 
             {/* Quick info pills */}
-            {(profile.city || profile.itExperienceYears > 0 || profile.itExperienceMonths > 0 || profile.certifications?.length > 0 || profile.graduation) && (
+            {(profile.city ||
+              profile.itExperienceYears > 0 ||
+              profile.itExperienceMonths > 0 ||
+              profile.certifications?.length > 0 ||
+              profile.graduation) && (
               <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
                 {profile.city && (
                   <div className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-purple-50 to-cyan-50 px-3 py-1.5 text-xs font-medium text-slate-700 dark:from-purple-900/20 dark:to-cyan-900/20 dark:text-slate-300">
                     <MapPin className="h-3 w-3 shrink-0 text-purple-500 dark:text-purple-400" />
-                    {profile.city}{profile.area ? `, ${profile.area}` : ""}
+                    {profile.city}
+                    {profile.area ? `, ${profile.area}` : ""}
                   </div>
                 )}
-                {(profile.itExperienceYears > 0 || profile.itExperienceMonths > 0) && (
+                {(profile.itExperienceYears > 0 ||
+                  profile.itExperienceMonths > 0) && (
                   <div className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-purple-50 to-cyan-50 px-3 py-1.5 text-xs font-medium text-slate-700 dark:from-purple-900/20 dark:to-cyan-900/20 dark:text-slate-300">
                     <Clock className="h-3 w-3 shrink-0 text-cyan-600 dark:text-cyan-400" />
                     {profile.itExperienceYears > 0
@@ -500,13 +522,16 @@ export default function ProfileDetailsSection({
                 {profile.certifications?.length > 0 && (
                   <div className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-purple-50 to-cyan-50 px-3 py-1.5 text-xs font-medium text-slate-700 dark:from-purple-900/20 dark:to-cyan-900/20 dark:text-slate-300">
                     <Award className="h-3 w-3 shrink-0 text-amber-500 dark:text-amber-400" />
-                    {profile.certifications.length} Certification{profile.certifications.length > 1 ? "s" : ""}
+                    {profile.certifications.length} Certification
+                    {profile.certifications.length > 1 ? "s" : ""}
                   </div>
                 )}
-                {profile.graduation && (
+                {(profile.postGraduation || profile.graduation) && (
                   <div className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-purple-50 to-cyan-50 px-3 py-1.5 text-xs font-medium text-slate-700 dark:from-purple-900/20 dark:to-cyan-900/20 dark:text-slate-300">
                     <GraduationCap className="h-3 w-3 shrink-0 text-blue-500 dark:text-blue-400" />
-                    {profile.graduation}{profile.graduationYear ? ` '${String(profile.graduationYear).slice(-2)}` : ""}
+                    {profile.postGraduation
+                      ? `${profile.postGraduation}${profile.pgYear ? ` ${profile.pgYear}` : ""}`
+                      : `${profile.graduation}${profile.graduationYear ? ` ${profile.graduationYear}` : ""}`}
                   </div>
                 )}
               </div>
@@ -692,7 +717,8 @@ export default function ProfileDetailsSection({
                               {cert.name}
                             </span>
                             {(() => {
-                              const url = cert.certificateDisplayUrl || cert.certificate;
+                              const url =
+                                cert.certificateDisplayUrl || cert.certificate;
                               return url?.startsWith("http") ? (
                                 <a
                                   href={url}
@@ -731,12 +757,15 @@ export default function ProfileDetailsSection({
                   >
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Certification</AlertDialogTitle>
+                        <AlertDialogTitle>
+                          Delete Certification
+                        </AlertDialogTitle>
                         <AlertDialogDescription>
                           Are you sure you want to remove{" "}
                           <span className="font-semibold text-foreground">
                             {certDeleteIndex !== null
-                              ? (educationForm.getValues("certifications") ?? [])[certDeleteIndex]?.name
+                              ? (educationForm.getValues("certifications") ??
+                                  [])[certDeleteIndex]?.name
                               : ""}
                           </span>
                           ? This action cannot be undone.
@@ -958,12 +987,15 @@ export default function ProfileDetailsSection({
                   </Label>
                   <Select
                     value={workForm.watch("employmentStatus")}
-                    onValueChange={(val) =>
+                    onValueChange={(val) => {
                       workForm.setValue(
                         "employmentStatus",
                         val as "WORKING" | "NON_WORKING" | "FRESHER",
-                      )
-                    }
+                      );
+                      if (val !== "NON_WORKING") {
+                        workForm.setValue("lastWorkedYear", undefined);
+                      }
+                    }}
                   >
                     <SelectTrigger className="h-9 rounded-lg">
                       <SelectValue placeholder="Select" />
@@ -977,6 +1009,7 @@ export default function ProfileDetailsSection({
                     </SelectContent>
                   </Select>
                 </div>
+                {workForm.watch("employmentStatus") === "NON_WORKING" && (
                 <div className="space-y-1.5">
                   <Label className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                     Last Worked
@@ -989,7 +1022,13 @@ export default function ProfileDetailsSection({
                     placeholder="YYYY"
                     className="h-9 rounded-lg"
                   />
+                  {workForm.formState.errors.lastWorkedYear && (
+                    <p className="text-xs text-destructive">
+                      {workForm.formState.errors.lastWorkedYear.message}
+                    </p>
+                  )}
                 </div>
+                )}
                 <div className="space-y-1.5">
                   <Label className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                     IT Experience
@@ -1067,6 +1106,7 @@ export default function ProfileDetailsSection({
                     )?.label || "—"
                   }
                 />
+                {profile.employmentStatus === "NON_WORKING" && (
                 <InfoItem
                   label="Last Worked"
                   value={
@@ -1075,6 +1115,7 @@ export default function ProfileDetailsSection({
                       : "—"
                   }
                 />
+                )}
                 <InfoItem
                   label="IT Experience"
                   value={`${profile.itExperienceYears || 0}y ${profile.itExperienceMonths || 0}m`}

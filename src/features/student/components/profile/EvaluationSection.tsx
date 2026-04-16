@@ -1,11 +1,21 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
   Star, CloudUpload, Upload, TrendingUp, MessageCircle, Award, Sparkles,
-  CheckCircle2, XCircle, BookOpen,
+  CheckCircle2, XCircle, BookOpen, Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { studentService } from '@/services/student.service';
 import { getErrorMessage } from '@/services/api';
 import { SectionHeader, fadeUp } from './shared';
@@ -25,6 +35,18 @@ export default function EvaluationSection({ evaluations, projectSubmissions }: E
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['student', 'profile'] });
       toast.success('Project uploaded successfully');
+    },
+    onError: (e) => toast.error(getErrorMessage(e)),
+  });
+
+  const [projectDeleteId, setProjectDeleteId] = useState<string | null>(null);
+
+  const projectDeleteMutation = useMutation({
+    mutationFn: studentService.deleteProject,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['student', 'profile'] });
+      toast.success('Project deleted');
+      setProjectDeleteId(null);
     },
     onError: (e) => toast.error(getErrorMessage(e)),
   });
@@ -79,7 +101,7 @@ export default function EvaluationSection({ evaluations, projectSubmissions }: E
                 <h3 className="text-sm font-semibold">Technical Score</h3>
               </div>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                Overall: <span className="font-semibold text-foreground">{totalScored}</span> / {totalPossible} marks
+                Overall: <span className="font-semibold text-foreground">{avgTechnicalPct}%</span>
               </p>
             </div>
           </div>
@@ -105,18 +127,13 @@ export default function EvaluationSection({ evaluations, projectSubmissions }: E
                         <BookOpen className="h-3.5 w-3.5 text-violet-500" />
                         <span className="text-sm font-semibold text-foreground">{evaluation.courseName}</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="rounded-md bg-violet-50 px-2 py-0.5 text-xs font-bold text-violet-700 dark:bg-violet-900/20 dark:text-violet-300">
-                          {evaluation.technicalMarksScored}/{evaluation.technicalTotalMarks}
-                        </span>
-                        <span className={`rounded-md px-2 py-0.5 text-xs font-bold ${
-                          coursePct >= 50
-                            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300'
-                            : 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400'
-                        }`}>
-                          {coursePct}%
-                        </span>
-                      </div>
+                      <span className={`rounded-md px-2 py-0.5 text-xs font-bold ${
+                        coursePct >= 50
+                          ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300'
+                          : 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400'
+                      }`}>
+                        {coursePct}%
+                      </span>
                     </div>
 
                     {/* Test scores table */}
@@ -126,7 +143,6 @@ export default function EvaluationSection({ evaluations, projectSubmissions }: E
                           <thead>
                             <tr className="bg-slate-50/80 dark:bg-slate-800/50">
                               <th className="px-3 py-2 text-left font-medium text-muted-foreground">Test</th>
-                              <th className="px-3 py-2 text-right font-medium text-muted-foreground">Score</th>
                               <th className="w-16 px-3 py-2 text-right font-medium text-muted-foreground">%</th>
                               <th className="w-8 px-2 py-2" />
                             </tr>
@@ -144,9 +160,6 @@ export default function EvaluationSection({ evaluations, projectSubmissions }: E
                                   className="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-800/30"
                                 >
                                   <td className="px-3 py-2 font-medium text-foreground">{test.testName}</td>
-                                  <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
-                                    <span className="font-semibold text-foreground">{test.score}</span>/{test.totalMarks}
-                                  </td>
                                   <td className={`px-3 py-2 text-right tabular-nums font-semibold ${passed ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
                                     {pct}%
                                   </td>
@@ -163,9 +176,6 @@ export default function EvaluationSection({ evaluations, projectSubmissions }: E
                           <tfoot>
                             <tr className="border-t border-slate-200 bg-violet-50/50 dark:border-slate-700 dark:bg-violet-900/10">
                               <td className="px-3 py-2 text-xs font-semibold text-violet-700 dark:text-violet-300">Accumulated</td>
-                              <td className="px-3 py-2 text-right tabular-nums text-xs font-bold text-violet-700 dark:text-violet-300">
-                                {evaluation.technicalMarksScored}/{evaluation.technicalTotalMarks}
-                              </td>
                               <td className="px-3 py-2 text-right tabular-nums text-xs font-bold text-violet-700 dark:text-violet-300">
                                 {coursePct}%
                               </td>
@@ -258,26 +268,37 @@ export default function EvaluationSection({ evaluations, projectSubmissions }: E
             {hasProjects ? (
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3">
                 {projectSubmissions.map((project, idx) => (
-                  <motion.a
+                  <motion.div
                     key={project.id}
-                    href={project.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.1 }}
                     className="flex items-center gap-3 rounded-xl border border-slate-150 bg-slate-50 px-4 py-3 transition-all hover:border-sky-200 hover:bg-sky-50/50 dark:border-slate-700 dark:bg-slate-800/50 dark:hover:border-sky-800 dark:hover:bg-sky-900/20"
                   >
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
-                      <Upload className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{project.originalFilename || `Project ${idx + 1}`}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(project.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </motion.a>
+                    <a
+                      href={project.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex min-w-0 flex-1 items-center gap-3"
+                    >
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
+                        <Upload className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium">{project.originalFilename || `Project ${idx + 1}`}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(project.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => setProjectDeleteId(project.id)}
+                      className="shrink-0 rounded-lg p-1.5 text-red-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-300"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </motion.div>
                 ))}
               </div>
             ) : (
@@ -288,6 +309,31 @@ export default function EvaluationSection({ evaluations, projectSubmissions }: E
               </div>
             )}
           </div>
+
+          {/* Delete Project Confirmation */}
+          <AlertDialog
+            open={projectDeleteId !== null}
+            onOpenChange={(open) => { if (!open) setProjectDeleteId(null); }}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Project</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete this project submission? This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => projectDeleteId && projectDeleteMutation.mutate(projectDeleteId)}
+                  className="bg-red-600 hover:bg-red-700"
+                  disabled={projectDeleteMutation.isPending}
+                >
+                  {projectDeleteMutation.isPending ? 'Deleting...' : 'Delete'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </motion.div>
 

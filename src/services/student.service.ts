@@ -37,6 +37,10 @@ export const studentService = {
     return extractData<{ url: string }>(response);
   },
 
+  deleteProject: async (projectId: string): Promise<void> => {
+    await api.delete(`/student/project/${projectId}`);
+  },
+
   uploadProject: async (file: File): Promise<{ url: string }> => {
     const formData = new FormData();
     formData.append('file', file);

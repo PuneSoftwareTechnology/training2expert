@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useForm, useFieldArray, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -48,16 +48,6 @@ export function EditTestDialog({
 }: EditTestDialogProps) {
   const queryClient = useQueryClient();
 
-  const form = useForm<TestFormValues>({
-    resolver: zodResolver(testSchema) as Resolver<TestFormValues>,
-    defaultValues,
-  });
-
-  const fieldArray = useFieldArray({
-    control: form.control,
-    name: "questions",
-  });
-
   const { data: courses = [] } = useQuery({
     queryKey: ["admin", "courses"],
     queryFn: adminService.getCourses,
@@ -69,40 +59,51 @@ export function EditTestDialog({
     enabled: !!testId && open,
   });
 
-  // Populate form when test detail loads
-  useEffect(() => {
-    if (testDetail && open) {
-      const questions = (testDetail.questions || []).map((q) => {
-        const correctIdx = q.correctAnswer
-          ? q.options.indexOf(q.correctAnswer)
-          : (q.correctOptionIndex ?? 0);
-        return {
-          question: q.question,
-          options: q.options.length === 4 ? q.options : ["", "", "", ""],
-          correctOptionIndex: correctIdx >= 0 ? correctIdx : 0,
-          marks: q.marks ?? 1,
-        };
-      });
+  // Compute form values from test detail synchronously during render
+  const formValues = useMemo<TestFormValues | undefined>(() => {
+    if (!testDetail || !open) return undefined;
+    const questions = (testDetail.questions || []).map((q) => {
+      const correctIdx = q.correctAnswer
+        ? q.options.indexOf(q.correctAnswer)
+        : (q.correctOptionIndex ?? 0);
+      return {
+        question: q.question,
+        options: q.options.length === 4 ? q.options : ["", "", "", ""],
+        correctOptionIndex: correctIdx >= 0 ? correctIdx : 0,
+        marks: q.marks ?? 1,
+      };
+    });
 
-      form.reset({
-        title: testDetail.title,
-        description: testDetail.description || "",
-        course: testDetail.course,
-        durationMinutes: testDetail.durationMinutes,
-        questions:
-          questions.length > 0
-            ? questions
-            : [
-                {
-                  question: "",
-                  options: ["", "", "", ""],
-                  correctOptionIndex: 0,
-                  marks: 1,
-                },
-              ],
-      });
-    }
-  }, [testDetail, open, form]);
+    return {
+      title: testDetail.title,
+      description: testDetail.description || "",
+      course: testDetail.course || "",
+      durationMinutes: testDetail.durationMinutes,
+      questions:
+        questions.length > 0
+          ? questions
+          : [
+              {
+                question: "",
+                options: ["", "", "", ""],
+                correctOptionIndex: 0,
+                marks: 1,
+              },
+            ],
+    };
+  }, [testDetail, open]);
+
+  const form = useForm<TestFormValues>({
+    resolver: zodResolver(testSchema) as Resolver<TestFormValues>,
+    defaultValues,
+    values: formValues ?? defaultValues,
+    resetOptions: { keepDirtyValues: true },
+  });
+
+  const fieldArray = useFieldArray({
+    control: form.control,
+    name: "questions",
+  });
 
   // Ensure the test's current course is always in the dropdown,
   // even if the courses list hasn't loaded yet or doesn't include it
