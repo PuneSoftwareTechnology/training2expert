@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Download, Star, Search, AlertCircle, MapPin, Briefcase, Users, CheckSquare, ChevronLeft, ChevronRight, Mail } from 'lucide-react';
+import { Download, Star, Search, AlertCircle, MapPin, Briefcase, Users, CheckSquare, ChevronLeft, ChevronRight, Mail, User, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ColumnDef } from '@tanstack/react-table';
 
@@ -21,19 +21,33 @@ import { recruiterService } from '@/services/recruiter.service';
 import { getErrorMessage } from '@/services/api';
 import { RECRUITER_DOWNLOAD_LIMIT } from '@/constants/courses';
 import { formatExperience } from '@/utils/format';
+import { ProfileDialog } from '../components/ProfileDialog';
 import type { RecruiterCandidate } from '@/types/student.types';
 
-const INITIAL_FILTERS = { course: '', city: '', minExp: '' };
+const EXP_RANGES = [
+  { label: '0-2 Yrs', min: 0, max: 2 },
+  { label: '2-4 Yrs', min: 2, max: 4 },
+  { label: '4-6 Yrs', min: 4, max: 6 },
+  { label: '6-8 Yrs', min: 6, max: 8 },
+  { label: '8-10 Yrs', min: 8, max: 10 },
+  { label: '10-15 Yrs', min: 10, max: 15 },
+  { label: '15+ Yrs', min: 15, max: undefined },
+] as const;
+
+const INITIAL_FILTERS = { course: '', city: '', area: '', expRange: '' };
 
 export default function CandidateFilterPage() {
   const queryClient = useQueryClient();
   const [filters, setFilters] = useState(INITIAL_FILTERS);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
+  const [profileStudentId, setProfileStudentId] = useState<string | null>(null);
   const setFilter = (key: keyof typeof INITIAL_FILTERS, value: string) => {
     setFilters((f) => ({ ...f, [key]: value }));
     setCurrentPage(1);
   };
+
+  const selectedExpRange = EXP_RANGES.find((r) => r.label === filters.expRange);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['recruiter', 'candidates', filters, currentPage],
@@ -41,7 +55,9 @@ export default function CandidateFilterPage() {
       recruiterService.getCandidates({
         course: filters.course || undefined,
         city: filters.city || undefined,
-        minExperience: filters.minExp ? Number(filters.minExp) : undefined,
+        area: filters.area || undefined,
+        minExperience: selectedExpRange?.min,
+        maxExperience: selectedExpRange?.max,
         page: currentPage,
       }),
   });
@@ -98,7 +114,7 @@ export default function CandidateFilterPage() {
 
   const courses = data?.courses ?? [];
   const cities = data?.cities ?? [];
-  const experienceYears = data?.experienceYears ?? [];
+  const areas = data?.areas ?? [];
   const candidates = data?.items ?? [];
 
   // Only non-shortlisted candidates can be selected
@@ -143,7 +159,15 @@ export default function CandidateFilterPage() {
     }
   };
 
+  // Page offset for S.NO calculation
+  const pageSize = 20;
+  const snoOffset = (currentPage - 1) * pageSize;
+
   const columns: ColumnDef<RecruiterCandidate>[] = [
+    {
+      id: 'sno', header: 'S.No', enableSorting: false,
+      cell: ({ row }) => <span className="text-muted-foreground">{snoOffset + row.index + 1}</span>,
+    },
     {
       id: 'select', enableSorting: false,
       header: () => (
@@ -172,10 +196,75 @@ export default function CandidateFilterPage() {
     },
     { accessorKey: 'course', header: 'Course' },
     { accessorKey: 'city', header: 'City', cell: ({ getValue }) => getValue<string>() ?? '-' },
+    { accessorKey: 'area', header: 'Area', cell: ({ getValue }) => getValue<string>() ?? '-' },
     {
       id: 'experience', header: 'Experience',
       accessorFn: (row) => row.itExperienceYears,
       cell: ({ row }) => formatExperience(row.original.itExperienceYears, row.original.itExperienceMonths),
+    },
+    {
+      id: 'technicalScore', header: 'Technical Score', enableSorting: false,
+      cell: ({ row }) => {
+        const c = row.original;
+        const pct = c.technicalTotalMarks > 0
+          ? Math.round((c.technicalMarksScored / c.technicalTotalMarks) * 100)
+          : 0;
+        const color = pct >= 70
+          ? 'border-green-200 bg-green-50 text-green-700'
+          : pct >= 40
+            ? 'border-yellow-200 bg-yellow-50 text-yellow-700'
+            : 'border-red-200 bg-red-50 text-red-700';
+        return (
+          <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${color}`}>
+            {c.technicalMarksScored}/{c.technicalTotalMarks}
+            {c.technicalTotalMarks > 0 && ` (${pct}%)`}
+          </span>
+        );
+      },
+    },
+    {
+      id: 'communicationScore', header: 'Communication Score', enableSorting: false,
+      cell: ({ row }) => {
+        const score = Number(row.original.communicationScore);
+        const color = score >= 7
+          ? 'border-green-200 bg-green-50 text-green-700'
+          : score >= 4
+            ? 'border-yellow-200 bg-yellow-50 text-yellow-700'
+            : 'border-red-200 bg-red-50 text-red-700';
+        return (
+          <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${color}`}>
+            {row.original.communicationScore}/10
+          </span>
+        );
+      },
+    },
+    {
+      id: 'project', header: 'Project', enableSorting: false,
+      cell: ({ row }) => {
+        const c = row.original;
+        if (!c.projectUrl) return <span className="text-muted-foreground">-</span>;
+        return (
+          <Button variant="outline" size="sm" asChild>
+            <a href={c.projectUrl} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="mr-1 h-3.5 w-3.5" /> View
+            </a>
+          </Button>
+        );
+      },
+    },
+    {
+      id: 'profile', header: 'Profile', enableSorting: false,
+      cell: ({ row }) => (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 text-primary"
+          title="View Profile"
+          onClick={() => setProfileStudentId(row.original.id)}
+        >
+          <User className="h-3.5 w-3.5" />
+        </Button>
+      ),
     },
     {
       id: 'actions', header: 'Actions', enableSorting: false,
@@ -251,12 +340,22 @@ export default function CandidateFilterPage() {
                   </Select>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">Min Exp</Label>
-                  <Select value={filters.minExp || 'ALL'} onValueChange={(v) => setFilter('minExp', v === 'ALL' ? '' : v)}>
-                    <SelectTrigger className="w-full sm:w-24"><SelectValue placeholder="All" /></SelectTrigger>
+                  <Label className="text-xs">Area</Label>
+                  <Select value={filters.area || 'ALL'} onValueChange={(v) => setFilter('area', v === 'ALL' ? '' : v)}>
+                    <SelectTrigger className="w-full sm:w-32"><SelectValue placeholder="All" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="ALL">All</SelectItem>
-                      {experienceYears.map((y) => <SelectItem key={y} value={String(y)}>{y}+ yrs</SelectItem>)}
+                      {areas.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Min IT Exp</Label>
+                  <Select value={filters.expRange || 'ALL'} onValueChange={(v) => setFilter('expRange', v === 'ALL' ? '' : v)}>
+                    <SelectTrigger className="w-full sm:w-28"><SelectValue placeholder="0+ yrs" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">All</SelectItem>
+                      {EXP_RANGES.map((r) => <SelectItem key={r.label} value={r.label}>{r.label}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
@@ -286,7 +385,7 @@ export default function CandidateFilterPage() {
 
         {/* Results */}
         {isLoading ? (
-          <TableSkeleton rows={6} columns={6} />
+          <TableSkeleton rows={6} columns={12} />
         ) : candidates.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center gap-2 py-12 text-center">
@@ -314,7 +413,7 @@ export default function CandidateFilterPage() {
                   <span className="text-xs text-muted-foreground">Select all</span>
                 </div>
               )}
-              {candidates.map((c) => (
+              {candidates.map((c, index) => (
                 <Card key={c.id} className={selectedIds.has(c.id) ? 'border-primary/50 bg-primary/5' : ''}>
                   <CardContent className="p-3">
                     <div className="flex items-start gap-2">
@@ -328,10 +427,24 @@ export default function CandidateFilterPage() {
                       )}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
-                          <p className="truncate text-sm font-semibold">{c.name}</p>
-                          {c.isShortlisted && (
-                            <Badge variant="outline" className="shrink-0 text-[10px] px-1.5 py-0 text-green-600 border-green-600">Shortlisted</Badge>
-                          )}
+                          <p className="truncate text-sm font-semibold">
+                            <span className="text-muted-foreground mr-1">{snoOffset + index + 1}.</span>
+                            {c.name}
+                          </p>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-primary"
+                              title="View Profile"
+                              onClick={() => setProfileStudentId(c.id)}
+                            >
+                              <User className="h-3 w-3" />
+                            </Button>
+                            {c.isShortlisted && (
+                              <Badge variant="outline" className="shrink-0 text-[10px] px-1.5 py-0 text-green-600 border-green-600">Shortlisted</Badge>
+                            )}
+                          </div>
                         </div>
                         <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1">
@@ -342,7 +455,28 @@ export default function CandidateFilterPage() {
                               <MapPin className="h-3 w-3" /> {c.city}
                             </span>
                           )}
+                          {c.area && <span>Area: {c.area}</span>}
                           <span>Exp: {formatExperience(c.itExperienceYears, c.itExperienceMonths)}</span>
+                        </div>
+                        <div className="mt-1 flex flex-wrap gap-1.5 text-xs">
+                          <span className={`inline-flex items-center rounded-full border px-2 py-0.5 font-medium ${
+                            c.technicalTotalMarks > 0 && Math.round((c.technicalMarksScored / c.technicalTotalMarks) * 100) >= 70
+                              ? 'border-green-200 bg-green-50 text-green-700'
+                              : c.technicalTotalMarks > 0 && Math.round((c.technicalMarksScored / c.technicalTotalMarks) * 100) >= 40
+                                ? 'border-yellow-200 bg-yellow-50 text-yellow-700'
+                                : 'border-red-200 bg-red-50 text-red-700'
+                          }`}>
+                            Tech: {c.technicalMarksScored}/{c.technicalTotalMarks}
+                          </span>
+                          <span className={`inline-flex items-center rounded-full border px-2 py-0.5 font-medium ${
+                            Number(c.communicationScore) >= 7
+                              ? 'border-green-200 bg-green-50 text-green-700'
+                              : Number(c.communicationScore) >= 4
+                                ? 'border-yellow-200 bg-yellow-50 text-yellow-700'
+                                : 'border-red-200 bg-red-50 text-red-700'
+                          }`}>
+                            Comm: {c.communicationScore}/10
+                          </span>
                         </div>
                         <div className="mt-2 flex gap-2">
                           {c.cvUrl && (
@@ -353,6 +487,13 @@ export default function CandidateFilterPage() {
                           <Button variant="outline" size="sm" className="h-7 flex-1 text-xs" onClick={() => openEmailDialog(c)}>
                             <Mail className="mr-1 h-3 w-3" /> Email
                           </Button>
+                          {c.projectUrl && (
+                            <Button variant="outline" size="sm" className="h-7 flex-1 text-xs" asChild>
+                              <a href={c.projectUrl} target="_blank" rel="noopener noreferrer">
+                                <ExternalLink className="mr-1 h-3 w-3" /> Project
+                              </a>
+                            </Button>
+                          )}
                           {!c.isShortlisted && (
                             <Button variant="default" size="sm" className="h-7 flex-1 text-xs" onClick={() => shortlistMutation.mutate({ studentId: c.id, course: c.course })} loading={shortlistMutation.isPending}>
                               {!shortlistMutation.isPending && <Star className="mr-1 h-3 w-3" />} Shortlist
@@ -444,6 +585,15 @@ export default function CandidateFilterPage() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Profile Dialog */}
+        <ProfileDialog
+          studentId={profileStudentId || ''}
+          open={!!profileStudentId}
+          onOpenChange={(open) => {
+            if (!open) setProfileStudentId(null);
+          }}
+        />
       </div>
     </PageTransition>
   );

@@ -151,10 +151,13 @@ export interface RecruiterCandidate {
   name: string;
   course: string;
   city?: string;
+  area?: string;
   itExperienceYears: number;
   itExperienceMonths: number;
-  technicalScore: number;
+  technicalMarksScored: number;
+  technicalTotalMarks: number;
   communicationScore: number;
   cvUrl?: string;
+  projectUrl?: string;
   isShortlisted: boolean;
 }

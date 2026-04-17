@@ -1,10 +1,11 @@
 import { api, extractData } from './api';
 import type { RecruiterShortlist } from '@/types/admin.types';
-import type { RecruiterCandidate } from '@/types/student.types';
+import type { RecruiterCandidate, StudentProfileFull } from '@/types/student.types';
 
 interface CandidateFilters {
   course?: string;
   city?: string;
+  area?: string;
   minExperience?: number;
   maxExperience?: number;
   minTechnicalRating?: number;
@@ -16,7 +17,7 @@ interface CandidateFilters {
 export const recruiterService = {
   getCandidates: async (filters: CandidateFilters = {}) => {
     const response = await api.get('/recruiter/candidates', { params: filters });
-    return extractData<{ items: RecruiterCandidate[]; total: number; page: number; totalPages: number; courses: string[]; cities: string[]; experienceYears: number[] }>(response);
+    return extractData<{ items: RecruiterCandidate[]; total: number; page: number; totalPages: number; courses: string[]; cities: string[]; areas: string[]; experienceYears: number[] }>(response);
   },
 
   downloadCv: async (studentId: string) => {
@@ -64,5 +65,10 @@ export const recruiterService = {
   sendEmail: async (studentId: string, subject: string, body: string) => {
     const response = await api.post(`/recruiter/candidates/${studentId}/send-email`, { subject, body });
     return extractData<{ message: string }>(response);
+  },
+
+  getStudentProfile: async (studentId: string) => {
+    const response = await api.get(`/recruiter/students/${studentId}/profile`);
+    return extractData<StudentProfileFull>(response);
   },
 };
