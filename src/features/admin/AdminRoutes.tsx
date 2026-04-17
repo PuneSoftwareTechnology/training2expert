@@ -13,6 +13,9 @@ const FeeDuesPage = lazy(() => import("./pages/FeeDuesPage"));
 const EnrollmentFiguresPage = lazy(
   () => import("./pages/EnrollmentFiguresPage"),
 );
+const EnquiryFiguresPage = lazy(
+  () => import("./pages/EnquiryFiguresPage"),
+);
 const PlacementReportsPage = lazy(() => import("./pages/PlacementReportsPage"));
 const QrCodePage = lazy(() => import("./pages/QrCodePage"));
 const RecruiterShortlistPage = lazy(
@@ -37,6 +40,10 @@ export default function AdminRoutes() {
           <Route
             path="reports/enrollment-figures"
             element={<EnrollmentFiguresPage />}
+          />
+          <Route
+            path="reports/enquiry-figures"
+            element={<EnquiryFiguresPage />}
           />
           <Route path="reports/placement" element={<PlacementReportsPage />} />
           <Route path="qr-code" element={<QrCodePage />} />

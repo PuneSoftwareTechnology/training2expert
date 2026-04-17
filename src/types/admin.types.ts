@@ -18,6 +18,7 @@ export interface Enquiry {
   institute: Institute;
   leadStatus: LeadStatus;
   demoStatus: DemoStatus;
+  comment?: string;
 }
 
 export interface Enrollment {

@@ -60,9 +60,19 @@ const NAV_ITEMS: NavItem[] = [
     icon: <ClipboardList className="h-4 w-4" />,
   },
   {
+    label: "Enquiry Figures",
+    path: ROUTES.ADMIN_ENQUIRY_FIGURES,
+    icon: <TrendingUp className="h-4 w-4" />,
+  },
+  {
     label: "Enrollment",
     path: ROUTES.ADMIN_ENROLLMENT,
     icon: <Users className="h-4 w-4" />,
+  },
+  {
+    label: "Enrollment Figures",
+    path: ROUTES.ADMIN_ENROLLMENT_FIGURES,
+    icon: <TrendingUp className="h-4 w-4" />,
   },
   {
     label: "Candidate Reports",
@@ -73,11 +83,6 @@ const NAV_ITEMS: NavItem[] = [
     label: "Fee Dues",
     path: ROUTES.ADMIN_FEE_DUES,
     icon: <DollarSign className="h-4 w-4" />,
-  },
-  {
-    label: "Enrollment Figures",
-    path: ROUTES.ADMIN_ENROLLMENT_FIGURES,
-    icon: <TrendingUp className="h-4 w-4" />,
   },
   {
     label: "Placement Reports",

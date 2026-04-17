@@ -17,6 +17,7 @@ export const ROUTES = {
   ADMIN_CANDIDATE_FILTER: "/admin/reports/candidates",
   ADMIN_FEE_DUES: "/admin/reports/fee-dues",
   ADMIN_ENROLLMENT_FIGURES: "/admin/reports/enrollment-figures",
+  ADMIN_ENQUIRY_FIGURES: "/admin/reports/enquiry-figures",
   ADMIN_PLACEMENT_REPORTS: "/admin/reports/placement",
   ADMIN_QR_CODE: "/admin/qr-code",
   ADMIN_RECRUITER_SHORTLIST: "/admin/recruiter-shortlist",

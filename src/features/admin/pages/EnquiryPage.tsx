@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -101,6 +101,7 @@ export default function EnquiryPage() {
     lead: "",
     demo: "",
   });
+  const [searchText, setSearchText] = useState("");
 
   const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
     queryKey: ["admin", "enquiries", filters],
@@ -167,8 +168,8 @@ export default function EnquiryPage() {
   });
 
   const onSubmit = (values: EnquiryFormValues) => {
-    const { enquiry_date, ...rest } = values;
-    const payload = { ...rest, enquiryDate: enquiry_date };
+    const { enquiry_date, comment, ...rest } = values;
+    const payload = { ...rest, enquiryDate: enquiry_date, comment: comment || undefined };
     editingEnquiry
       ? updateMutation.mutate({ id: editingEnquiry.id, data: payload as unknown as Partial<EnquiryFormValues> })
       : createMutation.mutate(payload as unknown as EnquiryFormValues);
@@ -186,6 +187,7 @@ export default function EnquiryPage() {
       institute: enquiry.institute,
       leadStatus: (raw.lead_status ?? enquiry.leadStatus) as EnquiryFormValues["leadStatus"],
       demoStatus: (raw.demo_status ?? enquiry.demoStatus) as EnquiryFormValues["demoStatus"],
+      comment: enquiry.comment ?? "",
     });
     setDialogOpen(true);
   };
@@ -201,7 +203,26 @@ export default function EnquiryPage() {
     setDialogOpen(true);
   };
 
+  const filteredData = useMemo(() => {
+    const items = data?.items ?? [];
+    if (!searchText.trim()) return items;
+    const term = searchText.toLowerCase();
+    return items.filter((e) =>
+      [e.name, e.phone, e.email, e.course, e.institute, e.comment]
+        .filter(Boolean)
+        .some((v) => v!.toLowerCase().includes(term)),
+    );
+  }, [data?.items, searchText]);
+
   const columns: ColumnDef<Enquiry>[] = [
+    {
+      id: "sno",
+      header: "S.No",
+      cell: ({ row }) => (
+        <span className="font-medium text-center">{row.index + 1}</span>
+      ),
+      enableSorting: false,
+    },
     {
       accessorKey: "enquiry_date",
       header: ({ column }) => <SortableHeader column={column} title="Date" />,
@@ -253,6 +274,11 @@ export default function EnquiryPage() {
         const label = DEMO_STATUSES.find((s) => s.value === v)?.label ?? v;
         return <Badge variant={DEMO_BADGE[v]}>{label}</Badge>;
       },
+    },
+    {
+      accessorKey: "comment",
+      header: "Comment",
+      cell: ({ getValue }) => getValue<string>() || "-",
     },
     {
       id: "actions",
@@ -340,6 +366,18 @@ export default function EnquiryPage() {
                   />
                 </div>
               ))}
+              <div className="space-y-1">
+                <Label className="text-xs">Search across columns</Label>
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search..."
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                    className="w-56 pl-8"
+                  />
+                </div>
+              </div>
               {FILTER_SELECTS.map(({ label, key, options }) => (
                 <div key={key} className="space-y-1">
                   <Label className="text-xs">{label}</Label>
@@ -375,7 +413,7 @@ export default function EnquiryPage() {
             <CardContent className="p-0">
               <DataTable
                 columns={columns}
-                data={data?.items ?? []}
+                data={filteredData}
                 emptyMessage="No enquiries found"
                 headerClassName="bg-gradient-to-r from-amber-500 to-orange-600"
               />
@@ -444,6 +482,13 @@ export default function EnquiryPage() {
                   <Input
                     {...form.register("course")}
                     placeholder="Enter course"
+                  />
+                </div>
+                <div className="col-span-2 space-y-1">
+                  <Label>Comment</Label>
+                  <Input
+                    {...form.register("comment")}
+                    placeholder="Enter comment"
                   />
                 </div>
                 {FORM_SELECTS.map(({ name, label, options }) => (

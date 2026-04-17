@@ -57,7 +57,7 @@ export default function LoginPage() {
           break;
         case ROLES.ADMIN:
         case ROLES.SUPER_ADMIN:
-          navigate(ROUTES.ADMIN_ENQUIRY, { replace: true });
+          navigate(ROUTES.ADMIN_DASHBOARD, { replace: true });
           break;
         case ROLES.RECRUITER:
           navigate(ROUTES.RECRUITER_CANDIDATES, { replace: true });

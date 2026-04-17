@@ -1,22 +1,10 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  Plus,
-  Download,
-  Search,
-  X,
-  Info,
-  BookOpen,
-  CreditCard,
-  GraduationCap,
-  Briefcase,
-  Settings,
-} from "lucide-react";
+import { Plus, Download, Search, GraduationCap } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
@@ -42,6 +30,7 @@ import { adminService } from "@/services/admin.service";
 import { getErrorMessage } from "@/services/api";
 import { formatDate } from "@/utils/format";
 import { ENROLLMENT_STATUSES, INSTITUTES } from "@/constants/courses";
+import { COLUMN_GROUPS, SUB_COLUMNS } from "@/constants/enrollment-table";
 import type { EnrollmentStatus, Institute } from "@/types/common.types";
 import type { Enrollment } from "@/types/admin.types";
 
@@ -134,50 +123,16 @@ import { EnrollmentTableRow } from "../components/EnrollmentTableRow";
 import { ProfileDialog } from "../components/ProfileDialog";
 import { EvaluationDialog } from "../components/EvaluationDialog";
 
-// ---------------------------------------------------------------------------
-// Column group definitions
-// ---------------------------------------------------------------------------
 
-const COLUMN_GROUPS = [
-  {
-    label: "Actions",
-    icon: Settings,
-    colSpan: 2,
-    color: "text-gray-600 bg-gray-50 border-gray-200",
-  },
-  {
-    label: "Basic Info",
-    icon: Info,
-    colSpan: 7,
-    color: "text-blue-600 bg-blue-50 border-blue-200",
-  },
-  {
-    label: "Course Details",
-    icon: BookOpen,
-    colSpan: 6,
-    color: "text-orange-600 bg-orange-50 border-orange-200",
-  },
-  {
-    label: "Payment Tracking",
-    icon: CreditCard,
-    colSpan: 17,
-    color: "text-indigo-600 bg-indigo-50 border-indigo-200",
-  },
-  {
-    label: "Certificate",
-    icon: GraduationCap,
-    colSpan: 2,
-    color: "text-teal-600 bg-teal-50 border-teal-200",
-  },
-  {
-    label: "Placement",
-    icon: Briefcase,
-    colSpan: 2,
-    color: "text-purple-600 bg-purple-50 border-purple-200",
-  },
-] as const;
-
-// Total columns: 1 (S.No) + 2 + 7 + 6 + 17 + 2 + 2 = 37
+interface FilterConfig {
+  key: string;
+  placeholder: string;
+  allLabel: string;
+  width: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+}
 
 export default function EnrollmentPage() {
   const queryClient = useQueryClient();
@@ -187,13 +142,17 @@ export default function EnrollmentPage() {
   const [filterInstitute, setFilterInstitute] = useState<string>("ALL");
   const [filterCourse, setFilterCourse] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editEnrollment, setEditEnrollment] = useState<Enrollment | null>(null);
   const [profileStudentId, setProfileStudentId] = useState<string | null>(null);
   const [evaluationStudentId, setEvaluationStudentId] = useState<string | null>(
     null,
   );
+  const [filterCompletion, setFilterCompletion] = useState<string>("ACTIVE");
+  const [filterTrainer, setFilterTrainer] = useState<string>("ALL");
+  const [filterYear, setFilterYear] = useState<string>("ALL");
+
+  const tableScrollRef = useRef<HTMLDivElement>(null);
 
   // Active filter tags
   const activeFilters: { label: string; onRemove: () => void }[] = [];
@@ -215,6 +174,32 @@ export default function EnrollmentPage() {
       onRemove: () => setFilterCourse(""),
     });
   }
+  if (filterCompletion !== "ALL") {
+    const completionLabel =
+      filterCompletion === "ACTIVE"
+        ? "Active"
+        : filterCompletion === "DROPOUT"
+          ? "Dropout"
+          : filterCompletion === "COMPLETED"
+            ? "Completed"
+            : filterCompletion;
+    activeFilters.push({
+      label: `Completion: ${completionLabel}`,
+      onRemove: () => setFilterCompletion("ALL"),
+    });
+  }
+  if (filterTrainer !== "ALL") {
+    activeFilters.push({
+      label: `Trainer: ${filterTrainer}`,
+      onRemove: () => setFilterTrainer("ALL"),
+    });
+  }
+  if (filterYear !== "ALL") {
+    activeFilters.push({
+      label: `Year: ${filterYear}`,
+      onRemove: () => setFilterYear("ALL"),
+    });
+  }
 
   // Queries
   const { data, isLoading, isError, error, refetch, isRefetching } = useQuery({
@@ -224,7 +209,6 @@ export default function EnrollmentPage() {
       filterStatus,
       filterInstitute,
       filterCourse,
-      currentPage,
     ],
     queryFn: () =>
       adminService.getEnrollments({
@@ -237,7 +221,7 @@ export default function EnrollmentPage() {
             ? undefined
             : (filterInstitute as Institute),
         course: filterCourse || undefined,
-        page: currentPage,
+        limit: 10000,
       }),
   });
 
@@ -253,7 +237,13 @@ export default function EnrollmentPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<Enrollment> }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<Enrollment>;
+    }) => {
       const result = await adminService.updateEnrollment(id, data);
 
       // Sync is_approved on the user when enrollment_status changes
@@ -287,20 +277,142 @@ export default function EnrollmentPage() {
 
   const courses = data?.courses ?? [];
 
-  // Client-side search filter across visible columns
-  const filteredItems = (() => {
-    const items = data?.items ?? [];
+  const allItems = data?.items ?? [];
+  const years = [
+    ...new Set(
+      allItems
+        .map((e) =>
+          e.start_date ? new Date(e.start_date).getFullYear().toString() : "",
+        )
+        .filter(Boolean),
+    ),
+  ]
+    .sort()
+    .reverse();
+
+  const { filteredItems, trainers } = (() => {
+    let items = allItems;
+
+    // Filter by completion status ("ACTIVE" includes both ACTIVE and IN_PROGRESS)
+    if (filterCompletion !== "ALL") {
+      if (filterCompletion === "ACTIVE") {
+        items = items.filter(
+          (e) =>
+            e.completion_status === "ACTIVE" ||
+            e.completion_status === "IN_PROGRESS",
+        );
+      } else {
+        items = items.filter((e) => e.completion_status === filterCompletion);
+      }
+    }
+
+    // Filter by year
+    if (filterYear !== "ALL") {
+      items = items.filter(
+        (e) =>
+          e.start_date &&
+          new Date(e.start_date).getFullYear().toString() === filterYear,
+      );
+    }
+
+    // Derive trainers AFTER completion/year filters so only relevant trainers appear
+    const trainers = [
+      ...new Set(items.map((e) => e.trainer).filter(Boolean)),
+    ].sort();
+
+    // Filter by trainer
+    if (filterTrainer !== "ALL") {
+      items = items.filter((e) => e.trainer === filterTrainer);
+    }
+
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return items;
-    return items.filter((e) =>
-      [e.name, e.email, e.phone, e.course, e.batch, e.trainer, e.institute, e.enrollment_status, e.completion_status, e.placement_status, e.company_name]
-        .filter(Boolean)
-        .some((v) => v!.toLowerCase().includes(q)),
-    );
+    if (q) {
+      items = items.filter((e) =>
+        [
+          e.name,
+          e.email,
+          e.phone,
+          e.course,
+          e.batch,
+          e.trainer,
+          e.institute,
+          e.enrollment_status,
+          e.completion_status,
+          e.placement_status,
+          e.company_name,
+        ]
+          .filter(Boolean)
+          .some((v) => v!.toLowerCase().includes(q)),
+      );
+    }
+
+    return { filteredItems: items, trainers };
   })();
 
-  const totalItems = data?.total ?? data?.items?.length ?? 0;
-  const totalPages = data?.totalPages ?? 1;
+  // Build filter configs for data-driven rendering
+  const filters: FilterConfig[] = [
+    {
+      key: "status",
+      placeholder: "Status",
+      allLabel: "All Status",
+      width: "w-[130px]",
+      value: filterStatus,
+      onChange: setFilterStatus,
+      options: ENROLLMENT_STATUSES.map((s) => ({
+        value: s.value,
+        label: s.label,
+      })),
+    },
+    {
+      key: "institute",
+      placeholder: "Institute",
+      allLabel: "All Institutes",
+      width: "w-[130px]",
+      value: filterInstitute,
+      onChange: setFilterInstitute,
+      options: INSTITUTES.map((inst) => ({ value: inst, label: inst })),
+    },
+    {
+      key: "course",
+      placeholder: "Course",
+      allLabel: "All Courses",
+      width: "w-[150px]",
+      value: filterCourse || "ALL",
+      onChange: (v) => setFilterCourse(v === "ALL" ? "" : v),
+      options: courses.map((c) => ({ value: c, label: c })),
+    },
+    {
+      key: "completion",
+      placeholder: "Completion",
+      allLabel: "All Students",
+      width: "w-[150px]",
+      value: filterCompletion,
+      onChange: setFilterCompletion,
+      options: [
+        { value: "ACTIVE", label: "Active" },
+        { value: "COMPLETED", label: "Completed" },
+        { value: "DROPOUT", label: "Dropout" },
+      ],
+    },
+    {
+      key: "trainer",
+      placeholder: "Trainer",
+      allLabel: "All Trainers",
+      width: "w-[150px]",
+      value: filterTrainer,
+      onChange: setFilterTrainer,
+      options: trainers.map((t) => ({ value: t, label: t })),
+    },
+    {
+      key: "year",
+      placeholder: "Year",
+      allLabel: "All Years",
+      width: "w-[120px]",
+      value: filterYear,
+      onChange: setFilterYear,
+      options: years.map((y) => ({ value: y, label: y })),
+    },
+  ];
 
   if (isError) {
     return <QueryError error={error} onRetry={() => refetch()} />;
@@ -322,8 +434,7 @@ export default function EnrollmentPage() {
                 Enrollment Hub
               </h1>
               <p className="text-sm text-muted-foreground">
-                Monitoring {totalItems.toLocaleString()} active student records
-                and financial health.
+                Monitoring student records and financial health.
               </p>
             </div>
           </div>
@@ -333,6 +444,9 @@ export default function EnrollmentPage() {
                 setFilterStatus("ALL");
                 setFilterInstitute("ALL");
                 setFilterCourse("");
+                setFilterCompletion("ALL");
+                setFilterTrainer("ALL");
+                setFilterYear("ALL");
                 setSearchQuery("");
               }}
               onRefresh={() => refetch()}
@@ -353,29 +467,10 @@ export default function EnrollmentPage() {
         {/* Active Filters + Actions Bar */}
         {/* ================================================================ */}
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-blue-200/60 bg-gradient-to-r from-blue-100 to-indigo-100 p-3">
-          <div className="flex items-center gap-2">
-            {activeFilters.length > 0 && (
-              <>
-                <span className="text-xs font-medium uppercase text-muted-foreground">
-                  Active Filters:
-                </span>
-                {activeFilters.map((f) => (
-                  <Badge
-                    key={f.label}
-                    variant="default"
-                    className="gap-1 pl-2.5 pr-1 py-1"
-                  >
-                    {f.label}
-                    <button
-                      onClick={f.onRemove}
-                      className="ml-1 rounded-full p-0.5 hover:bg-primary/20"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                ))}
-              </>
-            )}
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-semibold whitespace-nowrap">
+              Total: {filteredItems.length} students
+            </span>
           </div>
           <div className="flex items-center gap-2">
             {/* Search */}
@@ -388,51 +483,22 @@ export default function EnrollmentPage() {
                 className="h-9 w-64 pl-9"
               />
             </div>
-            {/* Status Filter */}
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="h-9 w-[130px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All Status</SelectItem>
-                {ENROLLMENT_STATUSES.map((s) => (
-                  <SelectItem key={s.value} value={s.value}>
-                    {s.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {/* Institute Filter */}
-            <Select value={filterInstitute} onValueChange={setFilterInstitute}>
-              <SelectTrigger className="h-9 w-[130px]">
-                <SelectValue placeholder="Institute" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All Institutes</SelectItem>
-                {INSTITUTES.map((inst) => (
-                  <SelectItem key={inst} value={inst}>
-                    {inst}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {/* Course Filter */}
-            <Select
-              value={filterCourse || "ALL"}
-              onValueChange={(v) => setFilterCourse(v === "ALL" ? "" : v)}
-            >
-              <SelectTrigger className="h-9 w-[150px]">
-                <SelectValue placeholder="Course" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All Courses</SelectItem>
-                {courses.map((course) => (
-                  <SelectItem key={course} value={course}>
-                    {course}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Filter Dropdowns */}
+            {filters.map((f) => (
+              <Select key={f.key} value={f.value} onValueChange={f.onChange}>
+                <SelectTrigger className={`h-9 ${f.width}`}>
+                  <SelectValue placeholder={f.placeholder} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">{f.allLabel}</SelectItem>
+                  {f.options.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ))}
             {/* Export */}
             <Button
               variant="outline"
@@ -457,246 +523,77 @@ export default function EnrollmentPage() {
         {isLoading ? (
           <TableSkeleton rows={8} columns={12} />
         ) : (
-          <Card className="overflow-hidden border-blue-200/60">
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table className="min-w-[2800px]">
-                  <TableHeader>
-                    {/* Row 1: Group headers */}
-                    <TableRow className="border-b-0">
-                      {/* S.No (spans 2 header rows) */}
-                      <TableHead
-                        rowSpan={2}
-                        className="border-r border-border bg-muted/60 text-xs font-bold uppercase tracking-wider align-bottom w-[60px] text-center"
-                      >
-                        S.No
-                      </TableHead>
-
-                      {COLUMN_GROUPS.map((group) => (
+          <>
+            <Card className="overflow-hidden border-blue-200/60">
+              <CardContent className="p-0">
+                <div ref={tableScrollRef} className="overflow-x-auto">
+                  <Table className="min-w-[2800px]">
+                    <TableHeader>
+                      {/* Row 1: Group headers */}
+                      <TableRow className="border-b-0">
                         <TableHead
-                          key={group.label}
-                          colSpan={group.colSpan}
-                          className={`text-center border-x border-border text-xs font-bold uppercase tracking-wider ${group.color}`}
+                          rowSpan={2}
+                          className="border-r border-border bg-muted/60 text-xs font-bold uppercase tracking-wider align-bottom w-[60px] text-center"
                         >
-                          <div className="flex items-center justify-center gap-1.5 py-1">
-                            <group.icon className="h-3.5 w-3.5" />
-                            {group.label}
-                          </div>
+                          S.No
                         </TableHead>
-                      ))}
-                    </TableRow>
-
-                    {/* Row 2: Individual column headers */}
-                    <TableRow>
-                      {/* Actions sub-headers */}
-                      <TableHead className="text-xs border-l border-border bg-gray-50/50 text-center">
-                        Edit
-                      </TableHead>
-                      <TableHead className="text-xs border-r border-border bg-gray-50/50 text-center">
-                        Delete
-                      </TableHead>
-
-                      {/* Basic Info sub-headers */}
-                      <TableHead className="text-xs border-l border-border bg-blue-50/50">
-                        Full Name
-                      </TableHead>
-                      <TableHead className="text-xs bg-blue-50/50">
-                        Email
-                      </TableHead>
-                      <TableHead className="text-xs bg-blue-50/50">
-                        Phone
-                      </TableHead>
-                      <TableHead className="text-xs bg-blue-50/50">
-                        Status
-                      </TableHead>
-                      <TableHead className="text-xs bg-blue-50/50">
-                        Institute
-                      </TableHead>
-                      <TableHead className="text-xs bg-blue-50/50 text-center">
-                        Profile
-                      </TableHead>
-                      <TableHead className="text-xs border-r border-border bg-blue-50/50 text-center">
-                        Evaluation
-                      </TableHead>
-
-                      {/* Course Details sub-headers */}
-                      <TableHead className="text-xs border-l border-border bg-orange-50/50">
-                        Course Name
-                      </TableHead>
-                      <TableHead className="text-xs bg-orange-50/50">
-                        Batch Name
-                      </TableHead>
-                      <TableHead className="text-xs bg-orange-50/50">
-                        Trainer
-                      </TableHead>
-                      <TableHead className="text-xs bg-orange-50/50">
-                        Start Date
-                      </TableHead>
-                      <TableHead className="text-xs bg-orange-50/50">
-                        End Date
-                      </TableHead>
-                      <TableHead className="text-xs border-r border-border bg-orange-50/50">
-                        Completion
-                      </TableHead>
-
-                      {/* Payment Tracking sub-headers */}
-                      <TableHead className="text-xs border-l border-border bg-indigo-50/50">
-                        Total Fee
-                      </TableHead>
-                      {/* 1st Installment */}
-                      <TableHead className="text-xs bg-indigo-50/30">
-                        1st Amt
-                      </TableHead>
-                      <TableHead className="text-xs bg-indigo-50/30">
-                        1st Date
-                      </TableHead>
-                      <TableHead className="text-xs bg-indigo-50/30">
-                        1st Mode
-                      </TableHead>
-                      <TableHead className="text-xs bg-indigo-50/30">
-                        View
-                      </TableHead>
-                      <TableHead className="text-xs bg-indigo-50/30">
-                        Send
-                      </TableHead>
-                      {/* 2nd Installment */}
-                      <TableHead className="text-xs bg-indigo-50/50">
-                        2nd Amt
-                      </TableHead>
-                      <TableHead className="text-xs bg-indigo-50/50">
-                        2nd Date
-                      </TableHead>
-                      <TableHead className="text-xs bg-indigo-50/50">
-                        2nd Mode
-                      </TableHead>
-                      <TableHead className="text-xs bg-indigo-50/50">
-                        View
-                      </TableHead>
-                      <TableHead className="text-xs bg-indigo-50/50">
-                        Send
-                      </TableHead>
-                      {/* 3rd Installment */}
-                      <TableHead className="text-xs bg-indigo-50/30">
-                        3rd Amt
-                      </TableHead>
-                      <TableHead className="text-xs bg-indigo-50/30">
-                        3rd Date
-                      </TableHead>
-                      <TableHead className="text-xs bg-indigo-50/30">
-                        3rd Mode
-                      </TableHead>
-                      <TableHead className="text-xs bg-indigo-50/30">
-                        View
-                      </TableHead>
-                      <TableHead className="text-xs bg-indigo-50/30">
-                        Send
-                      </TableHead>
-                      <TableHead className="text-xs border-r border-border bg-indigo-50/50 text-destructive font-semibold">
-                        Pending
-                      </TableHead>
-
-                      {/* Certificate sub-headers */}
-                      <TableHead className="text-xs border-l border-border bg-teal-50/50">
-                        View
-                      </TableHead>
-                      <TableHead className="text-xs border-r border-border bg-teal-50/50">
-                        Send
-                      </TableHead>
-
-                      {/* Placement sub-headers */}
-                      <TableHead className="text-xs border-l border-border bg-purple-50/50">
-                        Status
-                      </TableHead>
-                      <TableHead className="text-xs border-r border-border bg-purple-50/50">
-                        Company
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-
-                  <TableBody>
-                    {filteredItems.length > 0 ? (
-                      filteredItems.map((enrollment, index) => (
-                        <EnrollmentTableRow
-                          key={enrollment.id}
-                          enrollment={enrollment}
-                          index={index}
-                          onEdit={setEditEnrollment}
-                          onDelete={(id) => deleteMutation.mutate(id)}
-                          onViewProfile={setProfileStudentId}
-                          onViewEvaluation={setEvaluationStudentId}
-                        />
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell
-                          colSpan={37}
-                          className="py-12 text-center text-muted-foreground"
-                        >
-                          No enrollments found matching your criteria.
-                        </TableCell>
+                        {COLUMN_GROUPS.map((group) => (
+                          <TableHead
+                            key={group.label}
+                            colSpan={group.colSpan}
+                            className={`text-center border-x border-border text-xs font-bold uppercase tracking-wider ${group.color}`}
+                          >
+                            <div className="flex items-center justify-center gap-1.5 py-1">
+                              <group.icon className="h-3.5 w-3.5" />
+                              {group.label}
+                            </div>
+                          </TableHead>
+                        ))}
                       </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
-        {/* ================================================================ */}
-        {/* Pagination */}
-        {/* ================================================================ */}
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            Showing{" "}
-            <span className="font-medium">
-              {(currentPage - 1) * 10 + 1}-
-              {Math.min(currentPage * 10, totalItems)}
-            </span>{" "}
-            of{" "}
-            <span className="font-medium">{totalItems.toLocaleString()}</span>{" "}
-            candidates
-          </p>
-          {totalPages > 1 && (
-            <div className="flex items-center gap-1">
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage((p) => p - 1)}
-              >
-                &lt;
-              </Button>
-              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                const page = i + 1;
-                return (
-                  <Button
-                    key={page}
-                    variant={currentPage === page ? "default" : "outline"}
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => setCurrentPage(page)}
-                  >
-                    {page}
-                  </Button>
-                );
-              })}
-              {totalPages > 5 && (
-                <span className="px-2 text-muted-foreground">...</span>
-              )}
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage((p) => p + 1)}
-              >
-                &gt;
-              </Button>
-            </div>
-          )}
-        </div>
+                      {/* Row 2: Sub-column headers */}
+                      <TableRow>
+                        {SUB_COLUMNS.map((col, i) => (
+                          <TableHead
+                            key={i}
+                            className={`text-xs ${col.bg} ${col.extra ?? ""}`}
+                          >
+                            {col.label}
+                          </TableHead>
+                        ))}
+                      </TableRow>
+                    </TableHeader>
+
+                    <TableBody>
+                      {filteredItems.length > 0 ? (
+                        filteredItems.map((enrollment, index) => (
+                          <EnrollmentTableRow
+                            key={enrollment.id}
+                            enrollment={enrollment}
+                            index={index}
+                            onEdit={setEditEnrollment}
+                            onDelete={(id) => deleteMutation.mutate(id)}
+                            onViewProfile={setProfileStudentId}
+                            onViewEvaluation={setEvaluationStudentId}
+                          />
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell
+                            colSpan={37}
+                            className="py-12 text-center text-muted-foreground"
+                          >
+                            No enrollments found matching your criteria.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
 
         {/* ================================================================ */}
         {/* Dialogs */}

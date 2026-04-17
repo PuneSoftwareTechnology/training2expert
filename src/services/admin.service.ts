@@ -153,6 +153,14 @@ export const adminService = {
     return extractData<Installment>(response);
   },
 
+  downloadReceipt: async (enrollmentId: string, installmentId: string) => {
+    const response = await api.get(
+      `/admin/enrollments/${enrollmentId}/installments/${installmentId}/download-receipt`,
+      { responseType: "blob" },
+    );
+    return response.data as Blob;
+  },
+
   sendReceipt: async (enrollmentId: string, installmentId: string) => {
     const response = await api.post(
       `/admin/enrollments/${enrollmentId}/installments/${installmentId}/send-receipt`,
@@ -249,6 +257,13 @@ export const adminService = {
 
   getEnrollmentFigures: async (institute: string, year: number) => {
     const response = await api.get("/admin/reports/enrollment-figures", {
+      params: { institute, year },
+    });
+    return extractData<EnrollmentFigureRow[]>(response);
+  },
+
+  getEnquiryFigures: async (institute: string, year: number) => {
+    const response = await api.get("/admin/reports/enquiry-figures", {
       params: { institute, year },
     });
     return extractData<EnrollmentFigureRow[]>(response);

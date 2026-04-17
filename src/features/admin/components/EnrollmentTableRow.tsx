@@ -172,6 +172,7 @@ function InstallmentCells({
           open={receiptOpen}
           onOpenChange={setReceiptOpen}
           data={receiptData}
+          installmentNumber={installmentNumber}
         />
       </TableCell>
       <TableCell className={cellClassName}>

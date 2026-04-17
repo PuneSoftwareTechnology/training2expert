@@ -243,7 +243,7 @@ export function EditEnrollmentDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {COMPLETION_STATUSES.map((s) => (
+                    {COMPLETION_STATUSES.filter((s) => s.value !== "IN_PROGRESS").map((s) => (
                       <SelectItem key={s.value} value={s.value}>
                         {s.label}
                       </SelectItem>

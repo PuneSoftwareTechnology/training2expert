@@ -9,46 +9,46 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { adminService } from "@/services/admin.service";
+import { getErrorMessage } from "@/services/api";
 import PaymentReceipt, { type ReceiptData } from "./PaymentReceipt";
 
 interface ReceiptDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   data: ReceiptData;
+  installmentNumber: string;
 }
 
 export default function ReceiptDialog({
   open,
   onOpenChange,
   data,
+  installmentNumber,
 }: ReceiptDialogProps) {
   const receiptRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
 
   const handleDownload = useCallback(async () => {
-    const element = receiptRef.current;
-    if (!element) return;
-
     setDownloading(true);
     try {
-      const html2pdf = (await import("html2pdf.js")).default;
-
-      const opt = {
-        margin: 0,
-        filename: `Receipt_${data.studentName.replace(/\s+/g, "_")}_${data.courseName.replace(/\s+/g, "_")}.pdf`,
-        image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" as const },
-      };
-
-      await html2pdf().set(opt).from(element).save();
+      const blob = await adminService.downloadReceipt(
+        data.enrollmentId,
+        installmentNumber,
+      );
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Receipt_${data.studentName.replace(/\s+/g, "_")}_${data.courseName.replace(/\s+/g, "_")}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
       toast.success("Receipt downloaded successfully");
-    } catch {
-      toast.error("Failed to download receipt");
+    } catch (err) {
+      toast.error(getErrorMessage(err));
     } finally {
       setDownloading(false);
     }
-  }, [data.studentName, data.courseName]);
+  }, [data.enrollmentId, data.studentName, data.courseName, installmentNumber]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

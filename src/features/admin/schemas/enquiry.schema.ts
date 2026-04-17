@@ -9,6 +9,7 @@ export const enquirySchema = z.object({
   institute: z.enum(["PST", "TCH"]),
   leadStatus: z.enum(["PROSPECTIVE", "NON_PROSPECTIVE", "ENROLLED"]),
   demoStatus: z.enum(["DONE", "PENDING"]),
+  comment: z.string().optional().or(z.literal("")),
 });
 
 export type EnquiryFormValues = z.infer<typeof enquirySchema>;
