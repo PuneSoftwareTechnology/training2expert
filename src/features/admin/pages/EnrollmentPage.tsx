@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Download, Search, GraduationCap } from "lucide-react";
 import { toast } from "sonner";
@@ -153,6 +153,61 @@ export default function EnrollmentPage() {
   const [filterYear, setFilterYear] = useState<string>("ALL");
 
   const tableScrollRef = useRef<HTMLDivElement>(null);
+
+  // Drag-to-scroll state
+  const isDragging = useRef(false);
+  const dragStartX = useRef(0);
+  const dragStartY = useRef(0);
+  const dragScrollLeft = useRef(0);
+  const dragAxis = useRef<"none" | "horizontal">("none");
+
+  const onMouseDown = useCallback((e: React.MouseEvent) => {
+    // Don't hijack clicks on buttons, links, inputs, selects
+    const tag = (e.target as HTMLElement).closest("button, a, input, select, [role='menuitem']");
+    if (tag) return;
+
+    const el = tableScrollRef.current;
+    if (!el) return;
+    isDragging.current = true;
+    dragAxis.current = "none";
+    dragStartX.current = e.clientX;
+    dragStartY.current = e.clientY;
+    dragScrollLeft.current = el.scrollLeft;
+  }, []);
+
+  const onMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isDragging.current) return;
+    const dx = e.clientX - dragStartX.current;
+    const dy = e.clientY - dragStartY.current;
+
+    // Lock axis after 5px of movement
+    if (dragAxis.current === "none" && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
+      dragAxis.current = Math.abs(dx) > Math.abs(dy) ? "horizontal" : "none";
+      if (dragAxis.current === "none") {
+        // Vertical intent — stop dragging, let page scroll naturally
+        isDragging.current = false;
+        return;
+      }
+      const el = tableScrollRef.current!;
+      el.style.cursor = "grabbing";
+      el.style.userSelect = "none";
+    }
+
+    if (dragAxis.current !== "horizontal") return;
+    e.preventDefault();
+    const el = tableScrollRef.current!;
+    el.scrollLeft = dragScrollLeft.current - dx;
+  }, []);
+
+  const onMouseUp = useCallback(() => {
+    isDragging.current = false;
+    dragAxis.current = "none";
+    const el = tableScrollRef.current;
+    if (el) {
+      el.style.cursor = "grab";
+      el.style.userSelect = "";
+    }
+  }, []);
 
   // Active filter tags
   const activeFilters: { label: string; onRemove: () => void }[] = [];
@@ -526,7 +581,14 @@ export default function EnrollmentPage() {
           <>
             <Card className="overflow-hidden border-blue-200/60">
               <CardContent className="p-0">
-                <div ref={tableScrollRef} className="overflow-x-auto">
+                <div
+                  ref={tableScrollRef}
+                  onMouseDown={onMouseDown}
+                  onMouseMove={onMouseMove}
+                  onMouseUp={onMouseUp}
+                  onMouseLeave={onMouseUp}
+                  className="overflow-x-auto cursor-grab [&_[data-slot=table-container]]:overflow-visible"
+                >
                   <Table className="min-w-[2800px]">
                     <TableHeader>
                       {/* Row 1: Group headers */}
