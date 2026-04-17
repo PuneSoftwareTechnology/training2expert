@@ -52,13 +52,13 @@ export default function ReceiptDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl max-h-[95vh] overflow-y-auto p-0">
+      <DialogContent className="sm:max-w-2xl max-h-[95vh] overflow-y-auto p-0">
         <DialogHeader className="px-6 pt-6">
           <DialogTitle>Payment Receipt</DialogTitle>
         </DialogHeader>
 
         {/* Receipt preview - scrollable */}
-        <div className="overflow-auto max-h-[72vh] px-4">
+        <div className="overflow-hidden max-h-[72vh] px-4">
           <div className="origin-top-left scale-[0.48] sm:scale-[0.55] md:scale-[0.65] lg:scale-[0.75]" style={{ width: "210mm", transformOrigin: "top left" }}>
             <PaymentReceipt ref={receiptRef} data={data} />
           </div>
