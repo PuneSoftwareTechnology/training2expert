@@ -98,11 +98,17 @@ const columns: ColumnDef<FeeDueRow>[] = [
         <SortableHeader column={column} title="Pending Amt" />
       </div>
     ),
-    cell: ({ getValue }) => (
-      <span className="block text-right font-semibold text-destructive">
-        {formatCurrency(Number(getValue<number>()))}
-      </span>
-    ),
+    cell: ({ row, getValue }) => {
+      const amount =
+        row.original.completionStatus === "DROPOUT"
+          ? 0
+          : Number(getValue<number>());
+      return (
+        <span className="block text-right font-semibold text-destructive">
+          {formatCurrency(amount)}
+        </span>
+      );
+    },
   },
   {
     accessorKey: "daysSinceLastPayment",
@@ -160,7 +166,9 @@ export default function FeeDuesPage() {
   const summary = useMemo(() => {
     if (filteredData.length === 0) return { count: 0, totalPending: 0 };
     const totalPending = filteredData.reduce(
-      (sum, r) => sum + Number(r.pendingAmount),
+      (sum, r) =>
+        sum +
+        (r.completionStatus === "DROPOUT" ? 0 : Number(r.pendingAmount)),
       0,
     );
     return { count: filteredData.length, totalPending };
@@ -187,7 +195,7 @@ export default function FeeDuesPage() {
       r.phone,
       Number(r.totalFee),
       Number(r.paidAmount),
-      Number(r.pendingAmount),
+      r.completionStatus === "DROPOUT" ? 0 : Number(r.pendingAmount),
       r.daysSinceLastPayment,
     ]);
     const csv = [headers, ...rows]

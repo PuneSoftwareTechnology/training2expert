@@ -201,8 +201,9 @@ export const adminService = {
   },
 
   downloadCv: async (studentId: string): Promise<Blob> => {
-    const response = await api.get(`/admin/students/${studentId}/cv`, {
+    const response = await api.get(`/admin/reports/candidates/${studentId}/cv`, {
       responseType: "blob",
+      timeout: 120000,
     });
     return response.data as Blob;
   },
@@ -210,7 +211,7 @@ export const adminService = {
   downloadBulkCvs: async (studentIds: string[]): Promise<Blob> => {
     const response = await api.post("/admin/reports/candidates/download-cvs", {
       studentIds,
-    }, { responseType: "blob" });
+    }, { responseType: "blob", timeout: 120000 });
     return response.data as Blob;
   },
 
@@ -294,14 +295,14 @@ export const adminService = {
   },
 
   // Recruiter Shortlist
-  getRecruiterShortlist: async (filters: { page?: number; limit?: number } = {}) => {
+  getRecruiterShortlist: async (filters: { page?: number; limit?: number; recruiter?: string; course?: string; year?: string } = {}) => {
     const response = await api.get("/admin/recruiter-shortlist", { params: filters });
     const result = extractData<
       | RecruiterShortlist[]
-      | { items: RecruiterShortlist[]; total: number; page: number; totalPages: number }
+      | { items: RecruiterShortlist[]; total: number; page: number; totalPages: number; recruiters?: { id: string; name: string }[]; courses?: string[] }
     >(response);
     if (Array.isArray(result)) {
-      return { items: result, total: result.length, page: 1, totalPages: 1 };
+      return { items: result, total: result.length, page: 1, totalPages: 1, recruiters: [] as { id: string; name: string }[], courses: [] as string[] };
     }
     return result;
   },
@@ -313,6 +314,7 @@ export const adminService = {
       | RecruiterAccount[]
       | { items: RecruiterAccount[]; total: number; page: number; totalPages: number }
     >(response);
+    console.log("[getRecruiters] API response:", result);
     if (Array.isArray(result)) {
       return { items: result, total: result.length, page: 1, totalPages: 1 };
     }

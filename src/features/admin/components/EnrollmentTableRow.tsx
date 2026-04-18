@@ -249,10 +249,12 @@ export const EnrollmentTableRow = memo(function EnrollmentTableRow({
   const isOdd = index % 2 === 1;
 
   const pendingAmount =
-    Number(enrollment.total_fee || 0) -
-    Number(enrollment.installment1_amount || 0) -
-    Number(enrollment.installment2_amount || 0) -
-    Number(enrollment.installment3_amount || 0);
+    enrollment.completion_status === "DROPOUT"
+      ? 0
+      : Number(enrollment.total_fee || 0) -
+        Number(enrollment.installment1_amount || 0) -
+        Number(enrollment.installment2_amount || 0) -
+        Number(enrollment.installment3_amount || 0);
 
   // Column-group backgrounds — alternating row shades (Finder-style)
   const bg = {
@@ -432,8 +434,10 @@ export const EnrollmentTableRow = memo(function EnrollmentTableRow({
           totalFee: Number(enrollment.total_fee || 0),
           amountReceived: Number(enrollment.installment1_amount || 0),
           pendingAmount:
-            Number(enrollment.total_fee || 0) -
-            Number(enrollment.installment1_amount || 0),
+            enrollment.completion_status === "DROPOUT"
+              ? 0
+              : Number(enrollment.total_fee || 0) -
+                Number(enrollment.installment1_amount || 0),
           installmentDate: enrollment.installment1_date,
           paymentMode: enrollment.installment1_mode,
         }}
@@ -458,9 +462,11 @@ export const EnrollmentTableRow = memo(function EnrollmentTableRow({
           totalFee: Number(enrollment.total_fee || 0),
           amountReceived: Number(enrollment.installment2_amount || 0),
           pendingAmount:
-            Number(enrollment.total_fee || 0) -
-            Number(enrollment.installment1_amount || 0) -
-            Number(enrollment.installment2_amount || 0),
+            enrollment.completion_status === "DROPOUT"
+              ? 0
+              : Number(enrollment.total_fee || 0) -
+                Number(enrollment.installment1_amount || 0) -
+                Number(enrollment.installment2_amount || 0),
           installmentDate: enrollment.installment2_date,
           paymentMode: enrollment.installment2_mode,
         }}
@@ -485,10 +491,12 @@ export const EnrollmentTableRow = memo(function EnrollmentTableRow({
           totalFee: Number(enrollment.total_fee || 0),
           amountReceived: Number(enrollment.installment3_amount || 0),
           pendingAmount:
-            Number(enrollment.total_fee || 0) -
-            Number(enrollment.installment1_amount || 0) -
-            Number(enrollment.installment2_amount || 0) -
-            Number(enrollment.installment3_amount || 0),
+            enrollment.completion_status === "DROPOUT"
+              ? 0
+              : Number(enrollment.total_fee || 0) -
+                Number(enrollment.installment1_amount || 0) -
+                Number(enrollment.installment2_amount || 0) -
+                Number(enrollment.installment3_amount || 0),
           installmentDate: enrollment.installment3_date,
           paymentMode: enrollment.installment3_mode,
         }}

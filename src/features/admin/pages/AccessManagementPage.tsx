@@ -325,31 +325,53 @@ export default function AccessManagementPage() {
       accessorKey: "companyName",
       header: "Company",
       cell: ({ row }) => (
-        <div className="flex flex-col">
-          <span className="text-sm font-medium">
-            {row.original.companyName}
-          </span>
-          {row.original.designation && (
-            <span className="text-xs text-muted-foreground">
-              {row.original.designation}
-            </span>
-          )}
-        </div>
+        <span className="text-sm font-medium">
+          {row.original.companyName || "-"}
+        </span>
       ),
     },
     {
-      accessorKey: "contact",
-      header: "Contact",
+      accessorKey: "designation",
+      header: "Designation",
       cell: ({ row }) => (
-        <div className="flex flex-col text-xs">
-          <span>{row.original.email}</span>
-          <span className="text-muted-foreground">{row.original.phone}</span>
-        </div>
+        <span className="text-sm">{row.original.designation || "-"}</span>
       ),
+    },
+    {
+      accessorKey: "email",
+      header: "Email",
+      cell: ({ row }) => (
+        <span className="text-sm">{row.original.email}</span>
+      ),
+    },
+    {
+      accessorKey: "phone",
+      header: "Contact No.",
+      cell: ({ row }) => (
+        <span className="text-sm">{row.original.phone || "-"}</span>
+      ),
+    },
+    {
+      id: "status",
+      header: "Status",
+      cell: ({ row }) => {
+        const lastLogin = row.original.lastLogin;
+        const isActive = lastLogin
+          ? new Date(lastLogin) > new Date(Date.now() - 4 * 30 * 24 * 60 * 60 * 1000)
+          : false;
+        return (
+          <Badge
+            variant={isActive ? "success" : "destructive"}
+            className="text-xs"
+          >
+            {isActive ? "Active" : "Not Active"}
+          </Badge>
+        );
+      },
     },
     {
       id: "actions",
-      header: "",
+      header: "Actions",
       cell: ({ row }) => (
         <div className="flex items-center justify-end gap-1">
           <Button

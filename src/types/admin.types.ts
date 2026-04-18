@@ -54,6 +54,7 @@ export interface RecruiterShortlist {
   id: string;
   recruiterId: string;
   recruiterName: string;
+  companyName: string;
   course: string;
   studentName: string;
   studentId: string;
@@ -69,6 +70,7 @@ export interface RecruiterAccount {
   designation: string;
   role: string;
   createdAt: string;
+  lastLogin: string | null;
 }
 
 export interface CandidateReportRow {

@@ -232,8 +232,23 @@ export default function CandidateFilterPage() {
     }
   };
 
-  const handleDownloadSingle = (cvUrl: string) => {
-    window.open(cvUrl, "_blank");
+  const [downloadingCvId, setDownloadingCvId] = useState<string | null>(null);
+
+  const handleDownloadSingle = async (studentId: string) => {
+    try {
+      setDownloadingCvId(studentId);
+      const blob = await adminService.downloadCv(studentId);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "CV.pdf";
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setDownloadingCvId(null);
+    }
   };
 
   if (isError) {
@@ -587,10 +602,12 @@ export default function CandidateFilterPage() {
                           <div className="flex gap-1.5">
                             {row.cvUrl && (
                               <button
-                                className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 transition-colors hover:bg-emerald-100"
-                                onClick={() => handleDownloadSingle(row.cvUrl!)}
+                                className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 transition-colors hover:bg-emerald-100 disabled:opacity-50"
+                                onClick={() => handleDownloadSingle(row.id)}
+                                disabled={downloadingCvId === row.id}
                               >
-                                <Download className="h-3 w-3" /> Download CV
+                                <Download className="h-3 w-3" />
+                                {downloadingCvId === row.id ? "Downloading..." : "Download CV"}
                               </button>
                             )}
                             <button
