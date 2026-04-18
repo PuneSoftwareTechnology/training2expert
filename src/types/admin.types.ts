@@ -74,9 +74,12 @@ export interface RecruiterAccount {
 export interface CandidateReportRow {
   id: string;
   name: string;
+  phone?: string;
   course: string;
   enrollmentId: string;
+  completionStatus?: string;
   city?: string;
+  area?: string;
   itExperienceYears: number;
   technicalMarksScored: number;
   technicalTotalMarks: number;
@@ -88,6 +91,7 @@ export interface CandidateReportRow {
 export interface FeeDueRow {
   id: string;
   name: string;
+  institute: string;
   course: string;
   completionStatus: CompletionStatus;
   phone: string;

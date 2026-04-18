@@ -1,14 +1,17 @@
 import { z } from "zod";
 
 export const enquirySchema = z.object({
-  enquiry_date: z.string().min(1, "Date is required"),
+  enquiry_date: z.string().optional().or(z.literal("")),
   name: z.string().min(2, "Name is required"),
   phone: z.string().regex(/^\d{10}$/, "Phone must be 10 digits"),
-  email: z.string().email("Invalid email").optional().or(z.literal("")),
-  course: z.string().optional(),
-  institute: z.enum(["PST", "TCH"]),
-  leadStatus: z.enum(["PROSPECTIVE", "NON_PROSPECTIVE", "ENROLLED"]),
-  demoStatus: z.enum(["DONE", "PENDING"]),
+  email: z
+    .string()
+    .transform((v) => (v === "" ? undefined : v))
+    .pipe(z.string().email("Invalid email").optional()),
+  course: z.string().optional().or(z.literal("")),
+  institute: z.enum(["PST", "TCH"]).optional(),
+  leadStatus: z.enum(["PROSPECTIVE", "NON_PROSPECTIVE", "ENROLLED"]).optional(),
+  demoStatus: z.enum(["DONE", "PENDING"]).optional(),
   comment: z.string().optional().or(z.literal("")),
 });
 

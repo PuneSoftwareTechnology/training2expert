@@ -302,10 +302,6 @@ const PaymentReceipt = forwardRef<HTMLDivElement, { data: ReceiptData }>(
                 The institute reserves the right to change batch timings or
                 faculty if required.
               </li>
-              <li>
-                The institute reserves the right to change batch timings or
-                faculty if required.
-              </li>
             </ol>
           </div>
         </div>

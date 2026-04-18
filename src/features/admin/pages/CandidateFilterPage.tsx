@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Check, Download, Mail, MessageSquare, Pencil, Users, X } from "lucide-react";
+import { Check, Download, Mail, MessageSquare, Pencil, Search, Users, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,67 @@ import { FilterActions } from "@/components/ui/filter-actions";
 
 import { adminService } from "@/services/admin.service";
 import { getErrorMessage } from "@/services/api";
+import type { CandidateReportRow } from "@/types/admin.types";
+
+function exportCandidatesCsv(items: CandidateReportRow[]) {
+  const headers = [
+    "S.No",
+    "Name",
+    "Phone",
+    "Course",
+    "Area",
+    "City",
+    "Experience (yrs)",
+    "Tech Score",
+    "Tech Total",
+    "Tech %",
+    "Comm Score",
+    "Completion",
+    "Remarks",
+  ];
+
+  const escape = (v: unknown) => {
+    const s = v == null ? "" : String(v);
+    return s.includes(",") || s.includes('"') || s.includes("\n")
+      ? `"${s.replace(/"/g, '""')}"`
+      : s;
+  };
+
+  const rows = items.map((r, i) => {
+    const pct =
+      r.technicalTotalMarks > 0
+        ? Math.round(
+            (r.technicalMarksScored / r.technicalTotalMarks) * 100,
+          )
+        : 0;
+    return [
+      i + 1,
+      r.name,
+      r.phone ?? "",
+      r.course,
+      r.area ?? "",
+      r.city ?? "",
+      r.itExperienceYears,
+      r.technicalMarksScored,
+      r.technicalTotalMarks,
+      `${pct}%`,
+      r.communicationScore,
+      r.completionStatus ?? "",
+      r.remarks ?? "",
+    ]
+      .map(escape)
+      .join(",");
+  });
+
+  const csv = [headers.join(","), ...rows].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `candidates_${new Date().toISOString().split("T")[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 export default function CandidateFilterPage() {
   const queryClient = useQueryClient();
@@ -45,6 +106,7 @@ export default function CandidateFilterPage() {
   const [minExp, setMinExp] = useState("");
   const [minTech, setMinTech] = useState("");
   const [minComm, setMinComm] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [emailDialog, setEmailDialog] = useState(false);
   const [emailTargetIds, setEmailTargetIds] = useState<string[]>([]);
@@ -72,6 +134,21 @@ export default function CandidateFilterPage() {
         minCommunicationRating: minComm ? Number(minComm) : undefined,
       }),
   });
+
+  const filteredItems = useMemo(() => {
+    if (!data?.items) return [];
+    if (!searchQuery.trim()) return data.items;
+    const q = searchQuery.toLowerCase();
+    return data.items.filter(
+      (row) =>
+        row.name.toLowerCase().includes(q) ||
+        row.course.toLowerCase().includes(q) ||
+        (row.phone && row.phone.includes(q)) ||
+        (row.city && row.city.toLowerCase().includes(q)) ||
+        (row.area && row.area.toLowerCase().includes(q)) ||
+        (row.remarks && row.remarks.toLowerCase().includes(q)),
+    );
+  }, [data?.items, searchQuery]);
 
   const downloadBulkMutation = useMutation({
     mutationFn: () => adminService.downloadBulkCvs(selectedIds),
@@ -147,30 +224,16 @@ export default function CandidateFilterPage() {
   };
 
   const toggleAll = () => {
-    if (!data?.items) return;
-    if (selectedIds.length === data.items.length) {
+    if (!filteredItems.length) return;
+    if (selectedIds.length === filteredItems.length) {
       setSelectedIds([]);
     } else {
-      setSelectedIds(data.items.map((i) => i.id));
+      setSelectedIds(filteredItems.map((i) => i.id));
     }
   };
 
-  const handleDownloadSingle = async (
-    studentId: string,
-    name: string,
-    course: string,
-  ) => {
-    try {
-      const blob = await adminService.downloadCv(studentId);
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `${name.replace(/\s+/g, "_")}_${course.replace(/\s+/g, "_")}.pdf`;
-      link.click();
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      toast.error(getErrorMessage(error));
-    }
+  const handleDownloadSingle = (cvUrl: string) => {
+    window.open(cvUrl, "_blank");
   };
 
   if (isError) {
@@ -180,138 +243,164 @@ export default function CandidateFilterPage() {
   return (
     <PageTransition>
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 p-2.5 shadow-md shadow-emerald-200/50">
-              <Users className="h-5 w-5 text-white" />
+        {/* Sticky upper section */}
+        <div className="sticky top-0 z-10 space-y-4 bg-background pb-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 p-2.5 shadow-md shadow-emerald-200/50">
+                <Users className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold">Candidate Filter Report</h2>
+                <p className="text-sm text-muted-foreground">
+                  Search and filter candidates by skills and ratings
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-2xl font-bold">Candidate Filter Report</h2>
-              <p className="text-sm text-muted-foreground">
-                Search and filter candidates by skills and ratings
-              </p>
-            </div>
+            <FilterActions
+              onReset={() => {
+                setCourse("");
+                setCity("");
+                setMinExp("");
+                setMinTech("");
+                setMinComm("");
+                setSearchQuery("");
+              }}
+              onRefresh={() => refetch()}
+              isFetching={isFetching}
+            />
           </div>
-          <FilterActions
-            onReset={() => {
-              setCourse("");
-              setCity("");
-              setMinExp("");
-              setMinTech("");
-              setMinComm("");
-            }}
-            onRefresh={() => refetch()}
-            isFetching={isFetching}
-          />
+
+          <Card className="border-emerald-200/60 bg-gradient-to-r from-emerald-100 to-green-100">
+            <CardContent className="pt-4">
+              <div className="flex flex-wrap items-end gap-4">
+                <div className="space-y-1">
+                  <Label className="text-xs">Course</Label>
+                  <Select value={course} onValueChange={setCourse}>
+                    <SelectTrigger className="w-36">
+                      <SelectValue placeholder="All" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">All</SelectItem>
+                      {courses.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {c}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">City</Label>
+                  <Select value={city} onValueChange={setCity}>
+                    <SelectTrigger className="w-36">
+                      <SelectValue placeholder="All" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">All</SelectItem>
+                      {cities.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {c}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Min Experience (yrs)</Label>
+                  <Input
+                    type="number"
+                    value={minExp}
+                    onChange={(e) => setMinExp(e.target.value)}
+                    className="w-24"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Min Tech Rating</Label>
+                  <Input
+                    type="number"
+                    value={minTech}
+                    onChange={(e) => setMinTech(e.target.value)}
+                    className="w-24"
+                    min="1"
+                    max="10"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Min Comm Rating</Label>
+                  <Input
+                    type="number"
+                    value={minComm}
+                    onChange={(e) => setMinComm(e.target.value)}
+                    className="w-24"
+                    min="1"
+                    max="10"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Search + Export bar */}
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search across columns..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            {data?.items && data.items.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportCandidatesCsv(filteredItems)}
+              >
+                <Download className="mr-1 h-3.5 w-3.5" /> Export Data
+              </Button>
+            )}
+          </div>
+
+          {selectedIds.length > 0 && (
+            <div className="flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50/50 p-3">
+              <span className="text-sm font-semibold text-emerald-800">
+                {selectedIds.length} selected
+              </span>
+              <Button
+                size="sm"
+                className="bg-emerald-600 text-white hover:bg-emerald-700"
+                onClick={() => downloadBulkMutation.mutate()}
+                loading={downloadBulkMutation.isPending}
+              >
+                {!downloadBulkMutation.isPending && (
+                  <Download className="mr-1 h-3.5 w-3.5" />
+                )}
+                {downloadBulkMutation.isPending
+                  ? "Downloading..."
+                  : "Download CVs"}
+              </Button>
+              <Button
+                size="sm"
+                className="bg-blue-600 text-white hover:bg-blue-700"
+                onClick={() => openEmailDialog(selectedIds)}
+              >
+                <Mail className="mr-1 h-3.5 w-3.5" /> Send Email
+              </Button>
+              <Button
+                size="sm"
+                className="bg-amber-500 text-white hover:bg-amber-600"
+                onClick={() => setCommentDialog(true)}
+              >
+                <MessageSquare className="mr-1 h-3.5 w-3.5" /> Add Comment
+              </Button>
+            </div>
+          )}
         </div>
 
-        <Card className="border-emerald-200/60 bg-gradient-to-r from-emerald-100 to-green-100">
-          <CardContent className="pt-4">
-            <div className="flex flex-wrap items-end gap-4">
-              <div className="space-y-1">
-                <Label className="text-xs">Course</Label>
-                <Select value={course} onValueChange={setCourse}>
-                  <SelectTrigger className="w-36">
-                    <SelectValue placeholder="All" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ALL">All</SelectItem>
-                    {courses.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">City</Label>
-                <Select value={city} onValueChange={setCity}>
-                  <SelectTrigger className="w-36">
-                    <SelectValue placeholder="All" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ALL">All</SelectItem>
-                    {cities.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Min Experience (yrs)</Label>
-                <Input
-                  type="number"
-                  value={minExp}
-                  onChange={(e) => setMinExp(e.target.value)}
-                  className="w-24"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Min Tech Rating</Label>
-                <Input
-                  type="number"
-                  value={minTech}
-                  onChange={(e) => setMinTech(e.target.value)}
-                  className="w-24"
-                  min="1"
-                  max="10"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Min Comm Rating</Label>
-                <Input
-                  type="number"
-                  value={minComm}
-                  onChange={(e) => setMinComm(e.target.value)}
-                  className="w-24"
-                  min="1"
-                  max="10"
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {selectedIds.length > 0 && (
-          <div className="flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50/50 p-3">
-            <span className="text-sm font-semibold text-emerald-800">
-              {selectedIds.length} selected
-            </span>
-            <Button
-              size="sm"
-              className="bg-emerald-600 text-white hover:bg-emerald-700"
-              onClick={() => downloadBulkMutation.mutate()}
-              loading={downloadBulkMutation.isPending}
-            >
-              {!downloadBulkMutation.isPending && (
-                <Download className="mr-1 h-3.5 w-3.5" />
-              )}
-              {downloadBulkMutation.isPending
-                ? "Downloading..."
-                : "Download CVs"}
-            </Button>
-            <Button
-              size="sm"
-              className="bg-blue-600 text-white hover:bg-blue-700"
-              onClick={() => openEmailDialog(selectedIds)}
-            >
-              <Mail className="mr-1 h-3.5 w-3.5" /> Send Email
-            </Button>
-            <Button
-              size="sm"
-              className="bg-amber-500 text-white hover:bg-amber-600"
-              onClick={() => setCommentDialog(true)}
-            >
-              <MessageSquare className="mr-1 h-3.5 w-3.5" /> Add Comment
-            </Button>
-          </div>
-        )}
-
         {isLoading ? (
-          <TableSkeleton rows={6} columns={7} />
+          <TableSkeleton rows={6} columns={12} />
         ) : (
           <Card className="border-emerald-200/60 overflow-hidden">
             <CardContent className="p-0">
@@ -321,17 +410,26 @@ export default function CandidateFilterPage() {
                     <TableHead className="w-10 text-white">
                       <Checkbox
                         checked={
-                          selectedIds.length === (data?.items?.length ?? 0) &&
+                          selectedIds.length === filteredItems.length &&
                           selectedIds.length > 0
                         }
                         onCheckedChange={toggleAll}
                       />
+                    </TableHead>
+                    <TableHead className="text-white font-semibold text-xs uppercase tracking-wider w-12">
+                      S.No
                     </TableHead>
                     <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">
                       Name
                     </TableHead>
                     <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">
                       Course
+                    </TableHead>
+                    <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">
+                      Phone
+                    </TableHead>
+                    <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">
+                      Area
                     </TableHead>
                     <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">
                       City
@@ -346,6 +444,9 @@ export default function CandidateFilterPage() {
                       Comm
                     </TableHead>
                     <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">
+                      Completion
+                    </TableHead>
+                    <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">
                       Remarks
                     </TableHead>
                     <TableHead className="text-white font-semibold text-xs uppercase tracking-wider">
@@ -354,140 +455,158 @@ export default function CandidateFilterPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data?.items?.map((row) => (
-                    <TableRow key={row.enrollmentId}>
-                      <TableCell>
-                        <Checkbox
-                          checked={selectedIds.includes(row.id)}
-                          onCheckedChange={() => toggleSelect(row.id)}
-                        />
-                      </TableCell>
-                      <TableCell className="font-medium">{row.name}</TableCell>
-                      <TableCell>{row.course}</TableCell>
-                      <TableCell>{row.city ?? "-"}</TableCell>
-                      <TableCell>{row.itExperienceYears} yrs</TableCell>
-                      <TableCell>
-                        {(() => {
-                          const pct = row.technicalTotalMarks > 0
-                            ? Math.round((row.technicalMarksScored / row.technicalTotalMarks) * 100)
-                            : 0;
-                          const color = pct >= 70
-                            ? "border-green-200 bg-green-50 text-green-700"
-                            : pct >= 40
-                              ? "border-yellow-200 bg-yellow-50 text-yellow-700"
-                              : "border-red-200 bg-red-50 text-red-700";
-                          return (
-                            <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${color}`}>
-                              {row.technicalMarksScored}/{row.technicalTotalMarks}
-                              {row.technicalTotalMarks > 0 && ` (${pct}%)`}
-                            </span>
-                          );
-                        })()}
-                      </TableCell>
-                      <TableCell>
-                        {(() => {
-                          const score = Number(row.communicationScore);
-                          const color = score >= 7
-                            ? "border-green-200 bg-green-50 text-green-700"
-                            : score >= 4
-                              ? "border-yellow-200 bg-yellow-50 text-yellow-700"
-                              : "border-red-200 bg-red-50 text-red-700";
-                          return (
-                            <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${color}`}>
-                              {row.communicationScore}/10
-                            </span>
-                          );
-                        })()}
-                      </TableCell>
-                      <TableCell className="max-w-[200px]">
-                        {editingRemarkId === row.enrollmentId ? (
-                          <div className="flex items-center gap-1">
-                            <Input
-                              ref={remarkInputRef}
-                              value={editingRemarkValue}
-                              onChange={(e) => setEditingRemarkValue(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") {
+                  {filteredItems.length > 0 ? (
+                    filteredItems.map((row, index) => (
+                      <TableRow key={row.enrollmentId}>
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedIds.includes(row.id)}
+                            onCheckedChange={() => toggleSelect(row.id)}
+                          />
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-sm">
+                          {index + 1}
+                        </TableCell>
+                        <TableCell className="font-medium">{row.name}</TableCell>
+                        <TableCell>{row.course}</TableCell>
+                        <TableCell>{row.phone ?? "-"}</TableCell>
+                        <TableCell>{row.area ?? "-"}</TableCell>
+                        <TableCell>{row.city ?? "-"}</TableCell>
+                        <TableCell>{row.itExperienceYears} yrs</TableCell>
+                        <TableCell>
+                          {(() => {
+                            const pct = row.technicalTotalMarks > 0
+                              ? Math.round((row.technicalMarksScored / row.technicalTotalMarks) * 100)
+                              : 0;
+                            const color = pct >= 70
+                              ? "border-green-200 bg-green-50 text-green-700"
+                              : pct >= 40
+                                ? "border-yellow-200 bg-yellow-50 text-yellow-700"
+                                : "border-red-200 bg-red-50 text-red-700";
+                            return (
+                              <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${color}`}>
+                                {row.technicalMarksScored}/{row.technicalTotalMarks}
+                                {row.technicalTotalMarks > 0 && ` (${pct}%)`}
+                              </span>
+                            );
+                          })()}
+                        </TableCell>
+                        <TableCell>
+                          {(() => {
+                            const score = Number(row.communicationScore);
+                            const color = score >= 7
+                              ? "border-green-200 bg-green-50 text-green-700"
+                              : score >= 4
+                                ? "border-yellow-200 bg-yellow-50 text-yellow-700"
+                                : "border-red-200 bg-red-50 text-red-700";
+                            return (
+                              <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${color}`}>
+                                {row.communicationScore}/10
+                              </span>
+                            );
+                          })()}
+                        </TableCell>
+                        <TableCell>
+                          {(() => {
+                            const status = row.completionStatus;
+                            if (!status) return "-";
+                            const color =
+                              status === "COMPLETED"
+                                ? "border-green-200 bg-green-50 text-green-700"
+                                : "border-blue-200 bg-blue-50 text-blue-700";
+                            const label =
+                              status === "COMPLETED" ? "Completed" : "Active";
+                            return (
+                              <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${color}`}>
+                                {label}
+                              </span>
+                            );
+                          })()}
+                        </TableCell>
+                        <TableCell className="max-w-[200px]">
+                          {editingRemarkId === row.enrollmentId ? (
+                            <div className="flex items-center gap-1">
+                              <Input
+                                ref={remarkInputRef}
+                                value={editingRemarkValue}
+                                onChange={(e) => setEditingRemarkValue(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    updateRemarkMutation.mutate({
+                                      enrollmentId: row.enrollmentId,
+                                      studentId: row.id,
+                                      remark: editingRemarkValue,
+                                    });
+                                  } else if (e.key === "Escape") {
+                                    setEditingRemarkId(null);
+                                  }
+                                }}
+                                className="h-7 text-sm"
+                                disabled={updateRemarkMutation.isPending}
+                              />
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0"
+                                onClick={() =>
                                   updateRemarkMutation.mutate({
                                     enrollmentId: row.enrollmentId,
                                     studentId: row.id,
                                     remark: editingRemarkValue,
-                                  });
-                                } else if (e.key === "Escape") {
-                                  setEditingRemarkId(null);
+                                  })
                                 }
+                                disabled={updateRemarkMutation.isPending}
+                              >
+                                <Check className="h-3.5 w-3.5 text-green-600" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0"
+                                onClick={() => setEditingRemarkId(null)}
+                                disabled={updateRemarkMutation.isPending}
+                              >
+                                <X className="h-3.5 w-3.5 text-red-500" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <div
+                              className="group flex cursor-pointer items-center gap-1 truncate text-sm"
+                              onClick={() => {
+                                setEditingRemarkId(row.enrollmentId);
+                                setEditingRemarkValue(row.remarks ?? "");
                               }}
-                              className="h-7 text-sm"
-                              disabled={updateRemarkMutation.isPending}
-                            />
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 w-7 p-0"
-                              onClick={() =>
-                                updateRemarkMutation.mutate({
-                                  enrollmentId: row.enrollmentId,
-                                  studentId: row.id,
-                                  remark: editingRemarkValue,
-                                })
-                              }
-                              disabled={updateRemarkMutation.isPending}
+                              title="Click to edit"
                             >
-                              <Check className="h-3.5 w-3.5 text-green-600" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 w-7 p-0"
-                              onClick={() => setEditingRemarkId(null)}
-                              disabled={updateRemarkMutation.isPending}
-                            >
-                              <X className="h-3.5 w-3.5 text-red-500" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <div
-                            className="group flex cursor-pointer items-center gap-1 truncate text-sm"
-                            onClick={() => {
-                              setEditingRemarkId(row.enrollmentId);
-                              setEditingRemarkValue(row.remarks ?? "");
-                            }}
-                            title="Click to edit"
-                          >
-                            <span className="truncate">{row.remarks || "-"}</span>
-                            <Pencil className="h-3 w-3 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1.5">
-                          {row.cvUrl && (
-                            <button
-                              className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 transition-colors hover:bg-emerald-100"
-                              onClick={() =>
-                                handleDownloadSingle(
-                                  row.id,
-                                  row.name,
-                                  row.course,
-                                )
-                              }
-                            >
-                              <Download className="h-3 w-3" /> Download CV
-                            </button>
+                              <span className="truncate">{row.remarks || "-"}</span>
+                              <Pencil className="h-3 w-3 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </div>
                           )}
-                          <button
-                            className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-100"
-                            onClick={() => openEmailDialog([row.id])}
-                          >
-                            <Mail className="h-3 w-3" /> Send Email
-                          </button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )) ?? (
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1.5">
+                            {row.cvUrl && (
+                              <button
+                                className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 transition-colors hover:bg-emerald-100"
+                                onClick={() => handleDownloadSingle(row.cvUrl!)}
+                              >
+                                <Download className="h-3 w-3" /> Download CV
+                              </button>
+                            )}
+                            <button
+                              className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-100"
+                              onClick={() => openEmailDialog([row.id])}
+                            >
+                              <Mail className="h-3 w-3" /> Send Email
+                            </button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
                     <TableRow>
                       <TableCell
-                        colSpan={9}
+                        colSpan={13}
                         className="py-8 text-center text-muted-foreground"
                       >
                         No candidates found

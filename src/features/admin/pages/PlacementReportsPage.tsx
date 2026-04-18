@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Download,
@@ -31,6 +31,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DataTable, SortableHeader } from "@/components/ui/data-table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { TableSkeleton } from "@/components/loaders/TableSkeleton";
 import { QueryError } from "@/components/errors/QueryError";
 import { PageTransition } from "@/components/animations/PageTransition";
@@ -134,6 +144,10 @@ export default function PlacementReportsPage() {
   });
   const [editState, setEditState] = useState<EditState>({});
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [contactConfirm, setContactConfirm] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   const queryKey = ["admin", "reports", "placement", filters];
 
@@ -180,9 +194,16 @@ export default function PlacementReportsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey });
       toast.success("Student marked as contacted");
+      setContactConfirm(null);
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
+
+  const handleContactConfirm = useCallback(() => {
+    if (contactConfirm) {
+      contactMutation.mutate({ id: contactConfirm.id });
+    }
+  }, [contactConfirm, contactMutation]);
 
   /* ─── Save mutation (with edit fields) ─── */
   const saveMutation = useMutation({
@@ -291,6 +312,7 @@ export default function PlacementReportsPage() {
   if (isError) return <QueryError error={error} onRetry={refetch} />;
 
   return (
+    <>
     <PageTransition>
       <div className="space-y-4">
         {/* Header */}
@@ -563,8 +585,9 @@ export default function PlacementReportsPage() {
                                                 contactMutation.isPending
                                               }
                                               onClick={() =>
-                                                contactMutation.mutate({
+                                                setContactConfirm({
                                                   id: row.id,
+                                                  name: row.name,
                                                 })
                                               }
                                             >
@@ -888,5 +911,37 @@ export default function PlacementReportsPage() {
         </div>
       </div>
     </PageTransition>
+
+      {/* Confirmation dialog for marking as contacted */}
+      <AlertDialog
+        open={!!contactConfirm}
+        onOpenChange={(open) => !open && setContactConfirm(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Mark as Contacted?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to move{" "}
+              <span className="font-semibold text-foreground">
+                {contactConfirm?.name}
+              </span>{" "}
+              to the Contacted list?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={contactMutation.isPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleContactConfirm}
+              disabled={contactMutation.isPending}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              {contactMutation.isPending ? "Updating..." : "Confirm"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

@@ -27,7 +27,8 @@ export const DEMO_STATUSES = [
 
 export const PAYMENT_MODES = [
   { value: "CASH", label: "Cash" },
-  { value: "UPI", label: "UPI" },
+  { value: "HDFC", label: "HDFC" },
+  { value: "ICICI", label: "ICICI" },
 ] as const;
 
 export const ENROLLMENT_STATUSES = [

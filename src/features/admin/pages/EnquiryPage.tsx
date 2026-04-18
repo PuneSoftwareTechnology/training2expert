@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Search, Pencil, Trash2, ClipboardList } from "lucide-react";
+import { Plus, Download, Search, Pencil, Trash2, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
 import type { ColumnDef } from "@tanstack/react-table";
 
@@ -89,6 +89,53 @@ const FILTER_SELECTS = [
   { label: "Lead Status", key: "lead" as const, options: LEAD_STATUSES },
   { label: "Demo Status", key: "demo" as const, options: DEMO_STATUSES },
 ];
+
+function exportEnquiriesCsv(items: Enquiry[]) {
+  const headers = [
+    "Date",
+    "Name",
+    "Phone",
+    "Email",
+    "Course",
+    "Institute",
+    "Lead Status",
+    "Demo Status",
+    "Comment",
+  ];
+
+  const escape = (v: unknown) => {
+    const s = v == null ? "" : String(v);
+    return s.includes(",") || s.includes('"') || s.includes("\n")
+      ? `"${s.replace(/"/g, '""')}"`
+      : s;
+  };
+
+  const rows = items.map((e) => {
+    const raw = e as unknown as Record<string, string>;
+    return [
+      e.enquiry_date ? formatDate(e.enquiry_date) : "",
+      e.name,
+      e.phone,
+      e.email ?? "",
+      e.course ?? "",
+      e.institute,
+      LEAD_STATUSES.find((s) => s.value === (raw.lead_status ?? e.leadStatus))?.label ?? raw.lead_status ?? e.leadStatus,
+      DEMO_STATUSES.find((s) => s.value === (raw.demo_status ?? e.demoStatus))?.label ?? raw.demo_status ?? e.demoStatus,
+      e.comment ?? "",
+    ]
+      .map(escape)
+      .join(",");
+  });
+
+  const csv = [headers.join(","), ...rows].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `enquiries_${new Date().toISOString().split("T")[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 export default function EnquiryPage() {
   const queryClient = useQueryClient();
@@ -338,6 +385,13 @@ export default function EnquiryPage() {
               onRefresh={() => refetch()}
               isFetching={isFetching}
             />
+            <Button
+              variant="outline"
+              onClick={() => exportEnquiriesCsv(filteredData)}
+              disabled={!filteredData.length}
+            >
+              <Download className="mr-2" /> Export Data
+            </Button>
             <Button
               onClick={openCreate}
               className="bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-md shadow-amber-200/50 hover:from-amber-600 hover:to-orange-700"

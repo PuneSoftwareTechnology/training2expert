@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Users, IndianRupee, Download } from "lucide-react";
+import { Users, IndianRupee, Download, Search, Info } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DataTable, SortableHeader } from "@/components/ui/data-table";
@@ -20,6 +21,14 @@ import { cn } from "@/lib/utils";
 import type { FeeDueRow } from "@/types/admin.types";
 
 const columns: ColumnDef<FeeDueRow>[] = [
+  {
+    id: "sno",
+    header: "S.No",
+    cell: ({ row }) => (
+      <span className="text-muted-foreground">{row.index + 1}</span>
+    ),
+    enableSorting: false,
+  },
   {
     accessorKey: "completionStatus",
     header: "Status",
@@ -38,9 +47,20 @@ const columns: ColumnDef<FeeDueRow>[] = [
   },
   {
     accessorKey: "name",
-    header: ({ column }) => <SortableHeader column={column} title="Name" />,
+    header: ({ column }) => (
+      <SortableHeader column={column} title="Candidate" />
+    ),
     cell: ({ getValue }) => (
       <span className="font-medium">{getValue<string>()}</span>
+    ),
+  },
+  {
+    accessorKey: "institute",
+    header: "Institute",
+    cell: ({ getValue }) => (
+      <Badge variant="outline" className="font-medium">
+        {getValue<string>()}
+      </Badge>
     ),
   },
   { accessorKey: "course", header: "Course" },
@@ -115,6 +135,7 @@ const columns: ColumnDef<FeeDueRow>[] = [
 
 export default function FeeDuesPage() {
   const [daysFilter, setDaysFilter] = useState<number | null>(null);
+  const [search, setSearch] = useState("");
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["admin", "reports", "fee-dues"],
@@ -125,9 +146,16 @@ export default function FeeDuesPage() {
 
   const filteredData = useMemo(() => {
     if (!allRows.length) return [];
-    if (daysFilter === null) return allRows;
-    return allRows.filter((r) => r.daysSinceLastPayment >= daysFilter);
-  }, [allRows, daysFilter]);
+    let rows = allRows;
+    if (daysFilter !== null) {
+      rows = rows.filter((r) => r.daysSinceLastPayment >= daysFilter);
+    }
+    if (search.trim()) {
+      const term = search.trim().toLowerCase();
+      rows = rows.filter((r) => r.name.toLowerCase().includes(term));
+    }
+    return rows;
+  }, [allRows, daysFilter, search]);
 
   const summary = useMemo(() => {
     if (filteredData.length === 0) return { count: 0, totalPending: 0 };
@@ -142,7 +170,8 @@ export default function FeeDuesPage() {
     if (filteredData.length === 0) return;
     const headers = [
       "Status",
-      "Name",
+      "Candidate",
+      "Institute",
       "Course",
       "Phone No",
       "Total Fees",
@@ -153,6 +182,7 @@ export default function FeeDuesPage() {
     const rows = filteredData.map((r) => [
       r.completionStatus,
       r.name,
+      r.institute,
       r.course,
       r.phone,
       Number(r.totalFee),
@@ -194,7 +224,10 @@ export default function FeeDuesPage() {
             </div>
           </div>
           <FilterActions
-            onReset={() => setDaysFilter(null)}
+            onReset={() => {
+              setDaysFilter(null);
+              setSearch("");
+            }}
             onRefresh={() => refetch()}
             isFetching={isLoading}
           />
@@ -202,24 +235,35 @@ export default function FeeDuesPage() {
 
         {/* Filters & Search */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-md border border-rose-200/60 bg-gradient-to-r from-rose-100 to-red-100 p-4">
-          <div className="flex gap-2">
-            <Button
-              variant={daysFilter === null ? "default" : "outline"}
-              size="sm"
-              onClick={() => setDaysFilter(null)}
-            >
-              All
-            </Button>
-            {FEE_DUE_FILTERS.map((filter) => (
+          <div className="flex items-center gap-2">
+            <div className="flex gap-2">
               <Button
-                key={filter.value}
-                variant={daysFilter === filter.value ? "default" : "outline"}
+                variant={daysFilter === null ? "default" : "outline"}
                 size="sm"
-                onClick={() => setDaysFilter(filter.value)}
+                onClick={() => setDaysFilter(null)}
               >
-                {filter.label}
+                All
               </Button>
-            ))}
+              {FEE_DUE_FILTERS.map((filter) => (
+                <Button
+                  key={filter.value}
+                  variant={daysFilter === filter.value ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setDaysFilter(filter.value)}
+                >
+                  {filter.label}
+                </Button>
+              ))}
+            </div>
+            <div className="relative ml-2">
+              <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search person column..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-9 w-56 pl-8 bg-white"
+              />
+            </div>
           </div>
           {!isLoading && data && (
             <div className="flex items-center gap-3">
@@ -249,13 +293,14 @@ export default function FeeDuesPage() {
         </div>
 
         {isLoading ? (
-          <TableSkeleton rows={6} columns={8} />
+          <TableSkeleton rows={6} columns={10} />
         ) : (
           <Card className="border-rose-200/60 overflow-hidden">
             <CardContent className="p-0">
               <DataTable
                 columns={columns}
                 data={filteredData}
+                pageSize={filteredData.length || 10}
                 emptyMessage="No fee dues found."
                 headerClassName="bg-gradient-to-r from-rose-500 to-red-600"
               />
