@@ -148,7 +148,7 @@ export default function EnrollmentPage() {
   const [evaluationStudentId, setEvaluationStudentId] = useState<string | null>(
     null,
   );
-  const [filterCompletion, setFilterCompletion] = useState<string>("ACTIVE");
+  const [filterCompletion, setFilterCompletion] = useState<string>("ALL");
   const [filterTrainer, setFilterTrainer] = useState<string>("ALL");
   const [filterYear, setFilterYear] = useState<string>("ALL");
 

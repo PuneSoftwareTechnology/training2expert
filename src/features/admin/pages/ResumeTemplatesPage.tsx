@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, RefreshCw, Trash2, FileText, Download, Upload } from "lucide-react";
+import { Plus, RefreshCw, Trash2, FileText, Download, Upload, Eye } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -115,7 +115,7 @@ export default function ResumeTemplatesPage() {
 
         {/* Table */}
         {isLoading ? (
-          <TableSkeleton rows={4} columns={5} />
+          <TableSkeleton rows={4} columns={6} />
         ) : (
           <Card className="overflow-hidden border-orange-200/60">
             <CardContent className="p-0">
@@ -126,6 +126,7 @@ export default function ResumeTemplatesPage() {
                     <TableHead className="font-semibold text-xs uppercase tracking-wider text-white">Course</TableHead>
                     <TableHead className="font-semibold text-xs uppercase tracking-wider text-white">Level</TableHead>
                     <TableHead className="font-semibold text-xs uppercase tracking-wider text-white">File</TableHead>
+                    <TableHead className="font-semibold text-xs uppercase tracking-wider text-white">View</TableHead>
                     <TableHead className="font-semibold text-xs uppercase tracking-wider text-white">Uploaded</TableHead>
                     <TableHead className="w-[120px] font-semibold text-xs uppercase tracking-wider text-white">Actions</TableHead>
                   </TableRow>
@@ -133,7 +134,7 @@ export default function ResumeTemplatesPage() {
                 <TableBody>
                   {!templates?.length ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
+                      <TableCell colSpan={7} className="py-12 text-center text-muted-foreground">
                         <div className="flex flex-col items-center gap-2">
                           <FileText className="h-10 w-10" />
                           <p>No templates uploaded yet</p>
@@ -159,6 +160,18 @@ export default function ResumeTemplatesPage() {
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {template.originalFilename}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                            asChild
+                          >
+                            <a href={template.downloadUrl} target="_blank" rel="noopener noreferrer">
+                              <Eye className="h-4 w-4" />
+                            </a>
+                          </Button>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {new Date(template.createdAt).toLocaleDateString("en-IN", {
@@ -305,33 +318,35 @@ function UploadTemplateDialog({
             />
           </div>
 
-          <div className="space-y-2">
-            <Label>Course</Label>
-            <Select value={course} onValueChange={setCourse}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select course" />
-              </SelectTrigger>
-              <SelectContent>
-                {courses.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Course</Label>
+              <Select value={course} onValueChange={setCourse}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select course" />
+                </SelectTrigger>
+                <SelectContent>
+                  {courses.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="space-y-2">
-            <Label>Experience Level</Label>
-            <Select value={experienceLevel} onValueChange={(v) => setExperienceLevel(v as "FRESHER" | "EXPERIENCED")}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select level" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="FRESHER">Fresher</SelectItem>
-                <SelectItem value="EXPERIENCED">Experienced</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="space-y-2">
+              <Label>Experience Level</Label>
+              <Select value={experienceLevel} onValueChange={(v) => setExperienceLevel(v as "FRESHER" | "EXPERIENCED")}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select level" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="FRESHER">Fresher</SelectItem>
+                  <SelectItem value="EXPERIENCED">Experienced</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="space-y-2">

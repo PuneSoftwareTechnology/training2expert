@@ -125,7 +125,7 @@ export function EvaluationDialog({
               />
             ))}
           </div>
-        ) : evaluations.length > 0 ? (
+        ) : profile ? (
           <ScrollArea className="max-h-[80vh]">
             {/* Header */}
             <div className="flex items-center gap-3 border-b px-6 py-4">
@@ -142,8 +142,9 @@ export function EvaluationDialog({
                   {studentName || "Student"}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {evaluations.length} course evaluation
-                  {evaluations.length > 1 ? "s" : ""}
+                  {evaluations.length > 0
+                    ? `${evaluations.length} course evaluation${evaluations.length > 1 ? "s" : ""}`
+                    : "No evaluations yet"}
                 </p>
               </div>
               <Badge variant="secondary" className="ml-auto mr-8 text-[10px]">
@@ -151,32 +152,34 @@ export function EvaluationDialog({
               </Badge>
             </div>
 
-            {/* Stat Cards */}
-            <div className="grid grid-cols-2 gap-3 px-6 py-4">
-              <div className="rounded-xl border-2 border-blue-200 bg-blue-50/50 p-3 text-center">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-blue-600">
-                  Technical Score
-                </p>
-                <p className="mt-1 text-2xl font-bold text-blue-700">
-                  {totalScored}/{totalPossible}{" "}
-                  <span className="text-xs text-blue-500">({avgTechnicalPct}%)</span>
-                </p>
+            {/* Stat Cards — only when evaluations exist */}
+            {evaluations.length > 0 && (
+              <div className="grid grid-cols-2 gap-3 px-6 py-4">
+                <div className="rounded-xl border-2 border-blue-200 bg-blue-50/50 p-3 text-center">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-blue-600">
+                    Technical Score
+                  </p>
+                  <p className="mt-1 text-2xl font-bold text-blue-700">
+                    {totalScored}/{totalPossible}{" "}
+                    <span className="text-xs text-blue-500">({avgTechnicalPct}%)</span>
+                  </p>
+                </div>
+                <div className="rounded-xl border-2 border-amber-200 bg-amber-50/50 p-3 text-center">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600">
+                    Communication
+                  </p>
+                  <p className="mt-1 text-2xl font-bold text-amber-700">
+                    {avgCommunication}
+                    <span className="text-sm font-normal text-amber-500">
+                      /10
+                    </span>
+                  </p>
+                </div>
               </div>
-              <div className="rounded-xl border-2 border-amber-200 bg-amber-50/50 p-3 text-center">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600">
-                  Communication
-                </p>
-                <p className="mt-1 text-2xl font-bold text-amber-700">
-                  {avgCommunication}
-                  <span className="text-sm font-normal text-amber-500">
-                    /10
-                  </span>
-                </p>
-              </div>
-            </div>
+            )}
 
             {/* Project Submissions */}
-            {profile?.projectSubmissions &&
+            {profile.projectSubmissions &&
               profile.projectSubmissions.length > 0 && (
                 <div className="px-6 pb-2">
                   <div className="mb-2 flex items-center gap-2">
@@ -222,21 +225,30 @@ export function EvaluationDialog({
               )}
 
             {/* Per-course evaluations */}
-            <div className="space-y-4 px-6 pb-6">
-              {evaluations.map((evaluation) => (
-                <EvaluationCard
-                  key={evaluation.id}
-                  evaluation={evaluation}
-                  studentId={studentId}
-                />
-              ))}
-            </div>
+            {evaluations.length > 0 ? (
+              <div className="space-y-4 px-6 pb-6">
+                {evaluations.map((evaluation) => (
+                  <EvaluationCard
+                    key={evaluation.id}
+                    evaluation={evaluation}
+                    studentId={studentId}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="py-8 text-center">
+                <BookOpen className="mx-auto h-8 w-8 text-muted-foreground/30" />
+                <p className="mt-2 text-xs text-muted-foreground">
+                  No course evaluations yet
+                </p>
+              </div>
+            )}
           </ScrollArea>
         ) : (
           <div className="py-16 text-center">
             <BookOpen className="mx-auto h-10 w-10 text-muted-foreground/40" />
             <p className="mt-3 text-sm text-muted-foreground">
-              No evaluation data found for this student.
+              No data found for this student.
             </p>
           </div>
         )}
