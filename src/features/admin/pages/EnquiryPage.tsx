@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Download, Search, Pencil, Trash2, ClipboardList } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
 import type { ColumnDef } from "@tanstack/react-table";
 
@@ -384,14 +384,12 @@ export default function EnquiryPage() {
               }
               onRefresh={() => refetch()}
               isFetching={isFetching}
+              onExport={
+                filteredData.length
+                  ? () => exportEnquiriesCsv(filteredData)
+                  : undefined
+              }
             />
-            <Button
-              variant="outline"
-              onClick={() => exportEnquiriesCsv(filteredData)}
-              disabled={!filteredData.length}
-            >
-              <Download className="mr-2" /> Export Data
-            </Button>
             <Button
               onClick={openCreate}
               className="bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-md shadow-amber-200/50 hover:from-amber-600 hover:to-orange-700"

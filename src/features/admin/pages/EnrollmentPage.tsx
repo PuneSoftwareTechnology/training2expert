@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Download, Search, GraduationCap } from "lucide-react";
+import { Plus, Search, GraduationCap } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -506,6 +506,14 @@ export default function EnrollmentPage() {
               }}
               onRefresh={() => refetch()}
               isFetching={isRefetching}
+              onExport={
+                filteredItems.length
+                  ? () => {
+                      exportEnrollmentsCsv(filteredItems);
+                      toast.success("CSV exported");
+                    }
+                  : undefined
+              }
             />
             <Button
               size="sm"
@@ -554,21 +562,6 @@ export default function EnrollmentPage() {
                 </SelectContent>
               </Select>
             ))}
-            {/* Export */}
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={!filteredItems.length}
-              onClick={() => {
-                if (filteredItems.length) {
-                  exportEnrollmentsCsv(filteredItems);
-                  toast.success("CSV exported");
-                }
-              }}
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Export Data
-            </Button>
           </div>
         </div>
 

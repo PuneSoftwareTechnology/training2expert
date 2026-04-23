@@ -8,8 +8,6 @@ import {
   Clock,
   Menu,
   Pencil,
-  ClipboardList,
-  ArrowRight,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -23,14 +21,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -67,8 +57,6 @@ export function StudentLayout({ children }: StudentLayoutProps) {
   // If on a route-based page (e.g. /student/tests), reflect that in activeSection
   const isTestsRoute = location.pathname.startsWith("/student/tests");
   const currentActive = isTestsRoute ? "tests" : activeSection;
-  const [showTestDialog, setShowTestDialog] = useState(false);
-  const testDialogShownRef = useRef(false);
 
   // Fetch available tests in background
   const { data: availableTests, isLoading: testsLoading } = useQuery({
@@ -86,34 +74,6 @@ export function StudentLayout({ children }: StudentLayoutProps) {
     if (item.id === "tests") return hasTests;
     return true;
   });
-
-  // Show test notification dialog once per session when tests are available
-  useEffect(() => {
-    if (
-      availableTests &&
-      availableTests.length > 0 &&
-      !testDialogShownRef.current &&
-      !sessionStorage.getItem("test-notification-dismissed")
-    ) {
-      testDialogShownRef.current = true;
-      setShowTestDialog(true);
-    }
-  }, [availableTests]);
-
-  const handleTestDialogDismiss = () => {
-    setShowTestDialog(false);
-    sessionStorage.setItem("test-notification-dismissed", "true");
-  };
-
-  const handleGoToTest = () => {
-    setShowTestDialog(false);
-    sessionStorage.setItem("test-notification-dismissed", "true");
-    if (availableTests && availableTests.length === 1) {
-      navigate(`/student/tests/${availableTests[0].id}`);
-    } else {
-      navigate("/student/tests");
-    }
-  };
 
   const handleLogout = () => {
     logout();
@@ -434,47 +394,6 @@ export function StudentLayout({ children }: StudentLayoutProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* Test notification dialog */}
-      <Dialog open={showTestDialog} onOpenChange={(open) => !open && handleTestDialogDismiss()}>
-        <DialogContent showCloseButton={false} className="sm:max-w-md">
-          <DialogHeader className="items-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/30">
-              <ClipboardList className="h-7 w-7" />
-            </div>
-            <DialogTitle className="text-center text-xl">
-              {availableTests?.length === 1
-                ? "A Test is Available!"
-                : `${availableTests?.length} Tests Available!`}
-            </DialogTitle>
-            <DialogDescription className="text-center">
-              {availableTests?.length === 1 ? (
-                <>
-                  <span className="font-semibold text-foreground">
-                    {availableTests[0].title}
-                  </span>{" "}
-                  is ready for you. Duration: {availableTests[0].durationMinutes} min
-                  {" | "}{availableTests[0].totalMarks} marks.
-                </>
-              ) : (
-                <>
-                  You have {availableTests?.length} tests waiting for you.
-                  Don't miss out — take them before time runs out!
-                </>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="sm:justify-center gap-2 pt-2">
-            <Button variant="outline" onClick={handleTestDialogDismiss}>
-              Later
-            </Button>
-            <Button onClick={handleGoToTest}>
-              {availableTests?.length === 1 ? "Take Test Now" : "View Tests"}
-              <ArrowRight className="ml-1 h-4 w-4" />
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

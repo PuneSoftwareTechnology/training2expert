@@ -283,6 +283,11 @@ export default function CandidateFilterPage() {
               }}
               onRefresh={() => refetch()}
               isFetching={isFetching}
+              onExport={
+                data?.items && data.items.length > 0
+                  ? () => exportCandidatesCsv(filteredItems)
+                  : undefined
+              }
             />
           </div>
 
@@ -352,31 +357,21 @@ export default function CandidateFilterPage() {
                     max="10"
                   />
                 </div>
+                <div className="space-y-1 flex-1 min-w-[200px]">
+                  <Label className="text-xs">Search</Label>
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      placeholder="Search across columns..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
-
-          {/* Search + Export bar */}
-          <div className="flex items-center gap-3">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search across columns..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            {data?.items && data.items.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => exportCandidatesCsv(filteredItems)}
-              >
-                <Download className="mr-1 h-3.5 w-3.5" /> Export Data
-              </Button>
-            )}
-          </div>
 
           {selectedIds.length > 0 && (
             <div className="flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50/50 p-3">

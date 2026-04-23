@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Users, IndianRupee, Download, Search, Info } from "lucide-react";
+import { Users, IndianRupee, Search, Info } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -238,6 +238,9 @@ export default function FeeDuesPage() {
             }}
             onRefresh={() => refetch()}
             isFetching={isLoading}
+            onExport={
+              filteredData.length > 0 ? downloadCsv : undefined
+            }
           />
         </div>
 
@@ -287,15 +290,6 @@ export default function FeeDuesPage() {
                   {formatCurrency(summary.totalPending)}
                 </span>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={downloadCsv}
-                disabled={filteredData.length === 0}
-              >
-                <Download className="h-4 w-4 mr-1" />
-                CSV
-              </Button>
             </div>
           )}
         </div>
