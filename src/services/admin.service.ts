@@ -410,6 +410,13 @@ export const adminService = {
     return result;
   },
 
+  resetTestAttempt: async (testId: string, studentId: string) => {
+    const response = await api.post(
+      `/admin/tests/${testId}/students/${studentId}/reset-attempt`,
+    );
+    return extractData<{ id: string }>(response);
+  },
+
   // ─── CV / Resume Templates ─────────────────────────────────────
   getResumeTemplates: async () => {
     const response = await api.get("/admin/cv-templates");

@@ -50,6 +50,7 @@ export interface TestScore {
   score: number;
   totalMarks: number;
   submittedAt: string;
+  attemptCount: number;
 }
 
 export interface Evaluation {

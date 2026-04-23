@@ -37,6 +37,7 @@ export interface Test {
   isActive: boolean;
   isPublished: boolean;
   questionCount?: number;
+  attemptCount?: number;
   questions: TestQuestion[];
   createdAt: string;
 }

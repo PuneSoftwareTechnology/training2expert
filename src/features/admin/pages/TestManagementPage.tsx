@@ -1,10 +1,30 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, FileText, ChevronLeft, ChevronRight, FileSpreadsheet, PenLine } from "lucide-react";
+import {
+  Plus,
+  FileText,
+  ChevronLeft,
+  ChevronRight,
+  FileSpreadsheet,
+  PenLine,
+  Pencil,
+  Trash2,
+  Power,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,7 +52,6 @@ import { CsvTestUploadDialog } from "../components/test/CsvTestUploadDialog";
 import { EditTestDialog } from "../components/test/EditTestDialog";
 import { ViewTestDialog } from "../components/test/ViewTestDialog";
 import { TestAttemptsDialog } from "../components/test/TestAttemptsDialog";
-import { TestCard } from "../components/test/TestCard";
 
 export default function TestManagementPage() {
   const queryClient = useQueryClient();
@@ -157,24 +176,127 @@ export default function TestManagementPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-            {tests.map((test) => (
-              <TestCard
-                key={test.id}
-                test={test}
-                onView={(id) => setViewingTestId(id)}
-                onEdit={(id) => setEditingTestId(id)}
-                onViewAttempts={(id, title) => {
-                  setAttemptsTestId(id);
-                  setAttemptsTestTitle(title);
-                }}
-                onTogglePublish={(id) => toggleMutation.mutate(id)}
-                onDelete={(id) => setDeleteTestId(id)}
-                isToggling={toggleMutation.isPending}
-                isDeleting={deleteMutation.isPending}
-              />
-            ))}
-          </div>
+          <Card className="overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-12 text-center">S.No.</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Course</TableHead>
+                  <TableHead className="text-center">Questions</TableHead>
+                  <TableHead className="text-center">Marks</TableHead>
+                  <TableHead className="text-center">Time</TableHead>
+                  <TableHead className="text-center">Attempts</TableHead>
+                  <TableHead className="text-center">Status</TableHead>
+                  <TableHead className="text-center">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {tests.map((test, idx) => (
+                  <TableRow
+                    key={test.id}
+                    className="cursor-pointer hover:bg-muted/40"
+                    onClick={() => setViewingTestId(test.id)}
+                  >
+                    <TableCell className="text-center text-xs text-muted-foreground">
+                      {(currentPage - 1) * 10 + idx + 1}
+                    </TableCell>
+                    <TableCell className="font-medium">{test.title}</TableCell>
+                    <TableCell className="max-w-[240px] text-sm text-muted-foreground">
+                      {test.description ? (
+                        <span className="line-clamp-2" title={test.description}>
+                          {test.description}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground/50">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-sm">{test.course || "—"}</TableCell>
+                    <TableCell className="text-center text-sm tabular-nums">
+                      {test.questionCount ?? test.questions?.length ?? 0}
+                    </TableCell>
+                    <TableCell className="text-center text-sm tabular-nums">
+                      {test.totalMarks}
+                    </TableCell>
+                    <TableCell className="text-center text-sm tabular-nums">
+                      {test.durationMinutes}m
+                    </TableCell>
+                    <TableCell
+                      className="text-center"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="h-auto gap-1 p-0 text-indigo-600 hover:text-indigo-800"
+                        onClick={() => {
+                          setAttemptsTestId(test.id);
+                          setAttemptsTestTitle(test.title);
+                        }}
+                      >
+                        <Users className="h-3 w-3" />
+                        {test.attemptCount ?? 0}
+                      </Button>
+                    </TableCell>
+                    <TableCell
+                      className="text-center"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {(() => {
+                        const isTogglingThis =
+                          toggleMutation.isPending &&
+                          toggleMutation.variables === test.id;
+                        return (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            loading={isTogglingThis}
+                            className="h-7 gap-1 px-2"
+                            onClick={() => toggleMutation.mutate(test.id)}
+                            title={test.isPublished ? "Unpublish" : "Publish"}
+                          >
+                            {!isTogglingThis && <Power className="h-3 w-3" />}
+                            <Badge
+                              variant={test.isPublished ? "success" : "secondary"}
+                              className="text-[10px]"
+                            >
+                              {test.isPublished ? "Published" : "Unpublished"}
+                            </Badge>
+                          </Button>
+                        );
+                      })()}
+                    </TableCell>
+                    <TableCell
+                      className="text-center"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="flex items-center justify-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-primary"
+                          onClick={() => setEditingTestId(test.id)}
+                          title="Edit"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-destructive hover:bg-destructive/10"
+                          onClick={() => setDeleteTestId(test.id)}
+                          title="Delete"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
         )}
 
         {totalPages > 1 && (

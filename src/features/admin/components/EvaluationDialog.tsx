@@ -12,6 +12,7 @@ import {
   Loader2,
   Check,
   Pencil,
+  RotateCcw,
   X,
 } from "lucide-react";
 import {
@@ -21,6 +22,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,7 +42,7 @@ import { adminService } from "@/services/admin.service";
 import { getErrorMessage } from "@/services/api";
 import { useAuthStore } from "@/store/auth.store";
 import { ROLES } from "@/constants/roles";
-import type { Evaluation } from "@/types/student.types";
+import type { Evaluation, TestScore } from "@/types/student.types";
 
 interface EvaluationDialogProps {
   studentId: string;
@@ -365,12 +377,11 @@ function EvaluationCard({
               </span>
             </div>
             {evaluation.testScores.map((ts) => (
-              <MetricBar
+              <TestScoreRow
                 key={ts.testId}
-                label={ts.testName}
-                value={ts.score}
-                max={ts.totalMarks}
-                color="bg-gradient-to-r from-blue-400 to-blue-600"
+                testScore={ts}
+                studentId={studentId}
+                canReset={canEdit}
               />
             ))}
           </div>
@@ -657,6 +668,117 @@ function EvaluationCard({
             )}
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Test Score Row — MetricBar with admin-only reset control
+// ---------------------------------------------------------------------------
+
+function TestScoreRow({
+  testScore,
+  studentId,
+  canReset,
+}: {
+  testScore: TestScore;
+  studentId: string;
+  canReset: boolean;
+}) {
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+
+  const resetMutation = useMutation({
+    mutationFn: () => adminService.resetTestAttempt(testScore.testId, studentId),
+    onSuccess: () => {
+      toast.success(`Reset "${testScore.testName}" — student can reattempt`);
+      queryClient.invalidateQueries({
+        queryKey: ["admin", "student-profile", studentId],
+      });
+      setOpen(false);
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const pct = testScore.totalMarks > 0
+    ? Math.min((testScore.score / testScore.totalMarks) * 100, 100)
+    : 0;
+
+  return (
+    <div className="flex items-center gap-3 py-2">
+      <span className="text-sm shrink-0 flex items-center gap-1.5">
+        {testScore.testName}
+        {testScore.attemptCount > 1 && (
+          <span
+            className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[9px] font-semibold text-blue-600"
+            title={`${testScore.attemptCount} attempts — showing latest`}
+          >
+            {testScore.attemptCount} attempts
+          </span>
+        )}
+      </span>
+      <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
+        <div className="h-1.5 max-w-[50%] flex-1 overflow-hidden rounded-full bg-muted">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-blue-400 to-blue-600 transition-all duration-500"
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+        <span className="text-xs font-semibold tabular-nums text-right whitespace-nowrap">
+          {testScore.score}/{testScore.totalMarks}
+        </span>
+        {canReset && (
+          <AlertDialog open={open} onOpenChange={setOpen}>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-7 w-7 shrink-0 border-blue-300 bg-white text-blue-600 hover:bg-blue-50 hover:text-blue-800 hover:border-blue-400"
+                title="Reset test — allow student to reattempt"
+                disabled={resetMutation.isPending}
+              >
+                {resetMutation.isPending ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <RotateCcw className="h-3.5 w-3.5" />
+                )}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Reset this test?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Reset <span className="font-semibold text-foreground">{testScore.testName}</span>
+                  {" "}so the student can attempt it again. The current score
+                  ({testScore.score}/{testScore.totalMarks}) will be archived
+                  and the latest attempt will be used for scoring.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={resetMutation.isPending}>
+                  Cancel
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={(e) => {
+                    e.preventDefault();
+                    resetMutation.mutate();
+                  }}
+                  disabled={resetMutation.isPending}
+                >
+                  {resetMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                      Resetting...
+                    </>
+                  ) : (
+                    "Yes, Reset"
+                  )}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
     </div>
   );
