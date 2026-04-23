@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const recruiterSchema = z.object({
   name: z.string().min(2, "Name is required"),
-  email: z.string().email("Invalid email"),
+  email: z.string().trim().toLowerCase().email("Invalid email"),
   phone: z
     .string()
     .min(1, "Phone number is required")

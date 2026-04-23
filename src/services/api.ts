@@ -12,6 +12,23 @@ export const api = axios.create({
   },
 });
 
+function lowercaseEmailsDeep(value: unknown): void {
+  if (value === null || typeof value !== "object") return;
+  if (value instanceof FormData || value instanceof Blob) return;
+  if (Array.isArray(value)) {
+    for (const item of value) lowercaseEmailsDeep(item);
+    return;
+  }
+  const obj = value as Record<string, unknown>;
+  for (const key of Object.keys(obj)) {
+    if (key === "email" && typeof obj[key] === "string") {
+      obj[key] = (obj[key] as string).trim().toLowerCase();
+    } else {
+      lowercaseEmailsDeep(obj[key]);
+    }
+  }
+}
+
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const stored = localStorage.getItem("auth-storage");
@@ -26,13 +43,18 @@ api.interceptors.request.use(
         // Invalid storage state
       }
     }
+    if (config.data) lowercaseEmailsDeep(config.data);
+    if (config.params) lowercaseEmailsDeep(config.params);
     return config;
   },
   (error) => Promise.reject(error),
 );
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (response.data) lowercaseEmailsDeep(response.data);
+    return response;
+  },
   (error: AxiosError<ApiError>) => {
     if (error.response?.status === 401) {
       const url = error.config?.url ?? "";

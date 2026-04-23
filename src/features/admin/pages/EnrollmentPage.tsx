@@ -593,13 +593,38 @@ export default function EnrollmentPage() {
                     <TableHeader>
                       {/* Row 1: Group headers */}
                       <TableRow className="border-b-0">
+                        {/* S.No (sticky) */}
                         <TableHead
                           rowSpan={2}
-                          className="border-r border-border bg-muted/60 text-xs font-bold uppercase tracking-wider align-bottom w-[60px] text-center"
+                          className="sticky left-0 z-20 border-r border-border bg-muted text-xs font-bold uppercase tracking-wider align-bottom w-[60px] text-center"
                         >
                           S.No
                         </TableHead>
-                        {COLUMN_GROUPS.map((group) => (
+                        {/* Actions group (Edit + Delete) */}
+                        {(() => {
+                          const actions = COLUMN_GROUPS[0];
+                          return (
+                            <TableHead
+                              key={actions.label}
+                              colSpan={actions.colSpan}
+                              className={`text-center border-x border-border text-xs font-bold uppercase tracking-wider ${actions.color}`}
+                            >
+                              <div className="flex items-center justify-center gap-1.5 py-1">
+                                <actions.icon className="h-3.5 w-3.5" />
+                                {actions.label}
+                              </div>
+                            </TableHead>
+                          );
+                        })()}
+                        {/* Full Name standalone (sticky, spans both header rows) */}
+                        <TableHead
+                          rowSpan={2}
+                          className="sticky left-[60px] z-20 border-x border-border bg-blue-50 text-blue-600 text-xs font-bold uppercase tracking-wider align-bottom w-[180px]"
+                        >
+                          Full Name
+                        </TableHead>
+                        {/* Remaining groups */}
+                        {COLUMN_GROUPS.slice(1).map((group) => (
                           <TableHead
                             key={group.label}
                             colSpan={group.colSpan}

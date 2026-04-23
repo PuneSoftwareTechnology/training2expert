@@ -95,7 +95,7 @@ export function AddCandidateDialog({
 
     onSubmit({
       name: newCandidate.name,
-      email: newCandidate.email,
+      email: newCandidate.email.trim().toLowerCase(),
       phone: newCandidate.phone,
       institute: newCandidate.institute,
       course: newCandidate.course,
@@ -136,7 +136,9 @@ export function AddCandidateDialog({
             <Input
               type="email"
               value={newCandidate.email}
-              onChange={(e) => updateNewField("email", e.target.value)}
+              onChange={(e) =>
+                updateNewField("email", e.target.value.toLowerCase())
+              }
             />
             {newCandidate.email.length > 0 &&
               !isValidEmail(newCandidate.email) && (

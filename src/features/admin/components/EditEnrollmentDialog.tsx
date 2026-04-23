@@ -156,7 +156,9 @@ export function EditEnrollmentDialog({
                 <Input
                   type="email"
                   value={fields.email}
-                  onChange={(e) => updateField("email", e.target.value)}
+                  onChange={(e) =>
+                    updateField("email", e.target.value.toLowerCase())
+                  }
                 />
               </div>
               <div className="space-y-1">

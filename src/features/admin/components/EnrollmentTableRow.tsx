@@ -256,11 +256,14 @@ export const EnrollmentTableRow = memo(function EnrollmentTableRow({
         Number(enrollment.installment2_amount || 0) -
         Number(enrollment.installment3_amount || 0);
 
-  // Column-group backgrounds — alternating row shades (Finder-style)
+  // Column-group backgrounds — alternating row shades (Finder-style).
+  // sno and nameSticky use opaque backgrounds because those columns are
+  // frozen; translucent colors would let scrolling cells bleed through.
   const bg = {
-    sno: isOdd ? "bg-muted/40" : "",
+    sno: isOdd ? "bg-muted" : "bg-background",
     actions: isOdd ? "bg-gray-100/50" : "bg-gray-50/25",
     basic: isOdd ? "bg-blue-50/45" : "bg-blue-50/15",
+    nameSticky: isOdd ? "bg-blue-100" : "bg-blue-50",
     course: isOdd ? "bg-orange-50/45" : "bg-orange-50/15",
     payment: isOdd ? "bg-indigo-50/45" : "bg-indigo-50/15",
     cert: isOdd ? "bg-teal-50/45" : "bg-teal-50/15",
@@ -272,7 +275,7 @@ export const EnrollmentTableRow = memo(function EnrollmentTableRow({
       {/* S.No */}
       <TableCell
         className={cn(
-          "text-sm font-medium text-center border-r border-border",
+          "sticky left-0 z-10 text-sm font-medium text-center border-r border-border",
           bg.sno,
         )}
       >
@@ -331,11 +334,18 @@ export const EnrollmentTableRow = memo(function EnrollmentTableRow({
         </AlertDialog>
       </TableCell>
 
-      {/* === BASIC INFO === */}
-      <TableCell className={cn("text-sm font-semibold border-l border-border", bg.basic)}>
+      {/* === FULL NAME (sticky, standalone) === */}
+      <TableCell
+        className={cn(
+          "sticky left-[60px] z-10 w-[180px] text-sm font-semibold border-x border-border",
+          bg.nameSticky,
+        )}
+      >
         {enrollment.name}
       </TableCell>
-      <TableCell className={cn("text-sm", bg.basic)}>
+
+      {/* === BASIC INFO === */}
+      <TableCell className={cn("text-sm border-l border-border", bg.basic)}>
         {enrollment.email}
       </TableCell>
       <TableCell className={cn("text-sm", bg.basic)}>

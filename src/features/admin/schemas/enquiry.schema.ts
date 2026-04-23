@@ -6,6 +6,8 @@ export const enquirySchema = z.object({
   phone: z.string().regex(/^\d{10}$/, "Phone must be 10 digits"),
   email: z
     .string()
+    .trim()
+    .toLowerCase()
     .transform((v) => (v === "" ? undefined : v))
     .pipe(z.string().email("Invalid email").optional()),
   course: z.string().optional().or(z.literal("")),

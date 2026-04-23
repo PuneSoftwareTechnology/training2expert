@@ -21,7 +21,7 @@ export const COLUMN_GROUPS = [
   {
     label: "Basic Info",
     icon: Info,
-    colSpan: 7,
+    colSpan: 6,
     color: "text-blue-600 bg-blue-50 border-blue-200",
   },
   {
@@ -50,7 +50,7 @@ export const COLUMN_GROUPS = [
   },
 ] as const;
 
-// Total columns: 1 (S.No) + 2 + 7 + 6 + 17 + 2 + 2 = 37
+// Total columns: 1 (S.No) + 2 + 1 (Full Name, standalone) + 6 + 6 + 17 + 2 + 2 = 37
 
 // ---------------------------------------------------------------------------
 // Sub-column definitions (Row 2 headers)
@@ -60,9 +60,8 @@ export const SUB_COLUMNS: { label: string; bg: string; extra?: string }[] = [
   // Actions (2)
   { label: "Edit", bg: "bg-gray-50/50", extra: "border-l border-border text-center" },
   { label: "Delete", bg: "bg-gray-50/50", extra: "border-r border-border text-center" },
-  // Basic Info (7)
-  { label: "Full Name", bg: "bg-blue-50/50", extra: "border-l border-border" },
-  { label: "Email", bg: "bg-blue-50/50" },
+  // Basic Info (6) — Full Name is rendered as a standalone sticky column
+  { label: "Email", bg: "bg-blue-50/50", extra: "border-l border-border" },
   { label: "Phone", bg: "bg-blue-50/50" },
   { label: "Status", bg: "bg-blue-50/50" },
   { label: "Institute", bg: "bg-blue-50/50" },

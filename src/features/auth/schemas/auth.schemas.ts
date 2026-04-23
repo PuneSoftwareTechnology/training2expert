@@ -8,13 +8,21 @@ const passwordSchema = z
   .regex(/\d/, 'Must contain at least one number');
 
 export const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .email('Invalid email address'),
   password: z.string().min(1, 'Password is required'),
 });
 
 export const signupSchema = z
   .object({
-    email: z.string().email('Invalid email address'),
+    email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .email('Invalid email address'),
     password: passwordSchema,
     confirmPassword: z.string(),
   })
@@ -24,7 +32,11 @@ export const signupSchema = z
   });
 
 export const forgotPasswordSchema = z.object({
-  email: z.string().email('Invalid email address'),
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .email('Invalid email address'),
 });
 
 export const resetPasswordSchema = z
