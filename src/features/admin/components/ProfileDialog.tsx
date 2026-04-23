@@ -189,8 +189,12 @@ export function ProfileDialog({
                       {profile.certifications.map((cert, i) => {
                         const c =
                           typeof cert === "string" ? { name: cert } : cert;
-                        const url = c.certificate;
-                        return url?.startsWith("http") ? (
+                        const url =
+                          c.certificateDisplayUrl ||
+                          (c.certificate?.startsWith("http")
+                            ? c.certificate
+                            : undefined);
+                        return url ? (
                           <a
                             key={i}
                             href={url}

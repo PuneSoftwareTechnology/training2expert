@@ -39,19 +39,27 @@ import { adminService } from "@/services/admin.service";
 import { getErrorMessage } from "@/services/api";
 import type { CandidateReportRow } from "@/types/admin.types";
 
+const EXP_RANGES = [
+  { label: "0-2 Yrs", min: 0, max: 2 },
+  { label: "2-4 Yrs", min: 2, max: 4 },
+  { label: "4-6 Yrs", min: 4, max: 6 },
+  { label: "6-8 Yrs", min: 6, max: 8 },
+  { label: "8-10 Yrs", min: 8, max: 10 },
+  { label: "10-15 Yrs", min: 10, max: 15 },
+  { label: "15+ Yrs", min: 15, max: undefined },
+] as const;
+
 function exportCandidatesCsv(items: CandidateReportRow[]) {
   const headers = [
     "S.No",
     "Name",
-    "Phone",
     "Course",
+    "Phone",
     "Area",
     "City",
-    "Experience (yrs)",
-    "Tech Score",
-    "Tech Total",
-    "Tech %",
-    "Comm Score",
+    "Experience",
+    "Tech",
+    "Comm",
     "Completion",
     "Remarks",
   ];
@@ -64,25 +72,29 @@ function exportCandidatesCsv(items: CandidateReportRow[]) {
   };
 
   const rows = items.map((r, i) => {
-    const pct =
+    const tech =
       r.technicalTotalMarks > 0
-        ? Math.round(
+        ? `${r.technicalMarksScored}/${r.technicalTotalMarks} (${Math.round(
             (r.technicalMarksScored / r.technicalTotalMarks) * 100,
-          )
-        : 0;
+          )}%)`
+        : `${r.technicalMarksScored}/${r.technicalTotalMarks}`;
+    const completion =
+      r.completionStatus === "COMPLETED"
+        ? "Completed"
+        : r.completionStatus
+          ? "Active"
+          : "-";
     return [
       i + 1,
       r.name,
-      r.phone ?? "",
       r.course,
-      r.area ?? "",
-      r.city ?? "",
-      r.itExperienceYears,
-      r.technicalMarksScored,
-      r.technicalTotalMarks,
-      `${pct}%`,
-      r.communicationScore,
-      r.completionStatus ?? "",
+      r.phone ?? "-",
+      r.area ?? "-",
+      r.city ?? "-",
+      `${r.itExperienceYears} yrs`,
+      tech,
+      `${r.communicationScore}/10`,
+      completion,
       r.remarks ?? "",
     ]
       .map(escape)
@@ -103,9 +115,11 @@ export default function CandidateFilterPage() {
   const queryClient = useQueryClient();
   const [course, setCourse] = useState("");
   const [city, setCity] = useState("");
-  const [minExp, setMinExp] = useState("");
+  const [expRange, setExpRange] = useState("");
   const [minTech, setMinTech] = useState("");
   const [minComm, setMinComm] = useState("");
+
+  const selectedExpRange = EXP_RANGES.find((r) => r.label === expRange);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [emailDialog, setEmailDialog] = useState(false);
@@ -123,13 +137,14 @@ export default function CandidateFilterPage() {
       "admin",
       "reports",
       "candidates",
-      { course, city, minExp, minTech, minComm },
+      { course, city, expRange, minTech, minComm },
     ],
     queryFn: () =>
       adminService.getCandidateReport({
         course: course || undefined,
         city: city || undefined,
-        minExperience: minExp ? Number(minExp) : undefined,
+        minExperience: selectedExpRange?.min,
+        maxExperience: selectedExpRange?.max,
         minTechnicalRating: minTech ? Number(minTech) : undefined,
         minCommunicationRating: minComm ? Number(minComm) : undefined,
       }),
@@ -276,7 +291,7 @@ export default function CandidateFilterPage() {
               onReset={() => {
                 setCourse("");
                 setCity("");
-                setMinExp("");
+                setExpRange("");
                 setMinTech("");
                 setMinComm("");
                 setSearchQuery("");
@@ -327,13 +342,23 @@ export default function CandidateFilterPage() {
                   </Select>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">Min Experience (yrs)</Label>
-                  <Input
-                    type="number"
-                    value={minExp}
-                    onChange={(e) => setMinExp(e.target.value)}
-                    className="w-24"
-                  />
+                  <Label className="text-xs">Min IT Exp</Label>
+                  <Select
+                    value={expRange || "ALL"}
+                    onValueChange={(v) => setExpRange(v === "ALL" ? "" : v)}
+                  >
+                    <SelectTrigger className="w-28">
+                      <SelectValue placeholder="All" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">All</SelectItem>
+                      {EXP_RANGES.map((r) => (
+                        <SelectItem key={r.label} value={r.label}>
+                          {r.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">Min Tech Rating</Label>

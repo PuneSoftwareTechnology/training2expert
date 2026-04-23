@@ -934,10 +934,15 @@ export default function ProfileDetailsSection({
                       {(profile.certifications ?? []).map((cert, i) => {
                         const c =
                           typeof cert === "string" ? { name: cert } : cert;
-                        return c.certificate?.startsWith("http") ? (
+                        const url =
+                          c.certificateDisplayUrl ||
+                          (c.certificate?.startsWith("http")
+                            ? c.certificate
+                            : undefined);
+                        return url ? (
                           <a
                             key={i}
-                            href={c.certificate}
+                            href={url}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-violet-50 px-3 py-1.5 text-xs font-medium text-violet-700 transition-colors hover:bg-violet-100 dark:bg-violet-900/20 dark:text-violet-300 dark:hover:bg-violet-900/40"

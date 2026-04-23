@@ -119,8 +119,14 @@ function exportEnquiriesCsv(items: Enquiry[]) {
       e.email ?? "",
       e.course ?? "",
       e.institute,
-      LEAD_STATUSES.find((s) => s.value === (raw.lead_status ?? e.leadStatus))?.label ?? raw.lead_status ?? e.leadStatus,
-      DEMO_STATUSES.find((s) => s.value === (raw.demo_status ?? e.demoStatus))?.label ?? raw.demo_status ?? e.demoStatus,
+      LEAD_STATUSES.find((s) => s.value === (raw.lead_status ?? e.leadStatus))
+        ?.label ??
+        raw.lead_status ??
+        e.leadStatus,
+      DEMO_STATUSES.find((s) => s.value === (raw.demo_status ?? e.demoStatus))
+        ?.label ??
+        raw.demo_status ??
+        e.demoStatus,
       e.comment ?? "",
     ]
       .map(escape)
@@ -216,9 +222,16 @@ export default function EnquiryPage() {
 
   const onSubmit = (values: EnquiryFormValues) => {
     const { enquiry_date, comment, ...rest } = values;
-    const payload = { ...rest, enquiryDate: enquiry_date, comment: comment || undefined };
+    const payload = {
+      ...rest,
+      enquiryDate: enquiry_date,
+      comment: comment || undefined,
+    };
     editingEnquiry
-      ? updateMutation.mutate({ id: editingEnquiry.id, data: payload as unknown as Partial<EnquiryFormValues> })
+      ? updateMutation.mutate({
+          id: editingEnquiry.id,
+          data: payload as unknown as Partial<EnquiryFormValues>,
+        })
       : createMutation.mutate(payload as unknown as EnquiryFormValues);
   };
 
@@ -232,8 +245,10 @@ export default function EnquiryPage() {
       email: enquiry.email ?? "",
       course: enquiry.course ?? "",
       institute: enquiry.institute,
-      leadStatus: (raw.lead_status ?? enquiry.leadStatus) as EnquiryFormValues["leadStatus"],
-      demoStatus: (raw.demo_status ?? enquiry.demoStatus) as EnquiryFormValues["demoStatus"],
+      leadStatus: (raw.lead_status ??
+        enquiry.leadStatus) as EnquiryFormValues["leadStatus"],
+      demoStatus: (raw.demo_status ??
+        enquiry.demoStatus) as EnquiryFormValues["demoStatus"],
       comment: enquiry.comment ?? "",
     });
     setDialogOpen(true);
@@ -403,6 +418,9 @@ export default function EnquiryPage() {
         <Card className="border-amber-200/60 bg-gradient-to-r from-amber-100 to-orange-200">
           <CardContent className="pb-3">
             <div className="flex flex-wrap items-center gap-4">
+              <span className="self-end pb-1.5 text-sm font-semibold mr-16 whitespace-nowrap">
+                Total: {filteredData.length} students
+              </span>
               {(["fromDate", "toDate"] as const).map((key) => (
                 <div key={key} className="space-y-1">
                   <Label className="text-xs">
@@ -466,6 +484,7 @@ export default function EnquiryPage() {
               <DataTable
                 columns={columns}
                 data={filteredData}
+                pageSize={filteredData.length || 1}
                 emptyMessage="No enquiries found"
                 headerClassName="bg-gradient-to-r from-amber-500 to-orange-600"
               />
