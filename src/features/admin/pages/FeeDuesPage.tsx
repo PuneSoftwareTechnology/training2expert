@@ -7,6 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { DataTable, SortableHeader } from "@/components/ui/data-table";
 import { TableSkeleton } from "@/components/loaders/TableSkeleton";
 import { QueryError } from "@/components/errors/QueryError";
@@ -62,6 +69,18 @@ const columns: ColumnDef<FeeDueRow>[] = [
     ),
   },
   { accessorKey: "course", header: "Course" },
+  {
+    accessorKey: "trainer",
+    header: "Trainer",
+    cell: ({ getValue }) => {
+      const trainer = getValue<string | null>();
+      return trainer ? (
+        <span>{trainer}</span>
+      ) : (
+        <span className="text-muted-foreground">—</span>
+      );
+    },
+  },
   { accessorKey: "phone", header: "Phone No" },
   {
     accessorKey: "totalFee",
@@ -133,6 +152,7 @@ const columns: ColumnDef<FeeDueRow>[] = [
 
 export default function FeeDuesPage() {
   const [daysFilter, setDaysFilter] = useState<number | null>(null);
+  const [trainerFilter, setTrainerFilter] = useState<string>("ALL");
   const [search, setSearch] = useState("");
 
   const { data, isLoading, isError, error, refetch } = useQuery({
@@ -146,18 +166,27 @@ export default function FeeDuesPage() {
     [data?.items],
   );
 
+  const trainers = useMemo(
+    () =>
+      [...new Set(allRows.map((r) => r.trainer).filter(Boolean))].sort() as string[],
+    [allRows],
+  );
+
   const filteredData = useMemo(() => {
     if (!allRows.length) return [];
     let rows = allRows;
     if (daysFilter !== null) {
       rows = rows.filter((r) => r.daysSinceLastPayment >= daysFilter);
     }
+    if (trainerFilter !== "ALL") {
+      rows = rows.filter((r) => r.trainer === trainerFilter);
+    }
     if (search.trim()) {
       const term = search.trim().toLowerCase();
       rows = rows.filter((r) => r.name.toLowerCase().includes(term));
     }
     return rows;
-  }, [allRows, daysFilter, search]);
+  }, [allRows, daysFilter, trainerFilter, search]);
 
   const summary = useMemo(() => {
     if (filteredData.length === 0) return { count: 0, totalPending: 0 };
@@ -175,6 +204,7 @@ export default function FeeDuesPage() {
       "Candidate",
       "Institute",
       "Course",
+      "Trainer",
       "Phone No",
       "Total Fees",
       "Paid Amt",
@@ -186,6 +216,7 @@ export default function FeeDuesPage() {
       r.name,
       r.institute,
       r.course,
+      r.trainer ?? "",
       r.phone,
       Number(r.totalFee),
       Number(r.paidAmount),
@@ -228,6 +259,7 @@ export default function FeeDuesPage() {
           <FilterActions
             onReset={() => {
               setDaysFilter(null);
+              setTrainerFilter("ALL");
               setSearch("");
             }}
             onRefresh={() => refetch()}
@@ -260,6 +292,19 @@ export default function FeeDuesPage() {
                 </Button>
               ))}
             </div>
+            <Select value={trainerFilter} onValueChange={setTrainerFilter}>
+              <SelectTrigger className="h-9 w-[160px] ml-2 bg-white">
+                <SelectValue placeholder="Trainer" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All Trainers</SelectItem>
+                {trainers.map((t) => (
+                  <SelectItem key={t} value={t}>
+                    {t}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <div className="relative ml-2">
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -289,7 +334,7 @@ export default function FeeDuesPage() {
         </div>
 
         {isLoading ? (
-          <TableSkeleton rows={6} columns={10} />
+          <TableSkeleton rows={6} columns={11} />
         ) : (
           <Card className="border-rose-200/60 overflow-hidden">
             <CardContent className="p-0">

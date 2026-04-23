@@ -95,6 +95,7 @@ export interface FeeDueRow {
   name: string;
   institute: string;
   course: string;
+  trainer: string | null;
   completionStatus: CompletionStatus;
   phone: string;
   totalFee: number;
