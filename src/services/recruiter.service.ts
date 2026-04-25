@@ -10,13 +10,16 @@ interface CandidateFilters {
   maxExperience?: number;
   minTechnicalScore?: number;
   minCommunicationScore?: number;
+  shortlistedOnly?: boolean;
   page?: number;
   limit?: number;
 }
 
 export const recruiterService = {
   getCandidates: async (filters: CandidateFilters = {}) => {
-    const response = await api.get('/recruiter/candidates', { params: filters });
+    const params: Record<string, string | number | undefined> = { ...filters, shortlistedOnly: undefined };
+    if (filters.shortlistedOnly) params.shortlistedOnly = 'true';
+    const response = await api.get('/recruiter/candidates', { params });
     return extractData<{ items: RecruiterCandidate[]; total: number; page: number; totalPages: number; courses: string[]; cities: string[]; areas: string[]; experienceYears: number[] }>(response);
   },
 
@@ -65,6 +68,11 @@ export const recruiterService = {
   sendEmail: async (studentId: string, subject: string, body: string) => {
     const response = await api.post(`/recruiter/candidates/${studentId}/send-email`, { subject, body });
     return extractData<{ message: string }>(response);
+  },
+
+  bulkSendEmail: async (studentIds: string[], subject: string, body: string) => {
+    const response = await api.post('/recruiter/candidates/bulk-send-email', { studentIds, subject, body });
+    return extractData<{ sent: number; failed: number; total: number }>(response);
   },
 
   getStudentProfile: async (studentId: string) => {

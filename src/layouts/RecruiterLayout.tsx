@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import type { ReactNode } from 'react';
+import { motion } from 'framer-motion';
 import { Users, ListChecks, LogOut, Menu } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -11,13 +12,17 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
+  DropdownMenuSeparator, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth.store';
 import { ROUTES } from '@/constants/routes';
 
 const NAV_ITEMS = [
-  { label: 'Candidates', path: ROUTES.RECRUITER_CANDIDATES, icon: <Users className="h-5 w-5" /> },
-  { label: 'Shortlist', path: ROUTES.RECRUITER_SHORTLIST, icon: <ListChecks className="h-5 w-5" /> },
+  { label: 'Candidates', path: ROUTES.RECRUITER_CANDIDATES, icon: <Users className="h-4 w-4" /> },
+  { label: 'Shortlist', path: ROUTES.RECRUITER_SHORTLIST, icon: <ListChecks className="h-4 w-4" /> },
 ];
 
 interface RecruiterLayoutProps {
@@ -40,38 +45,72 @@ export function RecruiterLayout({ children }: RecruiterLayoutProps) {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="sticky top-0 z-30 border-b border-border/70 bg-card/80 shadow-sm backdrop-blur-md">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-          <h1 className="text-lg font-bold text-primary">Training2Expert Recruiter</h1>
+        <div className="mx-auto flex h-14 w-full items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+          <h1 className="text-lg font-bold text-primary whitespace-nowrap">Training2Expert Recruiter</h1>
 
-          {/* Desktop nav */}
-          <nav className="hidden items-center gap-1 sm:flex">
-            {NAV_ITEMS.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={({ isActive }) =>
-                  cn(
-                    'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                    isActive
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-                  )
-                }
-              >
-                {item.icon}
-                {item.label}
-              </NavLink>
-            ))}
+          {/* Desktop pill toggle (sliding indicator) */}
+          <nav className="hidden flex-1 items-center justify-center sm:flex">
+            <div className="inline-flex items-center gap-1 rounded-full border border-indigo-100 bg-indigo-50/60 p-1 shadow-inner">
+              {NAV_ITEMS.map((item) => {
+                const isActive = location.pathname.startsWith(item.path);
+                return (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    className={cn(
+                      'relative flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors',
+                      isActive ? 'text-white' : 'text-indigo-700 hover:bg-white/70',
+                    )}
+                  >
+                    {isActive && (
+                      <motion.span
+                        layoutId="recruiter-tab-pill"
+                        className="absolute inset-0 rounded-full bg-indigo-600 shadow-sm"
+                        transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                      />
+                    )}
+                    <span className="relative z-10 flex items-center gap-1.5">
+                      {item.icon}
+                      {item.label}
+                    </span>
+                  </NavLink>
+                );
+              })}
+            </div>
           </nav>
 
           <div className="flex items-center gap-2">
-            <span className="hidden text-sm font-medium text-foreground sm:inline">
-              {user?.name}
-            </span>
-            <Button variant="ghost" size="sm" className="hidden text-destructive hover:bg-destructive/10 hover:text-destructive sm:inline-flex" onClick={() => setShowLogout(true)}>
-              <LogOut className="mr-1 h-4 w-4" />
-              Logout
-            </Button>
+            {/* Desktop hamburger menu (hover/click reveals name + logout) */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="hidden hover:bg-indigo-50 hover:text-indigo-700 sm:inline-flex"
+                  aria-label="User menu"
+                >
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {user?.name && (
+                  <>
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="text-xs text-muted-foreground">Signed in as</div>
+                      <div className="truncate text-sm font-medium">{user.name}</div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                <DropdownMenuItem
+                  onClick={() => setShowLogout(true)}
+                  className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                >
+                  <LogOut className="mr-2 h-4 w-4" /> Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             {/* Mobile hamburger */}
             <Button variant="ghost" size="icon" className="sm:hidden" onClick={() => setMobileMenuOpen(true)}>
               <Menu className="h-5 w-5" />
@@ -124,11 +163,10 @@ export function RecruiterLayout({ children }: RecruiterLayoutProps) {
         </SheetContent>
       </Sheet>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-4 sm:py-6">
+      <main className="mx-auto w-full flex-1 px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
         {children}
       </main>
 
-      {/* Logout confirmation */}
       <AlertDialog open={showLogout} onOpenChange={setShowLogout}>
         <AlertDialogContent>
           <AlertDialogHeader>

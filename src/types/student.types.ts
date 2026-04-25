@@ -161,4 +161,5 @@ export interface RecruiterCandidate {
   cvUrl?: string;
   projectUrl?: string;
   isShortlisted: boolean;
+  shortlistedAt?: string | null;
 }
