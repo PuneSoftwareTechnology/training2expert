@@ -24,17 +24,19 @@ import { formatExperience } from '@/utils/format';
 import { ProfileDialog } from '../components/ProfileDialog';
 import type { RecruiterCandidate } from '@/types/student.types';
 
-const EXP_RANGES = [
-  { label: '0-2 Yrs', min: 0, max: 2 },
-  { label: '2-4 Yrs', min: 2, max: 4 },
-  { label: '4-6 Yrs', min: 4, max: 6 },
-  { label: '6-8 Yrs', min: 6, max: 8 },
-  { label: '8-10 Yrs', min: 8, max: 10 },
-  { label: '10-15 Yrs', min: 10, max: 15 },
-  { label: '15+ Yrs', min: 15, max: undefined },
-] as const;
+const EXP_YEAR_OPTIONS = [0, 1, 2, 3, 4, 5, 6, 8, 10, 15, 20] as const;
+const TECH_SCORE_OPTIONS = [30, 40, 50, 60, 70, 80, 90] as const;
+const COMM_SCORE_OPTIONS = [3, 4, 5, 6, 7, 8, 9] as const;
 
-const INITIAL_FILTERS = { course: '', city: '', area: '', expRange: '' };
+const INITIAL_FILTERS = {
+  course: '',
+  city: '',
+  area: '',
+  minExperience: '',
+  maxExperience: '',
+  minTechnicalScore: '',
+  minCommunicationScore: '',
+};
 
 export default function CandidateFilterPage() {
   const queryClient = useQueryClient();
@@ -47,8 +49,6 @@ export default function CandidateFilterPage() {
     setCurrentPage(1);
   };
 
-  const selectedExpRange = EXP_RANGES.find((r) => r.label === filters.expRange);
-
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['recruiter', 'candidates', filters, currentPage],
     queryFn: () =>
@@ -56,8 +56,10 @@ export default function CandidateFilterPage() {
         course: filters.course || undefined,
         city: filters.city || undefined,
         area: filters.area || undefined,
-        minExperience: selectedExpRange?.min,
-        maxExperience: selectedExpRange?.max,
+        minExperience: filters.minExperience ? Number(filters.minExperience) : undefined,
+        maxExperience: filters.maxExperience ? Number(filters.maxExperience) : undefined,
+        minTechnicalScore: filters.minTechnicalScore ? Number(filters.minTechnicalScore) : undefined,
+        minCommunicationScore: filters.minCommunicationScore ? Number(filters.minCommunicationScore) : undefined,
         page: currentPage,
       }),
   });
@@ -351,11 +353,41 @@ export default function CandidateFilterPage() {
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">Min IT Exp</Label>
-                  <Select value={filters.expRange || 'ALL'} onValueChange={(v) => setFilter('expRange', v === 'ALL' ? '' : v)}>
-                    <SelectTrigger className="w-full sm:w-28"><SelectValue placeholder="0+ yrs" /></SelectTrigger>
+                  <Select value={filters.minExperience || 'ALL'} onValueChange={(v) => setFilter('minExperience', v === 'ALL' ? '' : v)}>
+                    <SelectTrigger className="w-full sm:w-28"><SelectValue placeholder="All" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="ALL">All</SelectItem>
-                      {EXP_RANGES.map((r) => <SelectItem key={r.label} value={r.label}>{r.label}</SelectItem>)}
+                      {EXP_YEAR_OPTIONS.map((y) => <SelectItem key={y} value={String(y)}>{y} yrs</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Max IT Exp</Label>
+                  <Select value={filters.maxExperience || 'ALL'} onValueChange={(v) => setFilter('maxExperience', v === 'ALL' ? '' : v)}>
+                    <SelectTrigger className="w-full sm:w-28"><SelectValue placeholder="All" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">All</SelectItem>
+                      {EXP_YEAR_OPTIONS.map((y) => <SelectItem key={y} value={String(y)}>{y} yrs</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Min Tech Score</Label>
+                  <Select value={filters.minTechnicalScore || 'ALL'} onValueChange={(v) => setFilter('minTechnicalScore', v === 'ALL' ? '' : v)}>
+                    <SelectTrigger className="w-full sm:w-28"><SelectValue placeholder="All" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">All</SelectItem>
+                      {TECH_SCORE_OPTIONS.map((s) => <SelectItem key={s} value={String(s)}>{s}%+</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Min Comm Score</Label>
+                  <Select value={filters.minCommunicationScore || 'ALL'} onValueChange={(v) => setFilter('minCommunicationScore', v === 'ALL' ? '' : v)}>
+                    <SelectTrigger className="w-full sm:w-28"><SelectValue placeholder="All" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">All</SelectItem>
+                      {COMM_SCORE_OPTIONS.map((s) => <SelectItem key={s} value={String(s)}>{s}+/10</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>

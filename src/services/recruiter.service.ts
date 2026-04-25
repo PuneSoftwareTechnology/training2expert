@@ -8,8 +8,8 @@ interface CandidateFilters {
   area?: string;
   minExperience?: number;
   maxExperience?: number;
-  minTechnicalRating?: number;
-  minCommunicationRating?: number;
+  minTechnicalScore?: number;
+  minCommunicationScore?: number;
   page?: number;
   limit?: number;
 }
