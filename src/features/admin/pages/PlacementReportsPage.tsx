@@ -13,6 +13,7 @@ import {
   ChevronDown,
   ChevronUp,
   Pencil,
+  Undo2,
 } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
@@ -53,8 +54,11 @@ import type { PlacementRow } from "@/types/admin.types";
 
 const STATUS_OPTIONS = PLACEMENT_STATUSES.map((s) => ({ ...s }));
 
-/* ─── Contacted table columns (read-only) ─── */
-const contactedColumns: ColumnDef<PlacementRow>[] = [
+/* ─── Contacted table columns ─── */
+const buildContactedColumns = (
+  onRevert: (row: PlacementRow) => void,
+  isReverting: boolean,
+): ColumnDef<PlacementRow>[] => [
   {
     accessorKey: "name",
     header: ({ column }) => <SortableHeader column={column} title="Name" />,
@@ -124,6 +128,24 @@ const contactedColumns: ColumnDef<PlacementRow>[] = [
       );
     },
   },
+  {
+    id: "actions",
+    header: () => <span className="sr-only">Actions</span>,
+    cell: ({ row }) => (
+      <div className="flex justify-end">
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 gap-1.5 border-orange-200 text-orange-700 hover:bg-orange-50 hover:text-orange-800"
+          disabled={isReverting}
+          onClick={() => onRevert(row.original)}
+        >
+          <Undo2 className="h-3.5 w-3.5" />
+          Move back
+        </Button>
+      </div>
+    ),
+  },
 ];
 
 /* ─── Editable row state ─── */
@@ -145,6 +167,10 @@ export default function PlacementReportsPage() {
   const [editState, setEditState] = useState<EditState>({});
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [contactConfirm, setContactConfirm] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [revertConfirm, setRevertConfirm] = useState<{
     id: string;
     name: string;
   } | null>(null);
@@ -204,6 +230,33 @@ export default function PlacementReportsPage() {
       contactMutation.mutate({ id: contactConfirm.id });
     }
   }, [contactConfirm, contactMutation]);
+
+  /* ─── Revert (move back to Not Contacted) mutation ─── */
+  const revertMutation = useMutation({
+    mutationFn: ({ id }: { id: string }) =>
+      adminService.revertPlacementContact(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey });
+      toast.success("Student moved back to Not Contacted");
+      setRevertConfirm(null);
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const handleRevertConfirm = useCallback(() => {
+    if (revertConfirm) {
+      revertMutation.mutate({ id: revertConfirm.id });
+    }
+  }, [revertConfirm, revertMutation]);
+
+  const contactedColumns = useMemo(
+    () =>
+      buildContactedColumns(
+        (row) => setRevertConfirm({ id: row.id, name: row.name }),
+        revertMutation.isPending,
+      ),
+    [revertMutation.isPending],
+  );
 
   /* ─── Save mutation (with edit fields) ─── */
   const saveMutation = useMutation({
@@ -900,6 +953,23 @@ export default function PlacementReportsPage() {
                                   : "Not Placed"}
                               </Badge>
                             </div>
+                            <div className="mt-3 flex justify-end">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 gap-1.5 border-orange-200 text-orange-700 hover:bg-orange-50 hover:text-orange-800"
+                                disabled={revertMutation.isPending}
+                                onClick={() =>
+                                  setRevertConfirm({
+                                    id: row.id,
+                                    name: row.name,
+                                  })
+                                }
+                              >
+                                <Undo2 className="h-3.5 w-3.5" />
+                                Move back
+                              </Button>
+                            </div>
                           </CardContent>
                         </Card>
                       ))}
@@ -938,6 +1008,38 @@ export default function PlacementReportsPage() {
               className="bg-emerald-600 hover:bg-emerald-700"
             >
               {contactMutation.isPending ? "Updating..." : "Confirm"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Confirmation dialog for reverting to Not Contacted */}
+      <AlertDialog
+        open={!!revertConfirm}
+        onOpenChange={(open) => !open && setRevertConfirm(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Move back to Not Contacted?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to move{" "}
+              <span className="font-semibold text-foreground">
+                {revertConfirm?.name}
+              </span>{" "}
+              back to the Not Contacted list? This will clear the contacted
+              date.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={revertMutation.isPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleRevertConfirm}
+              disabled={revertMutation.isPending}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              {revertMutation.isPending ? "Reverting..." : "Move back"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

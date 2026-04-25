@@ -287,6 +287,11 @@ export const adminService = {
     return extractData<{ placementStatus: string; companyName?: string; contactedDate: string }>(response);
   },
 
+  revertPlacementContact: async (enrollmentId: string) => {
+    const response = await api.put(`/admin/reports/placement/${enrollmentId}/revert`);
+    return extractData<{ placementStatus: string; companyName?: string; contactedDate: string | null }>(response);
+  },
+
   // QR Code (Admin — read-only)
   getActiveQrCode: async () => {
     const response = await api.get("/admin/qr-codes");
