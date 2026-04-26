@@ -4,6 +4,7 @@ import {
   numberToWords,
   generateReceiptNumber,
   formatReceiptDate,
+  formatPaymentMode,
 } from "@/utils/format";
 import type { Institute } from "@/types/common.types";
 
@@ -252,7 +253,7 @@ const PaymentReceipt = forwardRef<HTMLDivElement, { data: ReceiptData }>(
           {/* Mode of Payment & Signature */}
           <div style={{ padding: "16px 30px 24px" }}>
             <p style={{ margin: "0 0 30px", fontWeight: 600 }}>
-              Mode of Payment: Cash / UPI / Cheque / Bank Transfer Transaction
+              Mode of Payment: {formatPaymentMode(data.paymentMode)}
             </p>
 
             <div style={{ textAlign: "right", marginTop: "20px" }}>

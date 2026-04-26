@@ -10,7 +10,8 @@ export function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
-export function formatDate(dateString: string | number): string {
+export function formatDate(dateString: string | number | null | undefined): string {
+  if (dateString === null || dateString === undefined || dateString === '') return '';
   const date = new Date(dateString);
   if (isNaN(date.getTime())) return String(dateString);
   return new Intl.DateTimeFormat('en-IN', {
@@ -95,4 +96,14 @@ export function formatReceiptDate(dateString?: string): string {
   const mm = (date.getMonth() + 1).toString().padStart(2, '0');
   const yyyy = date.getFullYear();
   return `${dd}.${mm}.${yyyy}`;
+}
+
+// HDFC and ICICI are bank accounts the institute receives transfers into;
+// the student-facing receipt shows them as "ONLINE" while the raw value is
+// retained in DB/SMS records for internal reconciliation.
+export function formatPaymentMode(mode?: string): string {
+  if (!mode) return 'Cash / UPI / Cheque / Bank Transfer Transaction';
+  if (mode === 'CASH') return 'Cash';
+  if (mode === 'HDFC' || mode === 'ICICI') return 'ONLINE';
+  return mode;
 }
