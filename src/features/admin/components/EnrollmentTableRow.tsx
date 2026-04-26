@@ -36,6 +36,8 @@ import {
 } from "@/constants/courses";
 import ReceiptDialog from "./ReceiptDialog";
 import { type ReceiptData } from "./PaymentReceipt";
+import CertificateDialog from "./CertificateDialog";
+import { type CertificateData } from "./Certificate";
 import type {
   EnrollmentStatus,
   CompletionStatus,
@@ -247,6 +249,27 @@ export const EnrollmentTableRow = memo(function EnrollmentTableRow({
   onViewEvaluation,
 }: EnrollmentTableRowProps) {
   const isOdd = index % 2 === 1;
+  const [certificateOpen, setCertificateOpen] = useState(false);
+  const [sendingCertificate, setSendingCertificate] = useState(false);
+
+  async function handleSendCertificate() {
+    setSendingCertificate(true);
+    try {
+      await adminService.sendCertificate(enrollment.id);
+      toast.success(`Certificate sent to ${enrollment.email}`);
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setSendingCertificate(false);
+    }
+  }
+
+  const certificateData: CertificateData = {
+    studentName: enrollment.name,
+    courseName: enrollment.course,
+    institute: enrollment.institute,
+    completionDate: enrollment.end_date,
+  };
 
   const pendingAmount =
     enrollment.completion_status === "DROPOUT"
@@ -532,15 +555,16 @@ export const EnrollmentTableRow = memo(function EnrollmentTableRow({
           title="View Certificate"
           onClick={(e) => {
             e.stopPropagation();
-            if (enrollment.certificate_url) {
-              window.open(enrollment.certificate_url, "_blank");
-            } else {
-              toast.info("No certificate available");
-            }
+            setCertificateOpen(true);
           }}
         >
           <FileText className="h-3.5 w-3.5" />
         </Button>
+        <CertificateDialog
+          open={certificateOpen}
+          onOpenChange={setCertificateOpen}
+          data={certificateData}
+        />
       </TableCell>
       <TableCell className={cn("border-r border-border", bg.cert)}>
         <AlertDialog>
@@ -573,10 +597,12 @@ export const EnrollmentTableRow = memo(function EnrollmentTableRow({
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
-                onClick={() =>
-                  toast.info("Send certificate triggered")
-                }
+                onClick={handleSendCertificate}
+                disabled={sendingCertificate}
               >
+                {sendingCertificate && (
+                  <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                )}
                 Yes, Send
               </AlertDialogAction>
             </AlertDialogFooter>

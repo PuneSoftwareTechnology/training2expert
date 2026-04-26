@@ -63,7 +63,6 @@ interface EditFields {
   installment3_mode: string;
   placement_status: PlacementStatus;
   company_name: string;
-  certificate_url: string;
 }
 
 function enrollmentToFields(e: Enrollment): EditFields {
@@ -91,7 +90,6 @@ function enrollmentToFields(e: Enrollment): EditFields {
     installment3_mode: e.installment3_mode || "",
     placement_status: e.placement_status || "NOT_PLACED",
     company_name: e.company_name || "",
-    certificate_url: e.certificate_url || "",
   };
 }
 
@@ -373,21 +371,6 @@ export function EditEnrollmentDialog({
                 <Input
                   value={fields.company_name}
                   onChange={(e) => updateField("company_name", e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Certificate */}
-          <div>
-            <h4 className="text-sm font-semibold text-muted-foreground mb-3">Certificate</h4>
-            <div className="grid grid-cols-1 gap-4">
-              <div className="space-y-1">
-                <Label>Certificate URL</Label>
-                <Input
-                  value={fields.certificate_url}
-                  onChange={(e) => updateField("certificate_url", e.target.value)}
-                  placeholder="https://..."
                 />
               </div>
             </div>
