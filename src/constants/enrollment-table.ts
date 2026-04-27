@@ -39,7 +39,7 @@ export const COLUMN_GROUPS = [
   {
     label: "Certificate",
     icon: GraduationCap,
-    colSpan: 1,
+    colSpan: 2,
     color: "text-teal-600 bg-teal-50 border-teal-200",
   },
   {
@@ -50,7 +50,7 @@ export const COLUMN_GROUPS = [
   },
 ] as const;
 
-// Total columns: 1 (S.No) + 2 + 1 (Full Name, standalone) + 6 + 6 + 17 + 1 + 2 = 36
+// Total columns: 1 (S.No) + 2 + 1 (Full Name, standalone) + 6 + 6 + 17 + 2 + 2 = 37
 
 // ---------------------------------------------------------------------------
 // Sub-column definitions (Row 2 headers)
@@ -92,8 +92,9 @@ export const SUB_COLUMNS: { label: string; bg: string; extra?: string }[] = [
   { label: "View", bg: "bg-indigo-50/30" },
   { label: "Send", bg: "bg-indigo-50/30" },
   { label: "Pending", bg: "bg-indigo-50/50", extra: "border-r border-border text-destructive font-semibold" },
-  // Certificate (1) — single cell opens a dialog with View / Download / Send
-  { label: "Actions", bg: "bg-teal-50/50", extra: "border-x border-border text-center" },
+  // Certificate (2) — both icons open the same dialog (View+Download+Send)
+  { label: "View", bg: "bg-teal-50/50", extra: "border-l border-border text-center" },
+  { label: "Send", bg: "bg-teal-50/50", extra: "border-r border-border text-center" },
   // Placement (2)
   { label: "Status", bg: "bg-purple-50/50", extra: "border-l border-border" },
   { label: "Company", bg: "bg-purple-50/50", extra: "border-r border-border" },

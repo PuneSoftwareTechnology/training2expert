@@ -533,12 +533,12 @@ export const EnrollmentTableRow = memo(function EnrollmentTableRow({
       </TableCell>
 
       {/* === CERTIFICATE === */}
-      <TableCell className={cn("text-center border-x border-border", bg.cert)}>
+      <TableCell className={cn("text-center border-l border-border", bg.cert)}>
         <Button
           variant="ghost"
           size="icon"
           className="h-7 w-7 text-primary"
-          title="View / Download / Send Certificate"
+          title="View Certificate"
           onClick={(e) => {
             e.stopPropagation();
             setCertificateOpen(true);
@@ -553,6 +553,20 @@ export const EnrollmentTableRow = memo(function EnrollmentTableRow({
           enrollmentId={enrollment.id}
           studentEmail={enrollment.email}
         />
+      </TableCell>
+      <TableCell className={cn("text-center border-r border-border", bg.cert)}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 text-primary"
+          title="Send Certificate"
+          onClick={(e) => {
+            e.stopPropagation();
+            setCertificateOpen(true);
+          }}
+        >
+          <Send className="h-3.5 w-3.5" />
+        </Button>
       </TableCell>
 
       {/* === PLACEMENT === */}
