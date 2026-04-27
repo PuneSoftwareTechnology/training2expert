@@ -168,9 +168,13 @@ export const adminService = {
     return extractData<{ message: string }>(response);
   },
 
-  sendCertificate: async (enrollmentId: string) => {
+  sendCertificate: async (enrollmentId: string, certificatePdf: Blob) => {
+    const formData = new FormData();
+    formData.append("certificate", certificatePdf, "certificate.pdf");
     const response = await api.post(
       `/admin/enrollments/${enrollmentId}/send-certificate`,
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } },
     );
     return extractData<{ message: string }>(response);
   },

@@ -29,11 +29,11 @@ const Certificate = forwardRef<HTMLDivElement, { data: CertificateData }>(
           boxSizing: "border-box",
         }}
       >
-        {/* Student name — overlays the first blank line */}
+        {/* Student name — sits on the first underline */}
         <div
           style={{
             position: "absolute",
-            top: "44.5%",
+            top: "47.5%",
             left: "12%",
             right: "12%",
             textAlign: "center",
@@ -45,11 +45,11 @@ const Certificate = forwardRef<HTMLDivElement, { data: CertificateData }>(
           {data.studentName}
         </div>
 
-        {/* Course name — overlays the second blank line */}
+        {/* Course name — sits on the second underline */}
         <div
           style={{
             position: "absolute",
-            top: "60.5%",
+            top: "60%",
             left: "12%",
             right: "12%",
             textAlign: "center",
@@ -60,12 +60,12 @@ const Certificate = forwardRef<HTMLDivElement, { data: CertificateData }>(
           {data.courseName}
         </div>
 
-        {/* Date — next to the "DATE" label at the bottom */}
+        {/* Date — sits on the underline next to the "DATE" label */}
         <div
           style={{
             position: "absolute",
-            bottom: "3.6%",
-            left: "13.5%",
+            bottom: "4%",
+            left: "11.5%",
             fontSize: "14px",
             fontWeight: 600,
             letterSpacing: "1px",
