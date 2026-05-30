@@ -19,7 +19,7 @@ import type {
   RecruiterAccount,
   TestAttemptResult,
 } from "@/types/admin.types";
-import type { QrCode } from "@/types/super-admin.types";
+import type { QrCode, Course } from "@/types/super-admin.types";
 import type { StudentProfileFull, Evaluation, CvTemplate } from "@/types/student.types";
 import type { DashboardData, DashboardPeriod } from "@/types/dashboard.types";
 
@@ -28,6 +28,8 @@ interface EnquiryFilters {
   toDate?: string;
   leadStatus?: LeadStatus;
   demoStatus?: DemoStatus;
+  institute?: Institute;
+  course?: string;
   page?: number;
   limit?: number;
 }
@@ -36,6 +38,8 @@ interface EnrollmentFilters {
   enrollment_status?: EnrollmentStatus;
   institute?: Institute;
   course?: string;
+  fromDate?: string;
+  toDate?: string;
   page?: number;
   limit?: number;
 }
@@ -68,13 +72,25 @@ export const adminService = {
     const response = await api.get("/admin/enquiries", { params: filters });
     const result = extractData<
       | Enquiry[]
-      | { items: Enquiry[]; total: number; page: number; totalPages: number }
+      | {
+          items: Enquiry[];
+          total: number;
+          page: number;
+          totalPages: number;
+          courses?: string[];
+        }
     >(response);
     // Handle both response shapes: array directly or paginated object
     if (Array.isArray(result)) {
-      return { items: result, total: result.length, page: 1, totalPages: 1 };
+      return {
+        items: result,
+        total: result.length,
+        page: 1,
+        totalPages: 1,
+        courses: [] as string[],
+      };
     }
-    return result;
+    return { ...result, courses: result.courses ?? [] };
   },
 
   createEnquiry: async (data: Omit<Enquiry, "id">) => {
@@ -90,6 +106,21 @@ export const adminService = {
   deleteEnquiry: async (id: string) => {
     const response = await api.delete(`/admin/enquiries/${id}`);
     return extractData<{ message: string }>(response);
+  },
+
+  sendEnquiryBulkEmail: async (
+    enquiryIds: string[],
+    subject: string,
+    body: string,
+  ) => {
+    const response = await api.post("/admin/enquiries/send-email", {
+      enquiryIds,
+      subject,
+      body,
+    });
+    return extractData<{ sent: number; failed: number; skipped: number }>(
+      response,
+    );
   },
 
   // Enrollment
@@ -109,6 +140,13 @@ export const adminService = {
     const response = await api.get("/admin/enrollments", { params: { limit: 1 } });
     const result = extractData<{ courses?: string[] }>(response);
     return result.courses ?? [];
+  },
+
+  getMasterCourses: async (activeOnly = true) => {
+    const response = await api.get("/admin/courses", {
+      params: activeOnly ? { isActive: true } : {},
+    });
+    return extractData<Course[]>(response);
   },
 
   createEnrollment: async (data: Partial<Enrollment>) => {
@@ -260,16 +298,30 @@ export const adminService = {
     return result;
   },
 
-  getEnrollmentFigures: async (institute: string, year: number) => {
+  getEnrollmentFigures: async (
+    institute: string,
+    year: number,
+    completionStatus: string,
+  ) => {
     const response = await api.get("/admin/reports/enrollment-figures", {
-      params: { institute, year },
+      params: { institute, year, completion_status: completionStatus },
     });
     return extractData<EnrollmentFigureRow[]>(response);
   },
 
-  getEnquiryFigures: async (institute: string, year: number) => {
+  getEnquiryFigures: async (
+    institute: string,
+    year: number,
+    leadStatus: string,
+    demoStatus: string,
+  ) => {
     const response = await api.get("/admin/reports/enquiry-figures", {
-      params: { institute, year },
+      params: {
+        institute,
+        year,
+        lead_status: leadStatus,
+        demo_status: demoStatus,
+      },
     });
     return extractData<EnrollmentFigureRow[]>(response);
   },

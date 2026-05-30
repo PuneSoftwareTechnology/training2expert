@@ -64,6 +64,11 @@ export function DataTable<TData, TValue>({
     }
   }, [searchKey, searchValue, table]);
 
+  // Keep table page size in sync when the prop changes (e.g. when data length changes)
+  useEffect(() => {
+    table.setPageSize(pageSize);
+  }, [pageSize, table]);
+
   return (
     <div className="space-y-2">
       <Table>

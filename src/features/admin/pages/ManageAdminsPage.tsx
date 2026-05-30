@@ -62,11 +62,14 @@ export default function ManageAdminsPage() {
     refetch,
   } = useQuery({
     queryKey: ["admin", "admins"],
-    queryFn: superAdminService.getAdmins,
+    queryFn: () => superAdminService.getAdmins(),
   });
   const admins = adminData?.items ?? [];
 
-  const form = useForm<AdminFormValues>({ resolver: zodResolver(adminSchema) });
+  const form = useForm<AdminFormValues>({
+    resolver: zodResolver(adminSchema),
+    defaultValues: { name: "", email: "", password: "", role: "ADMIN" },
+  });
 
   const createMutation = useMutation({
     mutationFn: superAdminService.createAdmin,

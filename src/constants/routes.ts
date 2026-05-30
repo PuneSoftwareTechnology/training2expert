@@ -26,6 +26,7 @@ export const ROUTES = {
   ADMIN_MANAGE_ADMINS: "/admin/manage-admins",
   ADMIN_RESUME_TEMPLATES: "/admin/resume-templates",
   ADMIN_QR_MANAGEMENT: "/admin/qr-management",
+  ADMIN_COURSES: "/admin/courses",
 
   RECRUITER_DASHBOARD: "/recruiter",
   RECRUITER_CANDIDATES: "/recruiter/candidates",

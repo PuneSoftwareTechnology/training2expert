@@ -1,5 +1,5 @@
 import { api, extractData } from "./api";
-import type { AdminAccount, QrCode } from "@/types/super-admin.types";
+import type { AdminAccount, QrCode, Course } from "@/types/super-admin.types";
 
 export const superAdminService = {
   // Admin Management
@@ -19,6 +19,7 @@ export const superAdminService = {
     name: string;
     email: string;
     password: string;
+    role?: "ADMIN" | "SUPER_ADMIN";
   }) => {
     const response = await api.post("/super-admin/admins", data);
     return extractData<AdminAccount>(response);
@@ -26,7 +27,7 @@ export const superAdminService = {
 
   updateAdmin: async (
     id: string,
-    data: { name?: string; email?: string },
+    data: { name?: string; email?: string; role?: "ADMIN" | "SUPER_ADMIN" },
   ) => {
     const response = await api.put(`/super-admin/admins/${id}`, data);
     return extractData<AdminAccount>(response);
@@ -77,5 +78,29 @@ export const superAdminService = {
   activateQrCode: async (qrId: string) => {
     const response = await api.patch(`/super-admin/qr/${qrId}/activate`);
     return extractData<QrCode>(response);
+  },
+
+  // Course Management (Super Admin)
+  getCourses: async (filters: { isActive?: boolean; search?: string } = {}) => {
+    const response = await api.get("/super-admin/courses", { params: filters });
+    return extractData<Course[]>(response);
+  },
+
+  createCourse: async (data: { name: string; isActive?: boolean }) => {
+    const response = await api.post("/super-admin/courses", data);
+    return extractData<Course>(response);
+  },
+
+  updateCourse: async (
+    id: string,
+    data: { name?: string; isActive?: boolean },
+  ) => {
+    const response = await api.put(`/super-admin/courses/${id}`, data);
+    return extractData<Course>(response);
+  },
+
+  deleteCourse: async (id: string) => {
+    const response = await api.delete(`/super-admin/courses/${id}`);
+    return extractData<{ id: string }>(response);
   },
 };

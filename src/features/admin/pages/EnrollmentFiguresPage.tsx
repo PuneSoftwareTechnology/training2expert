@@ -19,19 +19,32 @@ import { PageTransition } from "@/components/animations/PageTransition";
 import { FilterActions } from "@/components/ui/filter-actions";
 
 import { adminService } from "@/services/admin.service";
-import { INSTITUTES, MONTHS } from "@/constants/courses";
+import { COMPLETION_STATUSES, INSTITUTES, MONTHS } from "@/constants/courses";
 import type { EnrollmentFigureRow } from "@/types/admin.types";
 
 const INSTITUTE_OPTIONS = ["Combined", ...INSTITUTES] as const;
+const COMPLETION_STATUS_OPTIONS = [
+  { value: "All", label: "All" },
+  ...COMPLETION_STATUSES.filter((s) => s.value !== "IN_PROGRESS"),
+] as const;
 
 export default function EnrollmentFiguresPage() {
   const currentYear = new Date().getFullYear();
   const [institute, setInstitute] = useState<string>("Combined");
   const [year, setYear] = useState(currentYear);
+  const [completionStatus, setCompletionStatus] = useState<string>("All");
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["admin", "reports", "enrollment-figures", institute, year],
-    queryFn: () => adminService.getEnrollmentFigures(institute, year),
+    queryKey: [
+      "admin",
+      "reports",
+      "enrollment-figures",
+      institute,
+      year,
+      completionStatus,
+    ],
+    queryFn: () =>
+      adminService.getEnrollmentFigures(institute, year, completionStatus),
   });
 
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
@@ -123,6 +136,7 @@ export default function EnrollmentFiguresPage() {
             onReset={() => {
               setInstitute("Combined");
               setYear(currentYear);
+              setCompletionStatus("All");
             }}
             onRefresh={() => refetch()}
             isFetching={isLoading}
@@ -158,6 +172,24 @@ export default function EnrollmentFiguresPage() {
                 {years.map((y) => (
                   <SelectItem key={y} value={String(y)}>
                     {y}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Completion Status</Label>
+            <Select
+              value={completionStatus}
+              onValueChange={setCompletionStatus}
+            >
+              <SelectTrigger className="w-36">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {COMPLETION_STATUS_OPTIONS.map((s) => (
+                  <SelectItem key={s.value} value={s.value}>
+                    {s.label}
                   </SelectItem>
                 ))}
               </SelectContent>

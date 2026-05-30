@@ -7,6 +7,7 @@ export const adminSchema = z.object({
     .regex(/[A-Z]/, 'Must contain at least one uppercase letter')
     .regex(/[a-z]/, 'Must contain at least one lowercase letter')
     .regex(/\d/, 'Must contain at least one number'),
+  role: z.enum(['ADMIN', 'SUPER_ADMIN']),
 });
 
 export type AdminFormValues = z.infer<typeof adminSchema>;

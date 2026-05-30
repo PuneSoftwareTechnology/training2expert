@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
@@ -151,6 +152,8 @@ export default function EnrollmentPage() {
   const [filterCompletion, setFilterCompletion] = useState<string>("ALL");
   const [filterTrainer, setFilterTrainer] = useState<string>("ALL");
   const [filterYear, setFilterYear] = useState<string>("ALL");
+  const [fromDate, setFromDate] = useState<string>("");
+  const [toDate, setToDate] = useState<string>("");
 
   const tableScrollRef = useRef<HTMLDivElement>(null);
 
@@ -264,6 +267,8 @@ export default function EnrollmentPage() {
       filterStatus,
       filterInstitute,
       filterCourse,
+      fromDate,
+      toDate,
     ],
     queryFn: () =>
       adminService.getEnrollments({
@@ -276,6 +281,8 @@ export default function EnrollmentPage() {
             ? undefined
             : (filterInstitute as Institute),
         course: filterCourse || undefined,
+        fromDate: fromDate || undefined,
+        toDate: toDate || undefined,
         limit: 10000,
       }),
   });
@@ -502,6 +509,8 @@ export default function EnrollmentPage() {
                 setFilterCompletion("ALL");
                 setFilterTrainer("ALL");
                 setFilterYear("ALL");
+                setFromDate("");
+                setToDate("");
                 setSearchQuery("");
               }}
               onRefresh={() => refetch()}
@@ -535,7 +544,26 @@ export default function EnrollmentPage() {
               Total: {filteredItems.length} students
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-end gap-2">
+            {/* Date Range */}
+            <div className="space-y-1">
+              <Label className="text-xs">From Date</Label>
+              <Input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className="h-9 w-40"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">To Date</Label>
+              <Input
+                type="date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                className="h-9 w-40"
+              />
+            </div>
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

@@ -1,8 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Search, Pencil, Trash2, ClipboardList } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, ClipboardList, Mail } from "lucide-react";
 import { toast } from "sonner";
 import type { ColumnDef } from "@tanstack/react-table";
 
@@ -24,6 +25,8 @@ import {
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,7 +51,7 @@ import { adminService } from "@/services/admin.service";
 import { getErrorMessage } from "@/services/api";
 import { formatDate, todayStr } from "@/utils/format";
 import { INSTITUTES, LEAD_STATUSES, DEMO_STATUSES } from "@/constants/courses";
-import type { LeadStatus, DemoStatus } from "@/types/common.types";
+import type { LeadStatus, DemoStatus, Institute } from "@/types/common.types";
 import type { Enquiry } from "@/types/admin.types";
 
 const LEAD_BADGE: Record<LeadStatus, "default" | "destructive" | "success"> = {
@@ -88,7 +91,35 @@ const FORM_SELECTS = [
 const FILTER_SELECTS = [
   { label: "Lead Status", key: "lead" as const, options: LEAD_STATUSES },
   { label: "Demo Status", key: "demo" as const, options: DEMO_STATUSES },
+  {
+    label: "Institute",
+    key: "institute" as const,
+    options: INSTITUTES.map((i) => ({ value: i, label: i })),
+  },
 ];
+
+const DEMO_EMAIL_SUBJECT =
+  "Thank You for Attending the Demo Session – Take the Next Step in Your Career";
+
+const DEMO_EMAIL_BODY = `<p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#333;">Dear Candidate,</p>
+<p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#333;">Thank you for attending our demo session. We hope you found the session informative &amp; practical.</p>
+<p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#333;">At <strong>Tech Concept Hub</strong>, our focus is not only on teaching concepts but also on helping students gain real industry-oriented practical knowledge, confidence, and job-ready skills.</p>
+<div style="background:#f6f3fc;border-left:4px solid #4a1a8a;padding:18px 22px;margin:20px 0;border-radius:0 6px 6px 0;">
+<p style="margin:0 0 12px;font-weight:600;color:#4a1a8a;font-size:15px;">✅ What you will get in the complete course</p>
+<ul style="padding-left:20px;margin:0;color:#333;line-height:1.8;font-size:14px;">
+<li>Practical hands-on training</li>
+<li>Real-time business scenario explanation</li>
+<li>Guidance from experienced industry trainers</li>
+<li>Interview preparation support</li>
+<li>Resume/CV building assistance</li>
+<li>Recorded sessions &amp; practice materials</li>
+<li>Support for projects and assignments</li>
+<li>Certification guidance</li>
+<li>Placement Assistance</li>
+</ul>
+</div>
+<p style="margin:20px 0 16px;font-size:15px;line-height:1.6;color:#333;">If you would like to enroll or need complete course details such as syllabus, fees, batch timings, or career guidance, simply contact us.</p>
+<p style="margin:28px 0 0;font-size:15px;line-height:1.6;color:#333;">Best Regards,<br><strong>Tech Concept Hub Team</strong><br>📞 Contact: <a href="tel:7262000918" style="color:#4a1a8a;text-decoration:none;font-weight:600;">7262000918</a></p>`;
 
 function exportEnquiriesCsv(items: Enquiry[]) {
   const headers = [
@@ -100,6 +131,7 @@ function exportEnquiriesCsv(items: Enquiry[]) {
     "Institute",
     "Lead Status",
     "Demo Status",
+    "Demo Date",
     "Comment",
   ];
 
@@ -127,6 +159,7 @@ function exportEnquiriesCsv(items: Enquiry[]) {
         ?.label ??
         raw.demo_status ??
         e.demoStatus,
+      e.demo_date ? formatDate(e.demo_date) : "",
       e.comment ?? "",
     ]
       .map(escape)
@@ -148,13 +181,28 @@ export default function EnquiryPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEnquiry, setEditingEnquiry] = useState<Enquiry | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [filters, setFilters] = useState({
-    fromDate: "",
-    toDate: "",
-    lead: "",
-    demo: "",
-  });
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [filters, setFilters] = useState(() => ({
+    fromDate: searchParams.get("fromDate") ?? "",
+    toDate: searchParams.get("toDate") ?? "",
+    lead: searchParams.get("leadStatus") ?? "",
+    demo: searchParams.get("demoStatus") ?? "",
+    institute: searchParams.get("institute") ?? "",
+    course: searchParams.get("course") ?? "",
+  }));
+
+  useEffect(() => {
+    if (Array.from(searchParams.keys()).length > 0) {
+      setSearchParams({}, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [searchText, setSearchText] = useState("");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [emailDialog, setEmailDialog] = useState(false);
+  const [emailTargetIds, setEmailTargetIds] = useState<string[]>([]);
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailBody, setEmailBody] = useState("");
 
   const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
     queryKey: ["admin", "enquiries", filters],
@@ -164,8 +212,22 @@ export default function EnquiryPage() {
         toDate: filters.toDate || undefined,
         leadStatus: (filters.lead as LeadStatus) || undefined,
         demoStatus: (filters.demo as DemoStatus) || undefined,
+        institute: (filters.institute as Institute) || undefined,
+        course: filters.course || undefined,
       }),
   });
+
+  const courses = data?.courses ?? [];
+
+  const { data: masterCourses, isLoading: coursesLoading } = useQuery({
+    queryKey: ["admin", "master-courses"],
+    queryFn: () => adminService.getMasterCourses(true),
+  });
+
+  const courseOptions = useMemo(
+    () => (masterCourses ?? []).map((c) => c.name),
+    [masterCourses],
+  );
 
   const form = useForm<EnquiryFormValues>({
     resolver: zodResolver(enquirySchema),
@@ -220,11 +282,60 @@ export default function EnquiryPage() {
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
+  const sendEmailMutation = useMutation({
+    mutationFn: () =>
+      adminService.sendEnquiryBulkEmail(
+        emailTargetIds,
+        emailSubject,
+        emailBody,
+      ),
+    onSuccess: (res) => {
+      const skippedMsg = res.skipped
+        ? ` (${res.skipped} skipped — no email)`
+        : "";
+      toast.success(`${res.sent} email(s) sent${skippedMsg}`);
+      setEmailDialog(false);
+      setEmailTargetIds([]);
+      setEmailSubject("");
+      setEmailBody("");
+      setSelectedIds([]);
+    },
+    onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  const openEmailDialog = (ids: string[]) => {
+    setEmailTargetIds(ids);
+    setEmailSubject(DEMO_EMAIL_SUBJECT);
+    setEmailBody(DEMO_EMAIL_BODY);
+    setEmailDialog(true);
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
+    );
+  };
+
+  const selectableIds = useMemo(
+    () => (data?.items ?? []).filter((e) => !!e.email).map((e) => e.id),
+    [data?.items],
+  );
+
+  const toggleAll = () => {
+    if (!selectableIds.length) return;
+    if (selectedIds.length === selectableIds.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(selectableIds);
+    }
+  };
+
   const onSubmit = (values: EnquiryFormValues) => {
-    const { enquiry_date, comment, ...rest } = values;
+    const { enquiry_date, demo_date, comment, ...rest } = values;
     const payload = {
       ...rest,
       enquiryDate: enquiry_date,
+      demoDate: demo_date || undefined,
       comment: comment || undefined,
     };
     editingEnquiry
@@ -249,6 +360,7 @@ export default function EnquiryPage() {
         enquiry.leadStatus) as EnquiryFormValues["leadStatus"],
       demoStatus: (raw.demo_status ??
         enquiry.demoStatus) as EnquiryFormValues["demoStatus"],
+      demo_date: (raw.demo_date ?? enquiry.demo_date ?? "").split("T")[0],
       comment: enquiry.comment ?? "",
     });
     setDialogOpen(true);
@@ -277,6 +389,31 @@ export default function EnquiryPage() {
   }, [data?.items, searchText]);
 
   const columns: ColumnDef<Enquiry>[] = [
+    {
+      id: "select",
+      header: () => (
+        <Checkbox
+          checked={
+            selectableIds.length > 0 &&
+            selectedIds.length === selectableIds.length
+          }
+          onCheckedChange={toggleAll}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => {
+        const e = row.original;
+        if (!e.email) return null;
+        return (
+          <Checkbox
+            checked={selectedIds.includes(e.id)}
+            onCheckedChange={() => toggleSelect(e.id)}
+            aria-label="Select row"
+          />
+        );
+      },
+      enableSorting: false,
+    },
     {
       id: "sno",
       header: "S.No",
@@ -338,6 +475,16 @@ export default function EnquiryPage() {
       },
     },
     {
+      accessorKey: "demo_date",
+      header: ({ column }) => (
+        <SortableHeader column={column} title="Demo Date" />
+      ),
+      cell: ({ getValue }) => {
+        const v = getValue<string>();
+        return v ? formatDate(v) : "-";
+      },
+    },
+    {
       accessorKey: "comment",
       header: "Comment",
       cell: ({ getValue }) => getValue<string>() || "-",
@@ -358,6 +505,17 @@ export default function EnquiryPage() {
             >
               <Pencil className="h-4 w-4" />
             </Button>
+            {e.email && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
+                onClick={() => openEmailDialog([e.id])}
+                title="Send email"
+              >
+                <Mail className="h-4 w-4" />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"
@@ -394,9 +552,20 @@ export default function EnquiryPage() {
           </div>
           <div className="flex items-center gap-2">
             <FilterActions
-              onReset={() =>
-                setFilters({ fromDate: "", toDate: "", lead: "", demo: "" })
-              }
+              onReset={() => {
+                setFilters({
+                  fromDate: "",
+                  toDate: "",
+                  lead: "",
+                  demo: "",
+                  institute: "",
+                  course: "",
+                });
+                setSearchText("");
+                queryClient.invalidateQueries({
+                  queryKey: ["admin", "enquiries"],
+                });
+              }}
               onRefresh={() => refetch()}
               isFetching={isFetching}
               onExport={
@@ -452,9 +621,9 @@ export default function EnquiryPage() {
                 <div key={key} className="space-y-1">
                   <Label className="text-xs">{label}</Label>
                   <Select
-                    value={filters[key]}
+                    value={filters[key] || "ALL"}
                     onValueChange={(v) =>
-                      setFilters((f) => ({ ...f, [key]: v }))
+                      setFilters((f) => ({ ...f, [key]: v === "ALL" ? "" : v }))
                     }
                   >
                     <SelectTrigger className="w-40">
@@ -471,9 +640,56 @@ export default function EnquiryPage() {
                   </Select>
                 </div>
               ))}
+              <div className="space-y-1">
+                <Label className="text-xs">Course</Label>
+                <Select
+                  value={filters.course || "ALL"}
+                  onValueChange={(v) =>
+                    setFilters((f) => ({
+                      ...f,
+                      course: v === "ALL" ? "" : v,
+                    }))
+                  }
+                >
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="All Courses" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">All Courses</SelectItem>
+                    {courses.map((c) => (
+                      <SelectItem key={c} value={c}>
+                        {c}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </CardContent>
         </Card>
+
+        {/* Bulk actions bar */}
+        {selectedIds.length > 0 && (
+          <div className="flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50/60 p-3">
+            <span className="text-sm font-semibold text-emerald-800">
+              {selectedIds.length} selected
+            </span>
+            <Button
+              size="sm"
+              className="bg-emerald-600 text-white hover:bg-emerald-700"
+              onClick={() => openEmailDialog(selectedIds)}
+            >
+              <Mail className="mr-1 h-3.5 w-3.5" /> Send Email
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setSelectedIds([])}
+            >
+              Clear
+            </Button>
+          </div>
+        )}
 
         {/* Table */}
         {isLoading ? (
@@ -550,10 +766,31 @@ export default function EnquiryPage() {
                 </div>
                 <div className="space-y-1">
                   <Label>Course</Label>
-                  <Input
-                    {...form.register("course")}
-                    placeholder="Enter course"
-                  />
+                  <Select
+                    value={form.watch("course") || ""}
+                    onValueChange={(v) => form.setValue("course", v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select course" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {coursesLoading ? (
+                        <SelectItem value="__loading" disabled>
+                          Loading...
+                        </SelectItem>
+                      ) : courseOptions.length === 0 ? (
+                        <SelectItem value="__empty" disabled>
+                          No courses available
+                        </SelectItem>
+                      ) : (
+                        courseOptions.map((c) => (
+                          <SelectItem key={c} value={c}>
+                            {c}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="col-span-2 space-y-1">
                   <Label>Comment</Label>
@@ -567,7 +804,16 @@ export default function EnquiryPage() {
                     <Label>{label}</Label>
                     <Select
                       value={form.watch(name) ?? ""}
-                      onValueChange={(v) => form.setValue(name, v as never)}
+                      onValueChange={(v) => {
+                        form.setValue(name, v as never);
+                        if (
+                          name === "demoStatus" &&
+                          v === "DONE" &&
+                          !form.getValues("demo_date")
+                        ) {
+                          form.setValue("demo_date", todayStr());
+                        }
+                      }}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select" />
@@ -582,6 +828,10 @@ export default function EnquiryPage() {
                     </Select>
                   </div>
                 ))}
+                <div className="space-y-1">
+                  <Label>Demo Date</Label>
+                  <Input type="date" {...form.register("demo_date")} />
+                </div>
               </div>
               <div className="flex justify-end gap-2">
                 <Button
@@ -602,6 +852,54 @@ export default function EnquiryPage() {
                 </Button>
               </div>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Send Email Dialog */}
+        <Dialog open={emailDialog} onOpenChange={setEmailDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                Send Email
+                {emailTargetIds.length > 1
+                  ? ` to ${emailTargetIds.length} enquiries`
+                  : ""}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label>Subject</Label>
+                <Input
+                  value={emailSubject}
+                  onChange={(e) => setEmailSubject(e.target.value)}
+                  placeholder="Email subject"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>Body</Label>
+                <Textarea
+                  value={emailBody}
+                  onChange={(e) => setEmailBody(e.target.value)}
+                  rows={8}
+                  placeholder="Write your message..."
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setEmailDialog(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => sendEmailMutation.mutate()}
+                  loading={sendEmailMutation.isPending}
+                  disabled={!emailSubject.trim() || !emailBody.trim()}
+                >
+                  {sendEmailMutation.isPending ? "Sending..." : "Send"}
+                </Button>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
 

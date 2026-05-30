@@ -43,9 +43,10 @@ export const PLACEMENT_STATUSES = [
 ] as const;
 
 export const FEE_DUE_FILTERS = [
-  { value: 30, label: "> 30 days" },
-  { value: 60, label: "> 60 days" },
-  { value: 90, label: "> 90 days" },
+  { value: "lt30", label: "< 30 days", min: 0, max: 30 },
+  { value: "30-60", label: "31-60 days", min: 31, max: 60 },
+  { value: "60-90", label: "61-90 days", min: 61, max: 90 },
+  { value: "gt90", label: "> 90 days", min: 91, max: Number.POSITIVE_INFINITY },
 ] as const;
 
 export const MONTHS = [

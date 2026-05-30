@@ -17,3 +17,12 @@ export interface QrCode {
   is_active: boolean;
   created_at: string;
 }
+
+export interface Course {
+  id: string;
+  name: string;
+  is_active: boolean;
+  created_by?: string | null;
+  created_at: string;
+  updated_at: string;
+}

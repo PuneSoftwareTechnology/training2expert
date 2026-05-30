@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import type { ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -14,10 +14,13 @@ import {
   Briefcase,
   ShieldCheck,
   FileText,
+  FolderClosed,
+  ChevronDown,
   LogOut,
   Menu,
   ChevronLeft,
   Settings,
+  BookOpen,
   X,
 } from "lucide-react";
 
@@ -40,7 +43,8 @@ import { useUiStore } from "@/store/ui.store";
 import { useRole } from "@/hooks/useRole";
 import { ROUTES } from "@/constants/routes";
 
-interface NavItem {
+interface NavLeaf {
+  type?: "leaf";
   label: string;
   path: string;
   icon: React.ReactNode;
@@ -48,21 +52,22 @@ interface NavItem {
   adminOnly?: boolean;
 }
 
+interface NavGroup {
+  type: "group";
+  label: string;
+  icon: React.ReactNode;
+  children: NavLeaf[];
+  superAdminOnly?: boolean;
+  adminOnly?: boolean;
+}
+
+type NavItem = NavLeaf | NavGroup;
+
 const NAV_ITEMS: NavItem[] = [
-  {
-    label: "Dashboard",
-    path: ROUTES.ADMIN_DASHBOARD,
-    icon: <LayoutDashboard className="h-4 w-4" />,
-  },
   {
     label: "Enquiry",
     path: ROUTES.ADMIN_ENQUIRY,
     icon: <ClipboardList className="h-4 w-4" />,
-  },
-  {
-    label: "Enquiry Figures",
-    path: ROUTES.ADMIN_ENQUIRY_FIGURES,
-    icon: <TrendingUp className="h-4 w-4" />,
   },
   {
     label: "Enrollment",
@@ -70,35 +75,10 @@ const NAV_ITEMS: NavItem[] = [
     icon: <Users className="h-4 w-4" />,
   },
   {
-    label: "Enrollment Figures",
-    path: ROUTES.ADMIN_ENROLLMENT_FIGURES,
-    icon: <TrendingUp className="h-4 w-4" />,
-  },
-  {
-    label: "Candidate Reports",
-    path: ROUTES.ADMIN_CANDIDATE_FILTER,
-    icon: <BarChart3 className="h-4 w-4" />,
-  },
-  {
-    label: "Fee Dues",
-    path: ROUTES.ADMIN_FEE_DUES,
-    icon: <DollarSign className="h-4 w-4" />,
-  },
-  {
-    label: "Placement Reports",
-    path: ROUTES.ADMIN_PLACEMENT_REPORTS,
-    icon: <Briefcase className="h-4 w-4" />,
-  },
-  {
     label: "QR Code",
     path: ROUTES.ADMIN_QR_CODE,
     icon: <QrCode className="h-4 w-4" />,
-    adminOnly: true, // Custom flag to hide for super admin
-  },
-  {
-    label: "Recruiter Shortlist",
-    path: ROUTES.ADMIN_RECRUITER_SHORTLIST,
-    icon: <ListChecks className="h-4 w-4" />,
+    adminOnly: true,
   },
   {
     label: "Access Management",
@@ -121,14 +101,79 @@ const NAV_ITEMS: NavItem[] = [
     icon: <Settings className="h-4 w-4" />,
     superAdminOnly: true,
   },
+  {
+    label: "Courses",
+    path: ROUTES.ADMIN_COURSES,
+    icon: <BookOpen className="h-4 w-4" />,
+    superAdminOnly: true,
+  },
+  {
+    type: "group",
+    label: "Reports",
+    icon: <FolderClosed className="h-4 w-4" />,
+    children: [
+      {
+        label: "Dashboard",
+        path: ROUTES.ADMIN_DASHBOARD,
+        icon: <LayoutDashboard className="h-4 w-4" />,
+      },
+      {
+        label: "Enquiry Figures",
+        path: ROUTES.ADMIN_ENQUIRY_FIGURES,
+        icon: <TrendingUp className="h-4 w-4" />,
+      },
+      {
+        label: "Enrollment Figures",
+        path: ROUTES.ADMIN_ENROLLMENT_FIGURES,
+        icon: <TrendingUp className="h-4 w-4" />,
+      },
+      {
+        label: "Fee Dues",
+        path: ROUTES.ADMIN_FEE_DUES,
+        icon: <DollarSign className="h-4 w-4" />,
+      },
+      {
+        label: "Recruiter Shortlist",
+        path: ROUTES.ADMIN_RECRUITER_SHORTLIST,
+        icon: <ListChecks className="h-4 w-4" />,
+      },
+      {
+        label: "Placement Reports",
+        path: ROUTES.ADMIN_PLACEMENT_REPORTS,
+        icon: <Briefcase className="h-4 w-4" />,
+      },
+      {
+        label: "Candidate Reports",
+        path: ROUTES.ADMIN_CANDIDATE_FILTER,
+        icon: <BarChart3 className="h-4 w-4" />,
+      },
+    ],
+  },
 ];
 
 interface AdminLayoutProps {
   children: ReactNode;
 }
 
+function pathMatchesChildren(pathname: string, children: NavLeaf[]) {
+  return children.some(
+    (c) => pathname === c.path || pathname.startsWith(c.path + "/"),
+  );
+}
+
+function computeAutoOpenGroups(pathname: string): Set<string> {
+  const next = new Set<string>();
+  for (const item of NAV_ITEMS) {
+    if (item.type === "group" && pathMatchesChildren(pathname, item.children)) {
+      next.add(item.label);
+    }
+  }
+  return next;
+}
+
 export function AdminLayout({ children }: AdminLayoutProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const logout = useAuthStore((s) => s.logout);
   const user = useAuthStore((s) => s.user);
   const { sidebarCollapsed, toggleSidebar } = useUiStore();
@@ -136,6 +181,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const [showLogout, setShowLogout] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [openGroups, setOpenGroups] = useState<Set<string>>(() =>
+    computeAutoOpenGroups(window.location.pathname),
+  );
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 768px)");
@@ -148,6 +196,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     return () => mq.removeEventListener("change", handler);
   }, []);
 
+  useEffect(() => {
+    setOpenGroups(computeAutoOpenGroups(location.pathname));
+  }, [location.pathname]);
+
   const closeMobileMenu = useCallback(() => setMobileMenuOpen(false), []);
 
   const handleLogout = () => {
@@ -155,11 +207,104 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     navigate(ROUTES.LOGIN, { replace: true });
   };
 
-  const filteredItems = NAV_ITEMS.filter((item) => {
+  const isVisible = (item: {
+    superAdminOnly?: boolean;
+    adminOnly?: boolean;
+  }) => {
     if (item.superAdminOnly && !isSuperAdmin) return false;
     if (item.adminOnly && isSuperAdmin) return false;
     return true;
+  };
+
+  const filteredItems = NAV_ITEMS.flatMap((item): NavItem[] => {
+    if (!isVisible(item)) return [];
+    if (item.type === "group") {
+      const children = item.children.filter(isVisible);
+      if (children.length === 0) return [];
+      return [{ ...item, children }];
+    }
+    return [item];
   });
+
+  const handleGroupClick = (label: string) => {
+    if (!isMobile && sidebarCollapsed) {
+      toggleSidebar();
+      setOpenGroups((prev) => new Set(prev).add(label));
+      return;
+    }
+    setOpenGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
+      return next;
+    });
+  };
+
+  const renderLeaf = (item: NavLeaf, opts?: { nested?: boolean }) => (
+    <NavLink
+      key={item.path}
+      to={item.path}
+      onClick={isMobile ? closeMobileMenu : undefined}
+      className={({ isActive }) =>
+        cn(
+          "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+          isActive
+            ? "bg-sidebar-accent text-sidebar-primary"
+            : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+          !opts?.nested &&
+            !isMobile &&
+            sidebarCollapsed &&
+            "justify-center px-2",
+        )
+      }
+      title={
+        !opts?.nested && !isMobile && sidebarCollapsed ? item.label : undefined
+      }
+    >
+      {item.icon}
+      {(opts?.nested || isMobile || !sidebarCollapsed) && (
+        <span>{item.label}</span>
+      )}
+    </NavLink>
+  );
+
+  const renderGroup = (item: NavGroup) => {
+    const isOpen = openGroups.has(item.label);
+    const showLabels = isMobile || !sidebarCollapsed;
+    return (
+      <div key={item.label} className="flex flex-col">
+        <button
+          type="button"
+          onClick={() => handleGroupClick(item.label)}
+          className={cn(
+            "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+            "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+            !showLabels && "justify-center px-2",
+          )}
+          title={!showLabels ? item.label : undefined}
+          aria-expanded={isOpen}
+        >
+          {item.icon}
+          {showLabels && (
+            <>
+              <span className="flex-1 text-left">{item.label}</span>
+              <ChevronDown
+                className={cn(
+                  "h-4 w-4 transition-transform",
+                  isOpen && "rotate-180",
+                )}
+              />
+            </>
+          )}
+        </button>
+        {isOpen && showLabels && (
+          <div className="ml-4 mt-1 flex flex-col gap-1 border-l border-sidebar-border pl-2">
+            {item.children.map((child) => renderLeaf(child, { nested: true }))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const sidebarContent = (
     <>
@@ -198,26 +343,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
       <ScrollArea className="flex-1 px-2 py-2">
         <nav className="flex flex-col gap-1">
-          {filteredItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              onClick={isMobile ? closeMobileMenu : undefined}
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                  isActive
-                    ? "bg-sidebar-accent text-sidebar-primary"
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                  !isMobile && sidebarCollapsed && "justify-center px-2",
-                )
-              }
-              title={!isMobile && sidebarCollapsed ? item.label : undefined}
-            >
-              {item.icon}
-              {(isMobile || !sidebarCollapsed) && <span>{item.label}</span>}
-            </NavLink>
-          ))}
+          {filteredItems.map((item) =>
+            item.type === "group" ? renderGroup(item) : renderLeaf(item),
+          )}
         </nav>
       </ScrollArea>
 

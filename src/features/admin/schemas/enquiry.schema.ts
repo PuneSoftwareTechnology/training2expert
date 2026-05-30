@@ -14,6 +14,7 @@ export const enquirySchema = z.object({
   institute: z.enum(["PST", "TCH"]).optional(),
   leadStatus: z.enum(["PROSPECTIVE", "NON_PROSPECTIVE", "ENROLLED"]).optional(),
   demoStatus: z.enum(["DONE", "PENDING"]).optional(),
+  demo_date: z.string().optional().or(z.literal("")),
   comment: z.string().optional().or(z.literal("")),
 });
 

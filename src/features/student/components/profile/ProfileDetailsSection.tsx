@@ -148,13 +148,15 @@ export default function ProfileDetailsSection({
     resolver: zodResolver(
       workExperienceSchema,
     ) as Resolver<WorkExperienceFormValues>,
+    // Convert null → undefined so z.coerce.number().optional() validates correctly
+    // (z.coerce coerces null → 0, which then fails .min(1980)).
     values: {
       employmentStatus: profile.employmentStatus,
-      lastWorkedYear: profile.lastWorkedYear,
-      itExperienceYears: profile.itExperienceYears,
-      itExperienceMonths: profile.itExperienceMonths,
-      nonItExperienceYears: profile.nonItExperienceYears,
-      nonItExperienceMonths: profile.nonItExperienceMonths,
+      lastWorkedYear: profile.lastWorkedYear ?? undefined,
+      itExperienceYears: profile.itExperienceYears ?? 0,
+      itExperienceMonths: profile.itExperienceMonths ?? 0,
+      nonItExperienceYears: profile.nonItExperienceYears ?? 0,
+      nonItExperienceMonths: profile.nonItExperienceMonths ?? 0,
     },
   });
 
@@ -196,7 +198,10 @@ export default function ProfileDetailsSection({
       basicForm.trigger(),
       workForm.trigger(),
     ]);
-    if (!basicValid || !workValid) return;
+    if (!basicValid || !workValid) {
+      toast.error("Please fix the highlighted errors before saving");
+      return;
+    }
 
     const basic = basicForm.getValues();
     const education = educationForm.getValues();

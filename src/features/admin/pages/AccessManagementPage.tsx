@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Plus, Trash2, Pencil, Shield } from "lucide-react";
@@ -20,6 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -143,7 +144,7 @@ export default function AccessManagementPage() {
 
   const adminForm = useForm<AdminFormValues>({
     resolver: zodResolver(adminSchema),
-    defaultValues: { name: "", email: "", password: "" },
+    defaultValues: { name: "", email: "", password: "", role: "ADMIN" },
   });
 
   // Edit forms
@@ -160,7 +161,7 @@ export default function AccessManagementPage() {
 
   const adminEditForm = useForm<AdminEditFormValues>({
     resolver: zodResolver(adminEditSchema),
-    defaultValues: { name: "", email: "" },
+    defaultValues: { name: "", email: "", role: "ADMIN" },
   });
 
   // Create mutations
@@ -260,7 +261,11 @@ export default function AccessManagementPage() {
       });
     } else {
       const a = item as AdminAccount;
-      adminEditForm.reset({ name: a.name, email: a.email });
+      adminEditForm.reset({
+        name: a.name,
+        email: a.email,
+        role: a.role === "SUPER_ADMIN" ? "SUPER_ADMIN" : "ADMIN",
+      });
     }
     setDialogOpen(true);
   };
@@ -280,6 +285,26 @@ export default function AccessManagementPage() {
       ),
     },
     { accessorKey: "email", header: "Email" },
+    {
+      accessorKey: "role",
+      header: "Role",
+      cell: ({ row }) => {
+        const isSuper = row.original.role === "SUPER_ADMIN";
+        return (
+          <Badge
+            variant="outline"
+            className={cn(
+              "text-xs font-medium",
+              isSuper
+                ? "border-indigo-300 bg-indigo-50 text-indigo-700 dark:border-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300"
+                : "border-sky-300 bg-sky-50 text-sky-700 dark:border-sky-700 dark:bg-sky-950/40 dark:text-sky-300",
+            )}
+          >
+            {isSuper ? "Super Admin" : "Admin"}
+          </Badge>
+        );
+      },
+    },
     {
       id: "actions",
       header: "",
@@ -701,6 +726,53 @@ export default function AccessManagementPage() {
                     </p>
                   )}
                 </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Role *</Label>
+                  <Controller
+                    control={adminForm.control}
+                    name="role"
+                    render={({ field }) => (
+                      <RadioGroup
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        className="grid grid-cols-2 gap-2"
+                      >
+                        <Label
+                          htmlFor="role-admin"
+                          className={cn(
+                            "flex items-center gap-2 rounded-md border px-3 py-2 cursor-pointer text-xs font-medium transition-colors",
+                            field.value === "ADMIN"
+                              ? "border-sky-500 bg-sky-50 text-sky-700 dark:border-sky-400 dark:bg-sky-950/40 dark:text-sky-300"
+                              : "border-input hover:bg-muted/50",
+                          )}
+                        >
+                          <RadioGroupItem id="role-admin" value="ADMIN" />
+                          Admin
+                        </Label>
+                        <Label
+                          htmlFor="role-super-admin"
+                          className={cn(
+                            "flex items-center gap-2 rounded-md border px-3 py-2 cursor-pointer text-xs font-medium transition-colors",
+                            field.value === "SUPER_ADMIN"
+                              ? "border-indigo-500 bg-indigo-50 text-indigo-700 dark:border-indigo-400 dark:bg-indigo-950/40 dark:text-indigo-300"
+                              : "border-input hover:bg-muted/50",
+                          )}
+                        >
+                          <RadioGroupItem
+                            id="role-super-admin"
+                            value="SUPER_ADMIN"
+                          />
+                          Super Admin
+                        </Label>
+                      </RadioGroup>
+                    )}
+                  />
+                  {adminForm.formState.errors.role && (
+                    <p className="text-[10px] text-destructive">
+                      {adminForm.formState.errors.role.message}
+                    </p>
+                  )}
+                </div>
                 <div className="flex justify-end gap-2 pt-2">
                   <Button
                     type="button"
@@ -753,6 +825,53 @@ export default function AccessManagementPage() {
                   {adminEditForm.formState.errors.email && (
                     <p className="text-[10px] text-destructive">
                       {adminEditForm.formState.errors.email.message}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Role *</Label>
+                  <Controller
+                    control={adminEditForm.control}
+                    name="role"
+                    render={({ field }) => (
+                      <RadioGroup
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        className="grid grid-cols-2 gap-2"
+                      >
+                        <Label
+                          htmlFor="edit-role-admin"
+                          className={cn(
+                            "flex items-center gap-2 rounded-md border px-3 py-2 cursor-pointer text-xs font-medium transition-colors",
+                            field.value === "ADMIN"
+                              ? "border-sky-500 bg-sky-50 text-sky-700 dark:border-sky-400 dark:bg-sky-950/40 dark:text-sky-300"
+                              : "border-input hover:bg-muted/50",
+                          )}
+                        >
+                          <RadioGroupItem id="edit-role-admin" value="ADMIN" />
+                          Admin
+                        </Label>
+                        <Label
+                          htmlFor="edit-role-super-admin"
+                          className={cn(
+                            "flex items-center gap-2 rounded-md border px-3 py-2 cursor-pointer text-xs font-medium transition-colors",
+                            field.value === "SUPER_ADMIN"
+                              ? "border-indigo-500 bg-indigo-50 text-indigo-700 dark:border-indigo-400 dark:bg-indigo-950/40 dark:text-indigo-300"
+                              : "border-input hover:bg-muted/50",
+                          )}
+                        >
+                          <RadioGroupItem
+                            id="edit-role-super-admin"
+                            value="SUPER_ADMIN"
+                          />
+                          Super Admin
+                        </Label>
+                      </RadioGroup>
+                    )}
+                  />
+                  {adminEditForm.formState.errors.role && (
+                    <p className="text-[10px] text-destructive">
+                      {adminEditForm.formState.errors.role.message}
                     </p>
                   )}
                 </div>

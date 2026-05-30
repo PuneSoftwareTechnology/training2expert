@@ -151,7 +151,7 @@ const columns: ColumnDef<FeeDueRow>[] = [
 ];
 
 export default function FeeDuesPage() {
-  const [daysFilter, setDaysFilter] = useState<number | null>(null);
+  const [daysFilter, setDaysFilter] = useState<string | null>(null);
   const [trainerFilter, setTrainerFilter] = useState<string>("ALL");
   const [search, setSearch] = useState("");
 
@@ -176,7 +176,14 @@ export default function FeeDuesPage() {
     if (!allRows.length) return [];
     let rows = allRows;
     if (daysFilter !== null) {
-      rows = rows.filter((r) => r.daysSinceLastPayment >= daysFilter);
+      const bucket = FEE_DUE_FILTERS.find((f) => f.value === daysFilter);
+      if (bucket) {
+        rows = rows.filter(
+          (r) =>
+            r.daysSinceLastPayment >= bucket.min &&
+            r.daysSinceLastPayment <= bucket.max,
+        );
+      }
     }
     if (trainerFilter !== "ALL") {
       rows = rows.filter((r) => r.trainer === trainerFilter);
@@ -230,7 +237,7 @@ export default function FeeDuesPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `fee-dues-report${daysFilter ? `-${daysFilter}days` : ""}.csv`;
+    a.download = `fee-dues-report${daysFilter ? `-${daysFilter}` : ""}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
