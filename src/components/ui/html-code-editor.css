@@ -1,0 +1,55 @@
+/* "Fade the code, spotlight the text" scheme for the HTML email editor.
+   The HTML structure (tags, attributes, styles) is muted/light so it recedes,
+   and the actual editable text stays bold + black so a non-developer's eye
+   lands straight on what they are meant to change.
+
+   NOTE: the typed text overlays the colored layer character-for-character,
+   so tokens must NOT change font-size or letter-spacing or the caret drifts.
+   Differentiation is done with weight, color and background only. */
+
+.html-code-editor {
+  /* plain text = the editable content: bold + near-black = the star */
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.html-code-editor textarea:focus {
+  outline: none;
+}
+
+/* everything that is HTML "code" is faded so it recedes behind the text */
+.html-code-editor .token.tag,
+.html-code-editor .token.punctuation,
+.html-code-editor .token.attr-name,
+.html-code-editor .token.attr-value,
+.html-code-editor .token.entity,
+.html-code-editor .token.comment {
+  font-weight: 400;
+}
+
+/* tag names + angle brackets — faded blue */
+.html-code-editor .token.tag,
+.html-code-editor .token.punctuation {
+  color: #93a8d0;
+}
+
+/* attribute names like style, href — faded gray */
+.html-code-editor .token.attr-name {
+  color: #b0b8c4;
+}
+
+/* attribute values like "color:#333" — faded gray-green */
+.html-code-editor .token.attr-value {
+  color: #a7c4b5;
+}
+
+/* HTML entities like &amp; — faded purple */
+.html-code-editor .token.entity {
+  color: #c0a8e0;
+}
+
+/* comments */
+.html-code-editor .token.comment {
+  color: #cbd5e1;
+  font-style: italic;
+}

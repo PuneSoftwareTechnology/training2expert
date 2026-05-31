@@ -81,7 +81,15 @@ export function DataTable<TData, TValue>({
               {headerGroup.headers.map((header) => (
                 <TableHead
                   key={header.id}
-                  className={headerClassName ? "text-white font-semibold text-xs uppercase tracking-wider" : ""}
+                  className={[
+                    headerClassName
+                      ? "text-white font-semibold text-xs uppercase tracking-wider"
+                      : "",
+                    (header.column.columnDef.meta as { className?: string })
+                      ?.className ?? "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
                 >
                   {header.isPlaceholder
                     ? null
@@ -99,7 +107,13 @@ export function DataTable<TData, TValue>({
             table.getRowModel().rows.map((row, idx) => (
               <TableRow key={row.id} className={idx % 2 === 1 ? "bg-muted/40" : ""}>
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
+                  <TableCell
+                    key={cell.id}
+                    className={
+                      (cell.column.columnDef.meta as { className?: string })
+                        ?.className ?? ""
+                    }
+                  >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}

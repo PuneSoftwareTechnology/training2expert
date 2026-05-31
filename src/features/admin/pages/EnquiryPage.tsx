@@ -3,7 +3,14 @@ import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Search, Pencil, Trash2, ClipboardList, Mail } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Pencil,
+  Trash2,
+  ClipboardList,
+  Mail,
+} from "lucide-react";
 import { toast } from "sonner";
 import type { ColumnDef } from "@tanstack/react-table";
 
@@ -26,7 +33,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Textarea } from "@/components/ui/textarea";
+import { HtmlCodeEditor } from "@/components/ui/html-code-editor";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -105,21 +112,44 @@ const DEMO_EMAIL_BODY = `<p style="margin:0 0 16px;font-size:15px;line-height:1.
 <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#333;">Thank you for attending our demo session. We hope you found the session informative &amp; practical.</p>
 <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#333;">At <strong>Tech Concept Hub</strong>, our focus is not only on teaching concepts but also on helping students gain real industry-oriented practical knowledge, confidence, and job-ready skills.</p>
 <div style="background:#f6f3fc;border-left:4px solid #4a1a8a;padding:18px 22px;margin:20px 0;border-radius:0 6px 6px 0;">
-<p style="margin:0 0 12px;font-weight:600;color:#4a1a8a;font-size:15px;">✅ What you will get in the complete course</p>
-<ul style="padding-left:20px;margin:0;color:#333;line-height:1.8;font-size:14px;">
-<li>Practical hands-on training</li>
-<li>Real-time business scenario explanation</li>
-<li>Guidance from experienced industry trainers</li>
-<li>Interview preparation support</li>
-<li>Resume/CV building assistance</li>
-<li>Recorded sessions &amp; practice materials</li>
-<li>Support for projects and assignments</li>
-<li>Certification guidance</li>
-<li>Placement Assistance</li>
-</ul>
+  <p style="margin:0 0 12px;font-weight:600;color:#4a1a8a;font-size:15px;">✅ What you will get in the complete course</p>
+  <ul style="padding-left:20px;margin:0;color:#333;line-height:1.8;font-size:14px;">
+    <li>Practical hands-on training</li>
+    <li>Real-time business scenario explanation</li>
+    <li>Guidance from experienced industry trainers</li>
+    <li>Interview preparation support</li>
+    <li>Resume/CV building assistance</li>
+    <li>Recorded sessions &amp; practice materials</li>
+    <li>Support for projects and assignments</li>
+    <li>Certification guidance</li>
+    <li>Placement Assistance</li>
+  </ul>
 </div>
 <p style="margin:20px 0 16px;font-size:15px;line-height:1.6;color:#333;">If you would like to enroll or need complete course details such as syllabus, fees, batch timings, or career guidance, simply contact us.</p>
 <p style="margin:28px 0 0;font-size:15px;line-height:1.6;color:#333;">Best Regards,<br><strong>Tech Concept Hub Team</strong><br>📞 Contact: <a href="tel:7262000918" style="color:#4a1a8a;text-decoration:none;font-weight:600;">7262000918</a></p>`;
+
+// Wrap text into lines of at most `limit` chars, breaking on word
+// boundaries (falls back to a hard break for words longer than the limit).
+function wrapText(text: string, limit = 100): string {
+  const lines: string[] = [];
+  let line = "";
+  for (const word of text.split(/\s+/)) {
+    if (!line) {
+      line = word;
+    } else if (line.length + 1 + word.length <= limit) {
+      line += ` ${word}`;
+    } else {
+      lines.push(line);
+      line = word;
+    }
+    while (line.length > limit) {
+      lines.push(line.slice(0, limit));
+      line = line.slice(limit);
+    }
+  }
+  if (line) lines.push(line);
+  return lines.join("\n");
+}
 
 function exportEnquiriesCsv(items: Enquiry[]) {
   const headers = [
@@ -416,7 +446,7 @@ export default function EnquiryPage() {
     },
     {
       id: "sno",
-      header: "S.No",
+      header: "n.",
       cell: ({ row }) => (
         <span className="font-medium text-center">{row.index + 1}</span>
       ),
@@ -450,7 +480,7 @@ export default function EnquiryPage() {
     },
     {
       accessorKey: "institute",
-      header: "Institute",
+      header: "Ins.",
       cell: ({ getValue }) => {
         const v = getValue<string>() ?? "-";
         return <Badge variant={INSTITUTE_BADGE[v] ?? "outline"}>{v}</Badge>;
@@ -491,10 +521,10 @@ export default function EnquiryPage() {
         const v = getValue<string>();
         return v ? (
           <span
-            className="block max-w-[220px] whitespace-normal break-words line-clamp-2"
+            className="block min-w-[420px] max-w-[420px] whitespace-pre-wrap break-words"
             title={v}
           >
-            {v}
+            {wrapText(v, 200)}
           </span>
         ) : (
           "-"
@@ -869,8 +899,8 @@ export default function EnquiryPage() {
 
         {/* Send Email Dialog */}
         <Dialog open={emailDialog} onOpenChange={setEmailDialog}>
-          <DialogContent>
-            <DialogHeader>
+          <DialogContent className="flex max-h-[85vh] flex-col sm:max-w-3xl">
+            <DialogHeader className="shrink-0">
               <DialogTitle>
                 Send Email
                 {emailTargetIds.length > 1
@@ -878,7 +908,7 @@ export default function EnquiryPage() {
                   : ""}
               </DialogTitle>
             </DialogHeader>
-            <div className="space-y-3">
+            <div className="flex-1 space-y-3 overflow-y-auto pr-1">
               <div className="space-y-1">
                 <Label>Subject</Label>
                 <Input
@@ -889,28 +919,24 @@ export default function EnquiryPage() {
               </div>
               <div className="space-y-1">
                 <Label>Body</Label>
-                <Textarea
+                <HtmlCodeEditor
                   value={emailBody}
-                  onChange={(e) => setEmailBody(e.target.value)}
-                  rows={8}
+                  onChange={setEmailBody}
                   placeholder="Write your message..."
                 />
               </div>
-              <div className="flex justify-end gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setEmailDialog(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={() => sendEmailMutation.mutate()}
-                  loading={sendEmailMutation.isPending}
-                  disabled={!emailSubject.trim() || !emailBody.trim()}
-                >
-                  {sendEmailMutation.isPending ? "Sending..." : "Send"}
-                </Button>
-              </div>
+            </div>
+            <div className="flex shrink-0 justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setEmailDialog(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() => sendEmailMutation.mutate()}
+                loading={sendEmailMutation.isPending}
+                disabled={!emailSubject.trim() || !emailBody.trim()}
+              >
+                {sendEmailMutation.isPending ? "Sending..." : "Send"}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
