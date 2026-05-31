@@ -1,7 +1,10 @@
-import { useState, useMemo } from "react";
+import { useCallback, useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import { BarChart3 } from "lucide-react";
+
+import { ROUTES } from "@/constants/routes";
 
 import {
   Select,
@@ -29,10 +32,36 @@ const COMPLETION_STATUS_OPTIONS = [
 ] as const;
 
 export default function EnrollmentFiguresPage() {
+  const navigate = useNavigate();
   const currentYear = new Date().getFullYear();
   const [institute, setInstitute] = useState<string>("Combined");
   const [year, setYear] = useState(currentYear);
   const [completionStatus, setCompletionStatus] = useState<string>("All");
+
+  const drillDown = useCallback(
+    (course: string | null, month: string | null) => {
+      const params = new URLSearchParams();
+      if (institute !== "Combined") params.set("institute", institute);
+      if (course && course !== "Total") params.set("course", course);
+      if (completionStatus !== "All")
+        params.set("completionStatus", completionStatus);
+      if (month) {
+        const monthIdx = MONTHS.indexOf(month as (typeof MONTHS)[number]);
+        const lastDay = new Date(year, monthIdx + 1, 0).getDate();
+        const mm = String(monthIdx + 1).padStart(2, "0");
+        params.set("fromDate", `${year}-${mm}-01`);
+        params.set(
+          "toDate",
+          `${year}-${mm}-${String(lastDay).padStart(2, "0")}`,
+        );
+      } else {
+        params.set("fromDate", `${year}-01-01`);
+        params.set("toDate", `${year}-12-31`);
+      }
+      navigate(`${ROUTES.ADMIN_ENROLLMENT}?${params.toString()}`);
+    },
+    [navigate, institute, year, completionStatus],
+  );
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: [
@@ -88,12 +117,19 @@ export default function EnrollmentFiguresPage() {
           cell: ({ row, getValue }) => {
             const isTotal = row.original.course === "Total";
             const val = getValue<number>();
+            if (!val) {
+              return <span className="block text-center" />;
+            }
             return (
-              <span
-                className={`block text-center ${isTotal ? "font-bold" : ""}`}
+              <button
+                type="button"
+                onClick={() => drillDown(row.original.course, month)}
+                className={`block w-full text-center text-violet-700 hover:underline ${
+                  isTotal ? "font-bold" : ""
+                }`}
               >
-                {val || ""}
-              </span>
+                {val}
+              </button>
             );
           },
         }),
@@ -103,14 +139,24 @@ export default function EnrollmentFiguresPage() {
         header: () => (
           <span className="block text-center font-bold">Total (YTD)</span>
         ),
-        cell: ({ getValue }) => (
-          <span className="block text-center font-bold">
-            {getValue<number>()}
-          </span>
-        ),
+        cell: ({ row, getValue }) => {
+          const val = getValue<number>();
+          if (!val) {
+            return <span className="block text-center font-bold">{val}</span>;
+          }
+          return (
+            <button
+              type="button"
+              onClick={() => drillDown(row.original.course, null)}
+              className="block w-full text-center font-bold text-violet-700 hover:underline"
+            >
+              {val}
+            </button>
+          );
+        },
       },
     ],
-    [],
+    [drillDown],
   );
 
   if (isError) {

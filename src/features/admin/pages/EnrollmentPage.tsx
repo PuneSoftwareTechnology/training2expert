@@ -1,4 +1,5 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Search, GraduationCap } from "lucide-react";
 import { toast } from "sonner";
@@ -137,11 +138,16 @@ interface FilterConfig {
 
 export default function EnrollmentPage() {
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // State
   const [filterStatus, setFilterStatus] = useState<string>("ALL");
-  const [filterInstitute, setFilterInstitute] = useState<string>("ALL");
-  const [filterCourse, setFilterCourse] = useState<string>("");
+  const [filterInstitute, setFilterInstitute] = useState<string>(
+    () => searchParams.get("institute") ?? "ALL",
+  );
+  const [filterCourse, setFilterCourse] = useState<string>(
+    () => searchParams.get("course") ?? "",
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editEnrollment, setEditEnrollment] = useState<Enrollment | null>(null);
@@ -149,11 +155,25 @@ export default function EnrollmentPage() {
   const [evaluationStudentId, setEvaluationStudentId] = useState<string | null>(
     null,
   );
-  const [filterCompletion, setFilterCompletion] = useState<string>("ALL");
+  const [filterCompletion, setFilterCompletion] = useState<string>(
+    () => searchParams.get("completionStatus") ?? "ALL",
+  );
   const [filterTrainer, setFilterTrainer] = useState<string>("ALL");
   const [filterYear, setFilterYear] = useState<string>("ALL");
-  const [fromDate, setFromDate] = useState<string>("");
-  const [toDate, setToDate] = useState<string>("");
+  const [fromDate, setFromDate] = useState<string>(
+    () => searchParams.get("fromDate") ?? "",
+  );
+  const [toDate, setToDate] = useState<string>(
+    () => searchParams.get("toDate") ?? "",
+  );
+
+  // Clear drill-down query params from the URL once consumed into filters
+  useEffect(() => {
+    if (Array.from(searchParams.keys()).length > 0) {
+      setSearchParams({}, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const tableScrollRef = useRef<HTMLDivElement>(null);
 

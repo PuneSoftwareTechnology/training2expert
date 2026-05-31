@@ -487,7 +487,19 @@ export default function EnquiryPage() {
     {
       accessorKey: "comment",
       header: "Comment",
-      cell: ({ getValue }) => getValue<string>() || "-",
+      cell: ({ getValue }) => {
+        const v = getValue<string>();
+        return v ? (
+          <span
+            className="block max-w-[220px] whitespace-normal break-words line-clamp-2"
+            title={v}
+          >
+            {v}
+          </span>
+        ) : (
+          "-"
+        );
+      },
     },
     {
       id: "actions",
