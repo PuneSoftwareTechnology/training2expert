@@ -1,13 +1,17 @@
 export type EmploymentStatus = "WORKING" | "NON_WORKING" | "FRESHER";
 export type CompletionStatus = "IN_PROGRESS" | "ACTIVE" | "DROPOUT" | "COMPLETED";
 export type EnrollmentStatus = "NEW" | "APPROVED" | "REJECTED";
-export type LeadStatus = "PROSPECTIVE" | "NON_PROSPECTIVE" | "ENROLLED";
+export type LeadStatus =
+  | "NEW"
+  | "PROSPECTIVE"
+  | "NON_PROSPECTIVE"
+  | "ENROLLED";
 export type DemoStatus = "DONE" | "PENDING";
 export type EnquiryType = "WALKIN" | "PHONE" | "WEBSITE";
 export type CourseType = "ENQUIRY" | "ENROLLMENT";
 export type PaymentMode = "CASH" | "HDFC" | "ICICI";
 export type PlacementStatus = "PLACED" | "NOT_PLACED";
-export type Institute = "PST" | "TCH";
+export type Institute = "TECHVAA" | "TCH";
 export type ApprovalState = "PENDING_APPROVAL" | "APPROVED" | "REJECTED";
 
 export interface Installment {

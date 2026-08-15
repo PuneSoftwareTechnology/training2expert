@@ -1,4 +1,4 @@
-export const INSTITUTES = ["PST", "TCH"] as const;
+export const INSTITUTES = ["TECHVAA", "TCH"] as const;
 export type InstituteName = (typeof INSTITUTES)[number];
 
 export const EMPLOYMENT_STATUSES = [
@@ -15,6 +15,8 @@ export const COMPLETION_STATUSES = [
 ] as const;
 
 export const LEAD_STATUSES = [
+  // Every enquiry starts as New; staff move it on after speaking to the lead.
+  { value: "NEW", label: "New" },
   { value: "PROSPECTIVE", label: "Prospective" },
   { value: "NON_PROSPECTIVE", label: "Non-Prospective" },
   { value: "ENROLLED", label: "Enrolled" },

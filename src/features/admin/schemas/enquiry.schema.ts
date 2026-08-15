@@ -11,9 +11,11 @@ export const enquirySchema = z.object({
     .transform((v) => (v === "" ? undefined : v))
     .pipe(z.string().email("Invalid email").optional()),
   course: z.string().optional().or(z.literal("")),
-  institute: z.enum(["PST", "TCH"]).optional(),
+  institute: z.enum(["TECHVAA", "TCH"]).optional(),
   enquiryType: z.enum(["WALKIN", "PHONE", "WEBSITE"]).optional(),
-  leadStatus: z.enum(["PROSPECTIVE", "NON_PROSPECTIVE", "ENROLLED"]).optional(),
+  leadStatus: z
+    .enum(["NEW", "PROSPECTIVE", "NON_PROSPECTIVE", "ENROLLED"])
+    .optional(),
   demoStatus: z.enum(["DONE", "PENDING"]).optional(),
   demo_date: z.string().optional().or(z.literal("")),
   comment: z.string().optional().or(z.literal("")),

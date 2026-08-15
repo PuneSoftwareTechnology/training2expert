@@ -81,7 +81,7 @@ function placementStatusVariant(status: PlacementStatus) {
 }
 
 const INSTITUTE_BADGE: Record<string, "default" | "secondary" | "outline"> = {
-  PST: "default",
+  TECHVAA: "default",
   TCH: "secondary",
 };
 

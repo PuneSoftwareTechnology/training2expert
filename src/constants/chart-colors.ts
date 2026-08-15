@@ -21,7 +21,7 @@ export const PALETTE = [
 ] as const;
 
 export const INSTITUTE_COLORS: Record<string, string> = {
-  PST: "#3b82f6",
+  TECHVAA: "#153767",
   TCH: "#a855f7",
 };
 

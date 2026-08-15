@@ -1,17 +1,16 @@
-import { Building2, ExternalLink, ShieldCheck, MessageSquareQuote } from "lucide-react";
+import { Building2, ExternalLink, MessageSquareQuote } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
 const institutes = [
   {
-    abbr: "PST",
-    name: "Pune Software Technologies",
-    logo: "https://www.punesoftwaretechnologies.com/_next/image?url=%2F_next%2Fstatic%2Fmedia%2FLogo.a02dd24f.png&w=64&q=75",
+    abbr: "TECHVAA",
+    name: "Techvaa",
+    logo: "https://www.techvaa.com/logo.png",
     gradient: "from-blue-500 to-indigo-600",
     bgTint: "bg-blue-50",
     links: [
-      { label: "Website", url: "https://www.punesoftwaretechnologies.com/", icon: ExternalLink, color: "text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 border-blue-200" },
-      { label: "Admin Panel", url: "https://admin-panel-iota-roan.vercel.app/home/courses", icon: ShieldCheck, color: "text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border-emerald-200" },
-      { label: "Testimonials", url: "https://www.punesoftwaretechnologies.com/testimonial", icon: MessageSquareQuote, color: "text-purple-600 hover:text-purple-800 bg-purple-50 hover:bg-purple-100 border-purple-200" },
+      { label: "Website", url: "https://www.techvaa.com/", icon: ExternalLink, color: "text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 border-blue-200" },
+      { label: "Reviews", url: "https://www.techvaa.com/reviews", icon: MessageSquareQuote, color: "text-purple-600 hover:text-purple-800 bg-purple-50 hover:bg-purple-100 border-purple-200" },
     ],
   },
   {

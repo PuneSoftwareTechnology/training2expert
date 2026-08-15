@@ -190,7 +190,7 @@ export default function RecruiterShortlistPage() {
 
   const openEmailDialog = (ids: string[]) => {
     setEmailTargetIds(ids);
-    setEmailSubject("Regarding Your Application - PST");
+    setEmailSubject("Regarding Your Application - Techvaa");
     setEmailBody("");
     setEmailDialog(true);
   };

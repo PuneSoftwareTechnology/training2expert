@@ -72,7 +72,11 @@ import type {
 } from "@/types/common.types";
 import type { Enquiry } from "@/types/admin.types";
 
-const LEAD_BADGE: Record<LeadStatus, "default" | "destructive" | "success"> = {
+const LEAD_BADGE: Record<
+  LeadStatus,
+  "default" | "destructive" | "success" | "warning"
+> = {
+  NEW: "warning",
   PROSPECTIVE: "default",
   NON_PROSPECTIVE: "destructive",
   ENROLLED: "success",
@@ -84,7 +88,7 @@ const DEMO_BADGE: Record<DemoStatus, "success" | "warning"> = {
 };
 
 const INSTITUTE_BADGE: Record<string, "default" | "secondary"> = {
-  PST: "default",
+  TECHVAA: "default",
   TCH: "secondary",
 };
 
@@ -297,9 +301,9 @@ export default function EnquiryPage() {
     resolver: zodResolver(enquirySchema),
     defaultValues: {
       enquiry_date: todayStr(),
-      institute: "PST",
+      institute: "TECHVAA",
       enquiryType: "WALKIN",
-      leadStatus: "PROSPECTIVE",
+      leadStatus: "NEW",
       demoStatus: "PENDING",
     },
   });
@@ -438,9 +442,9 @@ export default function EnquiryPage() {
     setEditingEnquiry(null);
     form.reset({
       enquiry_date: todayStr(),
-      institute: "PST",
+      institute: "TECHVAA",
       enquiryType: "WALKIN",
-      leadStatus: "PROSPECTIVE",
+      leadStatus: "NEW",
       demoStatus: "PENDING",
     });
     setDialogOpen(true);

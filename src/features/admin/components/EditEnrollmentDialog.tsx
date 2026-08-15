@@ -72,7 +72,7 @@ function enrollmentToFields(e: Enrollment): EditFields {
     email: e.email || "",
     phone: e.phone || "",
     enrollment_status: e.enrollment_status || "NEW",
-    institute: e.institute || "PST",
+    institute: e.institute || "TECHVAA",
     course: e.course || "",
     batch: e.batch || "",
     trainer: e.trainer || "",

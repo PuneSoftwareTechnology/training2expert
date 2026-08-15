@@ -12,7 +12,7 @@ const PERIODS: { value: DashboardPeriod; label: string }[] = [
 
 const INSTITUTES: { value: Institute | "ALL"; label: string; activeColor: string }[] = [
   { value: "ALL", label: "All", activeColor: "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-200" },
-  { value: "PST", label: "PST", activeColor: "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md shadow-blue-200" },
+  { value: "TECHVAA", label: "Techvaa", activeColor: "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md shadow-blue-200" },
   { value: "TCH", label: "TCH", activeColor: "bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-md shadow-orange-200" },
 ];
 

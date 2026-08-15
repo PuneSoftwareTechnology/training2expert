@@ -41,7 +41,7 @@ const NEW_CANDIDATE_DEFAULTS: NewCandidateFields = {
   name: "",
   email: "",
   phone: "",
-  institute: "PST",
+  institute: "TECHVAA",
   course: "",
   batch: "",
   trainer: "",

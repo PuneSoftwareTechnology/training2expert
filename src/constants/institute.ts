@@ -1,5 +1,5 @@
 import type { Institute } from "@/types/common.types";
-import PSTLogo from "@/assets/images/PST.png";
+import TechvaaLogo from "@/assets/images/TECHVAA.png";
 import TCHLogo from "@/assets/images/TCH.webp";
 
 export interface InstituteConfig {
@@ -12,13 +12,13 @@ export interface InstituteConfig {
 }
 
 export const INSTITUTE_CONFIG: Record<Institute, InstituteConfig> = {
-  PST: {
-    name: "Pune Software Technologies",
-    shortName: "PST",
-    logo: PSTLogo,
+  TECHVAA: {
+    name: "Techvaa",
+    shortName: "TECHVAA",
+    logo: TechvaaLogo,
     address: "",
-    authorizedBy: "Autorized - Pune Software Technologies",
-    headerColor: "#1a3c7a",
+    authorizedBy: "Authorized - Techvaa",
+    headerColor: "#153767",
   },
   TCH: {
     name: "TCH Software Services LLP",
