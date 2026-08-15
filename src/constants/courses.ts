@@ -35,12 +35,6 @@ export const ENQUIRY_TYPES = [
   { value: "WEBSITE", label: "Website" },
 ] as const;
 
-// Website enquiries are created automatically by the public site, so only
-// these are offered when an admin adds an enquiry by hand.
-export const MANUAL_ENQUIRY_TYPES = ENQUIRY_TYPES.filter(
-  (t) => t.value !== "WEBSITE",
-);
-
 export const DEMO_STATUSES = [
   { value: "DONE", label: "Done" },
   { value: "PENDING", label: "Not done" },

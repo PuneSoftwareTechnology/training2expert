@@ -62,7 +62,6 @@ import {
   LEAD_STATUSES,
   DEMO_STATUSES,
   ENQUIRY_TYPES,
-  MANUAL_ENQUIRY_TYPES,
 } from "@/constants/courses";
 import type {
   LeadStatus,
@@ -108,7 +107,7 @@ const FORM_SELECTS = [
   {
     name: "enquiryType" as const,
     label: "Enquiry Type",
-    options: MANUAL_ENQUIRY_TYPES.map((t) => ({ ...t })),
+    options: ENQUIRY_TYPES.map((t) => ({ ...t })),
   },
   {
     name: "leadStatus" as const,
@@ -905,44 +904,35 @@ export default function EnquiryPage() {
                     placeholder="Enter comment"
                   />
                 </div>
-                {FORM_SELECTS.map(({ name, label, options }) => {
-                  // Website enquiries are created by the public site; keep the
-                  // option visible when editing one so it is not overwritten.
-                  const selectOptions =
-                    name === "enquiryType" &&
-                    form.watch("enquiryType") === "WEBSITE"
-                      ? ENQUIRY_TYPES.map((t) => ({ ...t }))
-                      : options;
-                  return (
-                    <div key={name} className="space-y-1">
-                      <Label>{label}</Label>
-                      <Select
-                        value={form.watch(name) ?? ""}
-                        onValueChange={(v) => {
-                          form.setValue(name, v as never);
-                          if (
-                            name === "demoStatus" &&
-                            v === "DONE" &&
-                            !form.getValues("demo_date")
-                          ) {
-                            form.setValue("demo_date", todayStr());
-                          }
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {selectOptions.map((o) => (
-                            <SelectItem key={o.value} value={o.value}>
-                              {o.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  );
-                })}
+                {FORM_SELECTS.map(({ name, label, options }) => (
+                  <div key={name} className="space-y-1">
+                    <Label>{label}</Label>
+                    <Select
+                      value={form.watch(name) ?? ""}
+                      onValueChange={(v) => {
+                        form.setValue(name, v as never);
+                        if (
+                          name === "demoStatus" &&
+                          v === "DONE" &&
+                          !form.getValues("demo_date")
+                        ) {
+                          form.setValue("demo_date", todayStr());
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {options.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ))}
                 <div className="space-y-1">
                   <Label>Demo Date</Label>
                   <Input type="date" {...form.register("demo_date")} />
