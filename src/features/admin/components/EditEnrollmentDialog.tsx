@@ -23,6 +23,7 @@ import {
   PLACEMENT_STATUSES,
   PAYMENT_MODES,
 } from "@/constants/courses";
+import { Combobox } from "@/components/ui/combobox";
 import { useCourseOptions } from "@/hooks/useCourseOptions";
 import type {
   Institute,
@@ -120,7 +121,9 @@ export function EditEnrollmentDialog({
   }, [enrollment, open]);
 
   const { options: courseOptions, isLoading: coursesLoading } =
-    useCourseOptions("ENROLLMENT", fields.course);
+    // Seeded with the record's saved course, not the live field, so partially
+    // typed text is not echoed back as a suggestion.
+    useCourseOptions("ENROLLMENT", enrollment?.course);
 
   const updateField = useCallback(
     <K extends keyof EditFields>(key: K, value: EditFields[K]) => {
@@ -218,31 +221,13 @@ export function EditEnrollmentDialog({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Label>Course</Label>
-                <Select
+                <Combobox
                   value={fields.course}
-                  onValueChange={(v) => updateField("course", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select course" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {coursesLoading ? (
-                      <SelectItem value="__loading" disabled>
-                        Loading...
-                      </SelectItem>
-                    ) : courseOptions.length === 0 ? (
-                      <SelectItem value="__empty" disabled>
-                        No courses available
-                      </SelectItem>
-                    ) : (
-                      courseOptions.map((c) => (
-                        <SelectItem key={c} value={c}>
-                          {c}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
+                  onChange={(v) => updateField("course", v)}
+                  options={courseOptions}
+                  loading={coursesLoading}
+                  placeholder="Select or type a course"
+                />
               </div>
               <div className="space-y-1">
                 <Label>Batch</Label>

@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import {
   Dialog,
   DialogContent,
@@ -878,31 +879,13 @@ export default function EnquiryPage() {
                 </div>
                 <div className="space-y-1">
                   <Label>Course</Label>
-                  <Select
+                  <Combobox
                     value={form.watch("course") || ""}
-                    onValueChange={(v) => form.setValue("course", v)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select course" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {coursesLoading ? (
-                        <SelectItem value="__loading" disabled>
-                          Loading...
-                        </SelectItem>
-                      ) : courseOptions.length === 0 ? (
-                        <SelectItem value="__empty" disabled>
-                          No courses available
-                        </SelectItem>
-                      ) : (
-                        courseOptions.map((c) => (
-                          <SelectItem key={c} value={c}>
-                            {c}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
+                    onChange={(v) => form.setValue("course", v)}
+                    options={courseOptions}
+                    loading={coursesLoading}
+                    placeholder="Select or type a course"
+                  />
                 </div>
                 <div className="col-span-2 space-y-1">
                   <Label>Comment</Label>
