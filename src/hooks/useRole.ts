@@ -10,6 +10,7 @@ export function useRole() {
     isAdmin: role === ROLES.ADMIN,
     isSuperAdmin: role === ROLES.SUPER_ADMIN,
     isRecruiter: role === ROLES.RECRUITER,
+    isIntern: role === ROLES.INTERN,
     isAdminOrSuper: role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN,
     hasRole: (requiredRole: Role) => role === requiredRole,
     hasAnyRole: (roles: Role[]) => role !== null && roles.includes(role),

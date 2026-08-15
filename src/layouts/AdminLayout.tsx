@@ -42,14 +42,14 @@ import { useAuthStore } from "@/store/auth.store";
 import { useUiStore } from "@/store/ui.store";
 import { useRole } from "@/hooks/useRole";
 import { ROUTES } from "@/constants/routes";
+import { ROLE_LABELS } from "@/constants/roles";
+import { canAccessAdminRoute } from "@/constants/access";
 
 interface NavLeaf {
   type?: "leaf";
   label: string;
   path: string;
   icon: React.ReactNode;
-  superAdminOnly?: boolean;
-  adminOnly?: boolean;
 }
 
 interface NavGroup {
@@ -57,8 +57,6 @@ interface NavGroup {
   label: string;
   icon: React.ReactNode;
   children: NavLeaf[];
-  superAdminOnly?: boolean;
-  adminOnly?: boolean;
 }
 
 type NavItem = NavLeaf | NavGroup;
@@ -78,7 +76,6 @@ const NAV_ITEMS: NavItem[] = [
     label: "QR Code",
     path: ROUTES.ADMIN_QR_CODE,
     icon: <QrCode className="h-4 w-4" />,
-    adminOnly: true,
   },
   {
     label: "Access Management",
@@ -99,13 +96,11 @@ const NAV_ITEMS: NavItem[] = [
     label: "QR Management",
     path: ROUTES.ADMIN_QR_MANAGEMENT,
     icon: <Settings className="h-4 w-4" />,
-    superAdminOnly: true,
   },
   {
     label: "Courses",
     path: ROUTES.ADMIN_COURSES,
     icon: <BookOpen className="h-4 w-4" />,
-    superAdminOnly: true,
   },
   {
     type: "group",
@@ -177,7 +172,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const logout = useAuthStore((s) => s.logout);
   const user = useAuthStore((s) => s.user);
   const { sidebarCollapsed, toggleSidebar } = useUiStore();
-  const { isSuperAdmin } = useRole();
+  const { role } = useRole();
+  const roleLabel = (role && ROLE_LABELS[role]) || "Admin";
   const [showLogout, setShowLogout] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -207,23 +203,17 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     navigate(ROUTES.LOGIN, { replace: true });
   };
 
-  const isVisible = (item: {
-    superAdminOnly?: boolean;
-    adminOnly?: boolean;
-  }) => {
-    if (item.superAdminOnly && !isSuperAdmin) return false;
-    if (item.adminOnly && isSuperAdmin) return false;
-    return true;
-  };
+  // Visibility comes straight from the shared route/role map, so the sidebar
+  // can never show a link that the route guard would then refuse.
+  const isVisible = (item: NavLeaf) => canAccessAdminRoute(item.path, role);
 
   const filteredItems = NAV_ITEMS.flatMap((item): NavItem[] => {
-    if (!isVisible(item)) return [];
     if (item.type === "group") {
       const children = item.children.filter(isVisible);
       if (children.length === 0) return [];
       return [{ ...item, children }];
     }
-    return [item];
+    return isVisible(item) ? [item] : [];
   });
 
   const handleGroupClick = (label: string) => {
@@ -311,7 +301,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       <div className="flex h-14 items-center justify-between px-4">
         {(isMobile || !sidebarCollapsed) && (
           <h1 className="text-lg font-bold text-sidebar-primary">
-            Training2Expert {isSuperAdmin ? "Super Admin" : "Admin"}
+            Training2Expert {roleLabel}
           </h1>
         )}
         {isMobile ? (
@@ -396,7 +386,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       {isMobile && (
         <header className="fixed inset-x-0 top-0 z-40 flex h-14 items-center justify-between border-b bg-sidebar px-4 text-sidebar-foreground">
           <h1 className="text-lg font-bold text-sidebar-primary">
-            Training2Expert {isSuperAdmin ? "Super Admin" : "Admin"}
+            Training2Expert {roleLabel}
           </h1>
           <Button
             variant="ghost"

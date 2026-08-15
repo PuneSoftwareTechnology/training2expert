@@ -95,6 +95,10 @@ export function AddCandidateDialog({
       toast.error("Phone number must be 10 digits");
       return;
     }
+    if (!newCandidate.course.trim()) {
+      toast.error("Please select a course");
+      return;
+    }
 
     onSubmit({
       name: newCandidate.name,
@@ -185,7 +189,7 @@ export function AddCandidateDialog({
             </Select>
           </div>
           <div className="space-y-1">
-            <Label>Course</Label>
+            <Label>Course *</Label>
             <Select
               value={newCandidate.course}
               onValueChange={(v) => updateNewField("course", v)}

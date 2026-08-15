@@ -1,9 +1,11 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, type ReactNode } from "react";
 import { AdminLayout } from "@/layouts/AdminLayout";
 import { ProtectedRoute } from "@/components/organisms/ProtectedRoute";
 import { PageLoader } from "@/components/loaders/PageLoader";
-import { ROLES } from "@/constants/roles";
+import { ROUTES } from "@/constants/routes";
+import { rolesForAdminRoute, defaultAdminRoute } from "@/constants/access";
+import { useRole } from "@/hooks/useRole";
 
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
 const EnquiryPage = lazy(() => import("./pages/EnquiryPage"));
@@ -27,49 +29,109 @@ const ResumeTemplatesPage = lazy(() => import("./pages/ResumeTemplatesPage"));
 const QrManagementPage = lazy(() => import("./pages/QrManagementPage"));
 const CoursesPage = lazy(() => import("./pages/CoursesPage"));
 
+/**
+ * Every admin screen is guarded by the same route/role map the sidebar filters
+ * with, so hiding a menu item also blocks the URL from being typed in.
+ */
+function guard(path: string, element: ReactNode) {
+  return (
+    <ProtectedRoute allowedRoles={rolesForAdminRoute(path)}>
+      {element}
+    </ProtectedRoute>
+  );
+}
+
 export default function AdminRoutes() {
+  const { role } = useRole();
+
   return (
     <AdminLayout>
       <Suspense fallback={<PageLoader />}>
         <Routes>
-          <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="enquiry" element={<EnquiryPage />} />
-          <Route path="enrollment" element={<EnrollmentPage />} />
-          <Route path="reports/candidates" element={<CandidateFilterPage />} />
-          <Route path="reports/fee-dues" element={<FeeDuesPage />} />
+          <Route
+            index
+            element={<Navigate to={defaultAdminRoute(role)} replace />}
+          />
+          <Route
+            path="dashboard"
+            element={guard(ROUTES.ADMIN_DASHBOARD, <DashboardPage />)}
+          />
+          <Route
+            path="enquiry"
+            element={guard(ROUTES.ADMIN_ENQUIRY, <EnquiryPage />)}
+          />
+          <Route
+            path="enrollment"
+            element={guard(ROUTES.ADMIN_ENROLLMENT, <EnrollmentPage />)}
+          />
+          <Route
+            path="reports/candidates"
+            element={guard(
+              ROUTES.ADMIN_CANDIDATE_FILTER,
+              <CandidateFilterPage />,
+            )}
+          />
+          <Route
+            path="reports/fee-dues"
+            element={guard(ROUTES.ADMIN_FEE_DUES, <FeeDuesPage />)}
+          />
           <Route
             path="reports/enrollment-figures"
-            element={<EnrollmentFiguresPage />}
+            element={guard(
+              ROUTES.ADMIN_ENROLLMENT_FIGURES,
+              <EnrollmentFiguresPage />,
+            )}
           />
           <Route
             path="reports/enquiry-figures"
-            element={<EnquiryFiguresPage />}
+            element={guard(
+              ROUTES.ADMIN_ENQUIRY_FIGURES,
+              <EnquiryFiguresPage />,
+            )}
           />
-          <Route path="reports/placement" element={<PlacementReportsPage />} />
-          <Route path="qr-code" element={<QrCodePage />} />
+          <Route
+            path="reports/placement"
+            element={guard(
+              ROUTES.ADMIN_PLACEMENT_REPORTS,
+              <PlacementReportsPage />,
+            )}
+          />
+          <Route
+            path="qr-code"
+            element={guard(ROUTES.ADMIN_QR_CODE, <QrCodePage />)}
+          />
           <Route
             path="recruiter-shortlist"
-            element={<RecruiterShortlistPage />}
+            element={guard(
+              ROUTES.ADMIN_RECRUITER_SHORTLIST,
+              <RecruiterShortlistPage />,
+            )}
           />
-          <Route path="access-management" element={<AccessManagementPage />} />
-          <Route path="tests" element={<TestManagementPage />} />
-          <Route path="resume-templates" element={<ResumeTemplatesPage />} />
+          <Route
+            path="access-management"
+            element={guard(
+              ROUTES.ADMIN_ACCESS_MANAGEMENT,
+              <AccessManagementPage />,
+            )}
+          />
+          <Route
+            path="tests"
+            element={guard(ROUTES.ADMIN_TESTS, <TestManagementPage />)}
+          />
+          <Route
+            path="resume-templates"
+            element={guard(
+              ROUTES.ADMIN_RESUME_TEMPLATES,
+              <ResumeTemplatesPage />,
+            )}
+          />
           <Route
             path="qr-management"
-            element={
-              <ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}>
-                <QrManagementPage />
-              </ProtectedRoute>
-            }
+            element={guard(ROUTES.ADMIN_QR_MANAGEMENT, <QrManagementPage />)}
           />
           <Route
             path="courses"
-            element={
-              <ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}>
-                <CoursesPage />
-              </ProtectedRoute>
-            }
+            element={guard(ROUTES.ADMIN_COURSES, <CoursesPage />)}
           />
         </Routes>
       </Suspense>

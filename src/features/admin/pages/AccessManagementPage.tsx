@@ -77,6 +77,81 @@ const EDIT_FORM_FIELDS = FORM_FIELDS.filter((f) => f.name !== "password") as {
   required?: boolean;
 }[];
 
+type StaffRole = AdminFormValues["role"];
+
+/**
+ * Staff roles a super admin can assign. Intern is a restricted admin account —
+ * see `constants/access.ts` for the screens it can reach.
+ */
+const STAFF_ROLES: {
+  value: StaffRole;
+  label: string;
+  activeClass: string;
+  badgeClass: string;
+}[] = [
+  {
+    value: "ADMIN",
+    label: "Admin",
+    activeClass:
+      "border-sky-500 bg-sky-50 text-sky-700 dark:border-sky-400 dark:bg-sky-950/40 dark:text-sky-300",
+    badgeClass:
+      "border-sky-300 bg-sky-50 text-sky-700 dark:border-sky-700 dark:bg-sky-950/40 dark:text-sky-300",
+  },
+  {
+    value: "SUPER_ADMIN",
+    label: "Super Admin",
+    activeClass:
+      "border-indigo-500 bg-indigo-50 text-indigo-700 dark:border-indigo-400 dark:bg-indigo-950/40 dark:text-indigo-300",
+    badgeClass:
+      "border-indigo-300 bg-indigo-50 text-indigo-700 dark:border-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300",
+  },
+  {
+    value: "INTERN",
+    label: "Intern",
+    activeClass:
+      "border-amber-500 bg-amber-50 text-amber-700 dark:border-amber-400 dark:bg-amber-950/40 dark:text-amber-300",
+    badgeClass:
+      "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
+  },
+];
+
+function StaffRoleRadioGroup({
+  idPrefix,
+  value,
+  onChange,
+}: {
+  idPrefix: string;
+  value: StaffRole;
+  onChange: (value: StaffRole) => void;
+}) {
+  return (
+    <RadioGroup
+      value={value}
+      onValueChange={onChange}
+      className="grid grid-cols-3 gap-2"
+    >
+      {STAFF_ROLES.map((role) => {
+        const id = `${idPrefix}-${role.value.toLowerCase()}`;
+        return (
+          <Label
+            key={role.value}
+            htmlFor={id}
+            className={cn(
+              "flex items-center gap-2 rounded-md border px-2.5 py-2 cursor-pointer text-xs font-medium transition-colors",
+              value === role.value
+                ? role.activeClass
+                : "border-input hover:bg-muted/50",
+            )}
+          >
+            <RadioGroupItem id={id} value={role.value} />
+            {role.label}
+          </Label>
+        );
+      })}
+    </RadioGroup>
+  );
+}
+
 
 export default function AccessManagementPage() {
   const queryClient = useQueryClient();
@@ -264,7 +339,8 @@ export default function AccessManagementPage() {
       adminEditForm.reset({
         name: a.name,
         email: a.email,
-        role: a.role === "SUPER_ADMIN" ? "SUPER_ADMIN" : "ADMIN",
+        role:
+          STAFF_ROLES.find((r) => r.value === a.role)?.value ?? "ADMIN",
       });
     }
     setDialogOpen(true);
@@ -289,18 +365,15 @@ export default function AccessManagementPage() {
       accessorKey: "role",
       header: "Role",
       cell: ({ row }) => {
-        const isSuper = row.original.role === "SUPER_ADMIN";
+        const role =
+          STAFF_ROLES.find((r) => r.value === row.original.role) ??
+          STAFF_ROLES[0];
         return (
           <Badge
             variant="outline"
-            className={cn(
-              "text-xs font-medium",
-              isSuper
-                ? "border-indigo-300 bg-indigo-50 text-indigo-700 dark:border-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300"
-                : "border-sky-300 bg-sky-50 text-sky-700 dark:border-sky-700 dark:bg-sky-950/40 dark:text-sky-300",
-            )}
+            className={cn("text-xs font-medium", role.badgeClass)}
           >
-            {isSuper ? "Super Admin" : "Admin"}
+            {role.label}
           </Badge>
         );
       },
@@ -437,7 +510,7 @@ export default function AccessManagementPage() {
                 Access Management
               </h2>
               <p className="text-sm text-muted-foreground">
-                Manage system administrators and recruiter accounts.
+                Manage staff accounts (admin, super admin, intern) and recruiters.
               </p>
             </div>
           </div>
@@ -449,7 +522,7 @@ export default function AccessManagementPage() {
             />
             {isSuperAdmin && (
               <Button size="sm" className="bg-sky-600 hover:bg-sky-700 text-white" onClick={() => openCreateDialog("admin")}>
-                <Plus className="mr-2 h-4 w-4" /> Add Admin
+                <Plus className="mr-2 h-4 w-4" /> Add Staff
               </Button>
             )}
             <Button size="sm" className="bg-teal-600 hover:bg-teal-700 text-white" onClick={() => openCreateDialog("recruiter")}>
@@ -470,7 +543,7 @@ export default function AccessManagementPage() {
                 value="admins"
                 className="data-[state=active]:bg-sky-500/15 data-[state=active]:text-sky-700 dark:data-[state=active]:text-sky-300"
               >
-                Administrators
+                Staff Accounts
               </TabsTrigger>
             )}
             <TabsTrigger
@@ -486,7 +559,7 @@ export default function AccessManagementPage() {
               <Card className="border-sky-200 dark:border-sky-800/50 overflow-hidden">
                 <div className="p-4 border-b border-sky-200 dark:border-sky-800/50 flex justify-between items-center bg-sky-50/80 dark:bg-sky-950/30">
                   <h3 className="font-semibold text-sm text-sky-800 dark:text-sky-300">
-                    System Administrators
+                    Staff Accounts
                   </h3>
                   <Badge className="bg-sky-100 text-sky-700 border-sky-300 dark:bg-sky-900/50 dark:text-sky-300 dark:border-sky-700">
                     {admins?.length || 0}
@@ -501,7 +574,7 @@ export default function AccessManagementPage() {
                     <DataTable
                       columns={adminColumns}
                       data={admins}
-                      emptyMessage="No administrators found"
+                      emptyMessage="No staff accounts found"
                       headerClassName="bg-gradient-to-r from-sky-500 to-blue-600"
                     />
                   )}
@@ -542,7 +615,7 @@ export default function AccessManagementPage() {
             <DialogHeader>
               <DialogTitle>
                 {dialogMode === "edit" ? "Edit" : "Create"}{" "}
-                {accountType === "admin" ? "Admin Account" : "Recruiter"}
+                {accountType === "admin" ? "Staff Account" : "Recruiter"}
               </DialogTitle>
             </DialogHeader>
 
@@ -732,39 +805,11 @@ export default function AccessManagementPage() {
                     control={adminForm.control}
                     name="role"
                     render={({ field }) => (
-                      <RadioGroup
+                      <StaffRoleRadioGroup
+                        idPrefix="role"
                         value={field.value}
-                        onValueChange={field.onChange}
-                        className="grid grid-cols-2 gap-2"
-                      >
-                        <Label
-                          htmlFor="role-admin"
-                          className={cn(
-                            "flex items-center gap-2 rounded-md border px-3 py-2 cursor-pointer text-xs font-medium transition-colors",
-                            field.value === "ADMIN"
-                              ? "border-sky-500 bg-sky-50 text-sky-700 dark:border-sky-400 dark:bg-sky-950/40 dark:text-sky-300"
-                              : "border-input hover:bg-muted/50",
-                          )}
-                        >
-                          <RadioGroupItem id="role-admin" value="ADMIN" />
-                          Admin
-                        </Label>
-                        <Label
-                          htmlFor="role-super-admin"
-                          className={cn(
-                            "flex items-center gap-2 rounded-md border px-3 py-2 cursor-pointer text-xs font-medium transition-colors",
-                            field.value === "SUPER_ADMIN"
-                              ? "border-indigo-500 bg-indigo-50 text-indigo-700 dark:border-indigo-400 dark:bg-indigo-950/40 dark:text-indigo-300"
-                              : "border-input hover:bg-muted/50",
-                          )}
-                        >
-                          <RadioGroupItem
-                            id="role-super-admin"
-                            value="SUPER_ADMIN"
-                          />
-                          Super Admin
-                        </Label>
-                      </RadioGroup>
+                        onChange={field.onChange}
+                      />
                     )}
                   />
                   {adminForm.formState.errors.role && (
@@ -789,7 +834,7 @@ export default function AccessManagementPage() {
                   >
                     {createAdminMutation.isPending
                       ? "Creating..."
-                      : "Create Admin"}
+                      : "Create Account"}
                   </Button>
                 </div>
               </form>
@@ -834,39 +879,11 @@ export default function AccessManagementPage() {
                     control={adminEditForm.control}
                     name="role"
                     render={({ field }) => (
-                      <RadioGroup
+                      <StaffRoleRadioGroup
+                        idPrefix="edit-role"
                         value={field.value}
-                        onValueChange={field.onChange}
-                        className="grid grid-cols-2 gap-2"
-                      >
-                        <Label
-                          htmlFor="edit-role-admin"
-                          className={cn(
-                            "flex items-center gap-2 rounded-md border px-3 py-2 cursor-pointer text-xs font-medium transition-colors",
-                            field.value === "ADMIN"
-                              ? "border-sky-500 bg-sky-50 text-sky-700 dark:border-sky-400 dark:bg-sky-950/40 dark:text-sky-300"
-                              : "border-input hover:bg-muted/50",
-                          )}
-                        >
-                          <RadioGroupItem id="edit-role-admin" value="ADMIN" />
-                          Admin
-                        </Label>
-                        <Label
-                          htmlFor="edit-role-super-admin"
-                          className={cn(
-                            "flex items-center gap-2 rounded-md border px-3 py-2 cursor-pointer text-xs font-medium transition-colors",
-                            field.value === "SUPER_ADMIN"
-                              ? "border-indigo-500 bg-indigo-50 text-indigo-700 dark:border-indigo-400 dark:bg-indigo-950/40 dark:text-indigo-300"
-                              : "border-input hover:bg-muted/50",
-                          )}
-                        >
-                          <RadioGroupItem
-                            id="edit-role-super-admin"
-                            value="SUPER_ADMIN"
-                          />
-                          Super Admin
-                        </Label>
-                      </RadioGroup>
+                        onChange={field.onChange}
+                      />
                     )}
                   />
                   {adminEditForm.formState.errors.role && (
@@ -909,7 +926,7 @@ export default function AccessManagementPage() {
               <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
               <AlertDialogDescription>
                 This will permanently delete the{" "}
-                {deleteData?.type === "admin" ? "administrator" : "recruiter"}{" "}
+                {deleteData?.type === "admin" ? "staff" : "recruiter"}{" "}
                 account. This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>

@@ -1,4 +1,9 @@
-import { Building2, ExternalLink, MessageSquareQuote } from "lucide-react";
+import {
+  Building2,
+  ExternalLink,
+  MessageSquareQuote,
+  ShieldCheck,
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
 const institutes = [
@@ -11,6 +16,7 @@ const institutes = [
     links: [
       { label: "Website", url: "https://www.techvaa.com/", icon: ExternalLink, color: "text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 border-blue-200" },
       { label: "Reviews", url: "https://www.techvaa.com/reviews", icon: MessageSquareQuote, color: "text-purple-600 hover:text-purple-800 bg-purple-50 hover:bg-purple-100 border-purple-200" },
+      { label: "Admin Panel", url: "https://main.d4r44y4g1fs0n.amplifyapp.com/", icon: ShieldCheck, color: "text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border-emerald-200" },
     ],
   },
   {

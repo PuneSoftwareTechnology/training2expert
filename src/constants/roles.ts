@@ -16,7 +16,17 @@ export const ROLES = {
   ADMIN: "ADMIN",
   SUPER_ADMIN: "SUPER_ADMIN",
   RECRUITER: "RECRUITER",
+  INTERN: "INTERN",
 } as const;
+
+/** Human-readable labels for the roles that share the /admin portal. */
+export const ROLE_LABELS: Record<string, string> = {
+  [ROLES.SUPER_ADMIN]: "Super Admin",
+  [ROLES.ADMIN]: "Admin",
+  [ROLES.INTERN]: "Intern",
+  [ROLES.RECRUITER]: "Recruiter",
+  [ROLES.STUDENT]: "Student",
+};
 
 export type Role = (typeof ROLES)[keyof typeof ROLES];
 

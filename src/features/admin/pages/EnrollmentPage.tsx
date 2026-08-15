@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Search, GraduationCap } from "lucide-react";
@@ -30,6 +30,7 @@ import { FilterActions } from "@/components/ui/filter-actions";
 
 import { adminService } from "@/services/admin.service";
 import { getErrorMessage } from "@/services/api";
+import { useCourseOptions } from "@/hooks/useCourseOptions";
 import { formatDate } from "@/utils/format";
 import { ENROLLMENT_STATUSES, INSTITUTES } from "@/constants/courses";
 import { COLUMN_GROUPS, SUB_COLUMNS } from "@/constants/enrollment-table";
@@ -357,7 +358,16 @@ export default function EnrollmentPage() {
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
-  const courses = data?.courses ?? [];
+  // Course filter options: the master ENROLLMENT list, plus any legacy course
+  // names still present on records. Blank values are dropped — Radix throws on
+  // a SelectItem with an empty value, which takes the whole dropdown down.
+  const { options: masterCourses } = useCourseOptions("ENROLLMENT");
+  const courses = useMemo(() => {
+    const names = [...masterCourses, ...(data?.courses ?? [])]
+      .map((c) => (c ?? "").trim())
+      .filter(Boolean);
+    return [...new Set(names)].sort();
+  }, [masterCourses, data?.courses]);
 
   const allItems = data?.items ?? [];
   const years = [

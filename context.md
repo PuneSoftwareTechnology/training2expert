@@ -292,7 +292,7 @@ Email
 
 Course
 
-Institute (PST / TCH)
+Institute (TECHVAA / TCH)
 
 Lead Status:
 
@@ -351,7 +351,7 @@ Approved
 
 Rejected
 
-Institute (PST / TCH)
+Institute (TECHVAA / TCH)
 
 Profile (Modal View Only)
 
@@ -510,7 +510,7 @@ No. of Days (Current Date - Last Payment Date)
 
 Filter:
 
-Institute (PST / TCH)
+Institute (TECHVAA / TCH)
 
 Current Year (Jan–Dec only)
 
@@ -646,7 +646,7 @@ Email
 
 Course
 
-Institute (PST / TCH)
+Institute (TECHVAA / TCH)
 
 Lead Status:
 
@@ -705,7 +705,7 @@ Approved
 
 Rejected
 
-Institute (PST / TCH)
+Institute (TECHVAA / TCH)
 
 Profile (Modal View Only)
 
@@ -864,7 +864,7 @@ No. of Days (Current Date - Last Payment Date)
 
 Filter:
 
-Institute (PST / TCH)
+Institute (TECHVAA / TCH)
 
 Current Year (Jan–Dec only)
 
@@ -1000,7 +1000,7 @@ Email
 
 Course
 
-Institute (PST / TCH)
+Institute (TECHVAA / TCH)
 
 Lead Status:
 
@@ -1059,7 +1059,7 @@ Approved
 
 Rejected
 
-Institute (PST / TCH)
+Institute (TECHVAA / TCH)
 
 Profile (Modal View Only)
 
@@ -1218,7 +1218,7 @@ No. of Days (Current Date - Last Payment Date)
 
 Filter:
 
-Institute (PST / TCH)
+Institute (TECHVAA / TCH)
 
 Current Year (Jan–Dec only)
 
@@ -1354,7 +1354,7 @@ Email
 
 Course
 
-Institute (PST / TCH)
+Institute (TECHVAA / TCH)
 
 Lead Status:
 
@@ -1413,7 +1413,7 @@ Approved
 
 Rejected
 
-Institute (PST / TCH)
+Institute (TECHVAA / TCH)
 
 Profile (Modal View Only)
 
@@ -1572,7 +1572,7 @@ No. of Days (Current Date - Last Payment Date)
 
 Filter:
 
-Institute (PST / TCH)
+Institute (TECHVAA / TCH)
 
 Current Year (Jan–Dec only)
 
@@ -1708,7 +1708,7 @@ Email
 
 Course
 
-Institute (PST / TCH)
+Institute (TECHVAA / TCH)
 
 Lead Status:
 
@@ -1767,7 +1767,7 @@ Approved
 
 Rejected
 
-Institute (PST / TCH)
+Institute (TECHVAA / TCH)
 
 Profile (Modal View Only)
 
@@ -1926,7 +1926,7 @@ No. of Days (Current Date - Last Payment Date)
 
 Filter:
 
-Institute (PST / TCH)
+Institute (TECHVAA / TCH)
 
 Current Year (Jan–Dec only)
 

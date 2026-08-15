@@ -2,6 +2,9 @@ import { api, extractData } from "./api";
 import type { AdminAccount, QrCode, Course } from "@/types/super-admin.types";
 import type { CourseType } from "@/types/common.types";
 
+/** Roles a super admin can hand out from the Access Management screen. */
+type StaffRole = "ADMIN" | "SUPER_ADMIN" | "INTERN";
+
 export const superAdminService = {
   // Admin Management
   getAdmins: async (filters: { page?: number; limit?: number } = {}) => {
@@ -20,7 +23,7 @@ export const superAdminService = {
     name: string;
     email: string;
     password: string;
-    role?: "ADMIN" | "SUPER_ADMIN";
+    role?: StaffRole;
   }) => {
     const response = await api.post("/super-admin/admins", data);
     return extractData<AdminAccount>(response);
@@ -28,7 +31,7 @@ export const superAdminService = {
 
   updateAdmin: async (
     id: string,
-    data: { name?: string; email?: string; role?: "ADMIN" | "SUPER_ADMIN" },
+    data: { name?: string; email?: string; role?: StaffRole },
   ) => {
     const response = await api.put(`/super-admin/admins/${id}`, data);
     return extractData<AdminAccount>(response);

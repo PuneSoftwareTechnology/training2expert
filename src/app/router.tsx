@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import { ROUTES } from "@/constants/routes";
 import { ROLES } from "@/constants/roles";
+import { ADMIN_PORTAL_ROLES } from "@/constants/access";
 import { ProtectedRoute } from "@/components/organisms/ProtectedRoute";
 import { GuestRoute } from "@/components/organisms/GuestRoute";
 import { PageLoader } from "@/components/loaders/PageLoader";
@@ -67,11 +68,11 @@ export function AppRouter() {
           }
         />
 
-        {/* Admin + Super Admin routes */}
+        {/* Admin + Super Admin + Intern routes (per-screen access in AdminRoutes) */}
         <Route
           path="/admin/*"
           element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.SUPER_ADMIN]}>
+            <ProtectedRoute allowedRoles={ADMIN_PORTAL_ROLES}>
               <AdminRoutes />
             </ProtectedRoute>
           }

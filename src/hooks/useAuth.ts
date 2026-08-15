@@ -20,6 +20,8 @@ export function useAuth() {
       case ROLES.ADMIN:
       case ROLES.SUPER_ADMIN:
         return ROUTES.ADMIN_ENQUIRY;
+      case ROLES.INTERN:
+        return ROUTES.ADMIN_ENQUIRY;
       case ROLES.RECRUITER:
         return ROUTES.RECRUITER_CANDIDATES;
       default:

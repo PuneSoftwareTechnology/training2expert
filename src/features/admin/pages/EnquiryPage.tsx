@@ -284,8 +284,6 @@ export default function EnquiryPage() {
       }),
   });
 
-  const courses = data?.courses ?? [];
-
   const { data: masterCourses, isLoading: coursesLoading } = useQuery({
     queryKey: ["admin", "master-courses", "ENQUIRY"],
     queryFn: () => adminService.getMasterCourses(true, "ENQUIRY"),
@@ -295,6 +293,15 @@ export default function EnquiryPage() {
     () => (masterCourses ?? []).map((c) => c.name),
     [masterCourses],
   );
+
+  // Filter options: master list + legacy course names on existing records.
+  // Blanks are dropped — Radix throws on a SelectItem with an empty value.
+  const courses = useMemo(() => {
+    const names = [...courseOptions, ...(data?.courses ?? [])]
+      .map((c) => (c ?? "").trim())
+      .filter(Boolean);
+    return [...new Set(names)].sort();
+  }, [courseOptions, data?.courses]);
 
   const form = useForm<EnquiryFormValues>({
     resolver: zodResolver(enquirySchema),

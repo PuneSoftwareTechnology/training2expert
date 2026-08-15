@@ -16,7 +16,10 @@ export function useCourseOptions(type: CourseType, currentValue?: string) {
   });
 
   const options = useMemo(() => {
-    const names = (data ?? []).map((c) => c.name);
+    // Blank names are dropped — Radix throws on a SelectItem with an empty value.
+    const names = (data ?? [])
+      .map((c) => c.name?.trim())
+      .filter((n): n is string => !!n);
     const current = currentValue?.trim();
     return current && !names.includes(current) ? [...names, current] : names;
   }, [data, currentValue]);
