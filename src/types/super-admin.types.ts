@@ -1,3 +1,5 @@
+import type { CourseType } from "./common.types";
+
 export interface AdminAccount {
   id: string;
   name: string;
@@ -21,6 +23,7 @@ export interface QrCode {
 export interface Course {
   id: string;
   name: string;
+  course_type: CourseType;
   is_active: boolean;
   created_by?: string | null;
   created_at: string;

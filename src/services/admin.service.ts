@@ -6,7 +6,9 @@ import type {
   Institute,
   LeadStatus,
   DemoStatus,
+  EnquiryType,
   EnrollmentStatus,
+  CourseType,
 } from "@/types/common.types";
 import type {
   Enquiry,
@@ -30,6 +32,7 @@ interface EnquiryFilters {
   demoStatus?: DemoStatus;
   institute?: Institute;
   course?: string;
+  enquiryType?: EnquiryType;
   page?: number;
   limit?: number;
 }
@@ -142,9 +145,12 @@ export const adminService = {
     return result.courses ?? [];
   },
 
-  getMasterCourses: async (activeOnly = true) => {
+  getMasterCourses: async (activeOnly = true, type?: CourseType) => {
     const response = await api.get("/admin/courses", {
-      params: activeOnly ? { isActive: true } : {},
+      params: {
+        ...(activeOnly ? { isActive: true } : {}),
+        ...(type ? { type } : {}),
+      },
     });
     return extractData<Course[]>(response);
   },
@@ -314,6 +320,7 @@ export const adminService = {
     year: number,
     leadStatus: string,
     demoStatus: string,
+    enquiryType: string,
   ) => {
     const response = await api.get("/admin/reports/enquiry-figures", {
       params: {
@@ -321,6 +328,7 @@ export const adminService = {
         year,
         lead_status: leadStatus,
         demo_status: demoStatus,
+        enquiry_type: enquiryType,
       },
     });
     return extractData<EnrollmentFigureRow[]>(response);

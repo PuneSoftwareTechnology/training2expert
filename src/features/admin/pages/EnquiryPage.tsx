@@ -57,8 +57,19 @@ import {
 import { adminService } from "@/services/admin.service";
 import { getErrorMessage } from "@/services/api";
 import { formatDate, todayStr } from "@/utils/format";
-import { INSTITUTES, LEAD_STATUSES, DEMO_STATUSES } from "@/constants/courses";
-import type { LeadStatus, DemoStatus, Institute } from "@/types/common.types";
+import {
+  INSTITUTES,
+  LEAD_STATUSES,
+  DEMO_STATUSES,
+  ENQUIRY_TYPES,
+  MANUAL_ENQUIRY_TYPES,
+} from "@/constants/courses";
+import type {
+  LeadStatus,
+  DemoStatus,
+  Institute,
+  EnquiryType,
+} from "@/types/common.types";
 import type { Enquiry } from "@/types/admin.types";
 
 const LEAD_BADGE: Record<LeadStatus, "default" | "destructive" | "success"> = {
@@ -77,11 +88,23 @@ const INSTITUTE_BADGE: Record<string, "default" | "secondary"> = {
   TCH: "secondary",
 };
 
+const ENQUIRY_TYPE_BADGE: Record<string, "default" | "secondary" | "outline"> =
+  {
+    WALKIN: "default",
+    PHONE: "secondary",
+    WEBSITE: "outline",
+  };
+
 const FORM_SELECTS = [
   {
     name: "institute" as const,
     label: "Institute",
     options: INSTITUTES.map((i) => ({ value: i, label: i })),
+  },
+  {
+    name: "enquiryType" as const,
+    label: "Enquiry Type",
+    options: MANUAL_ENQUIRY_TYPES.map((t) => ({ ...t })),
   },
   {
     name: "leadStatus" as const,
@@ -102,6 +125,11 @@ const FILTER_SELECTS = [
     label: "Institute",
     key: "institute" as const,
     options: INSTITUTES.map((i) => ({ value: i, label: i })),
+  },
+  {
+    label: "Enquiry Type",
+    key: "enquiryType" as const,
+    options: ENQUIRY_TYPES.map((t) => ({ ...t })),
   },
 ];
 
@@ -159,6 +187,7 @@ function exportEnquiriesCsv(items: Enquiry[]) {
     "Email",
     "Course",
     "Institute",
+    "Enquiry Type",
     "Lead Status",
     "Demo Status",
     "Demo Date",
@@ -181,6 +210,9 @@ function exportEnquiriesCsv(items: Enquiry[]) {
       e.email ?? "",
       e.course ?? "",
       e.institute,
+      ENQUIRY_TYPES.find((t) => t.value === e.enquiry_type)?.label ??
+        e.enquiry_type ??
+        "",
       LEAD_STATUSES.find((s) => s.value === (raw.lead_status ?? e.leadStatus))
         ?.label ??
         raw.lead_status ??
@@ -219,6 +251,7 @@ export default function EnquiryPage() {
     demo: searchParams.get("demoStatus") ?? "",
     institute: searchParams.get("institute") ?? "",
     course: searchParams.get("course") ?? "",
+    enquiryType: searchParams.get("enquiryType") ?? "",
   }));
 
   useEffect(() => {
@@ -244,14 +277,15 @@ export default function EnquiryPage() {
         demoStatus: (filters.demo as DemoStatus) || undefined,
         institute: (filters.institute as Institute) || undefined,
         course: filters.course || undefined,
+        enquiryType: (filters.enquiryType as EnquiryType) || undefined,
       }),
   });
 
   const courses = data?.courses ?? [];
 
   const { data: masterCourses, isLoading: coursesLoading } = useQuery({
-    queryKey: ["admin", "master-courses"],
-    queryFn: () => adminService.getMasterCourses(true),
+    queryKey: ["admin", "master-courses", "ENQUIRY"],
+    queryFn: () => adminService.getMasterCourses(true, "ENQUIRY"),
   });
 
   const courseOptions = useMemo(
@@ -264,6 +298,7 @@ export default function EnquiryPage() {
     defaultValues: {
       enquiry_date: todayStr(),
       institute: "PST",
+      enquiryType: "WALKIN",
       leadStatus: "PROSPECTIVE",
       demoStatus: "PENDING",
     },
@@ -386,6 +421,9 @@ export default function EnquiryPage() {
       email: enquiry.email ?? "",
       course: enquiry.course ?? "",
       institute: enquiry.institute,
+      enquiryType: (raw.enquiry_type ??
+        enquiry.enquiry_type ??
+        "WALKIN") as EnquiryFormValues["enquiryType"],
       leadStatus: (raw.lead_status ??
         enquiry.leadStatus) as EnquiryFormValues["leadStatus"],
       demoStatus: (raw.demo_status ??
@@ -401,6 +439,7 @@ export default function EnquiryPage() {
     form.reset({
       enquiry_date: todayStr(),
       institute: "PST",
+      enquiryType: "WALKIN",
       leadStatus: "PROSPECTIVE",
       demoStatus: "PENDING",
     });
@@ -412,7 +451,15 @@ export default function EnquiryPage() {
     if (!searchText.trim()) return items;
     const term = searchText.toLowerCase();
     return items.filter((e) =>
-      [e.name, e.phone, e.email, e.course, e.institute, e.comment]
+      [
+        e.name,
+        e.phone,
+        e.email,
+        e.course,
+        e.institute,
+        ENQUIRY_TYPES.find((t) => t.value === e.enquiry_type)?.label,
+        e.comment,
+      ]
         .filter(Boolean)
         .some((v) => v!.toLowerCase().includes(term)),
     );
@@ -484,6 +531,18 @@ export default function EnquiryPage() {
       cell: ({ getValue }) => {
         const v = getValue<string>() ?? "-";
         return <Badge variant={INSTITUTE_BADGE[v] ?? "outline"}>{v}</Badge>;
+      },
+    },
+    {
+      accessorKey: "enquiry_type",
+      header: "Enquiry Type",
+      cell: ({ getValue }) => {
+        const v = getValue<string>();
+        if (!v) return "-";
+        const label = ENQUIRY_TYPES.find((t) => t.value === v)?.label ?? v;
+        return (
+          <Badge variant={ENQUIRY_TYPE_BADGE[v] ?? "outline"}>{label}</Badge>
+        );
       },
     },
     {
@@ -602,6 +661,7 @@ export default function EnquiryPage() {
                   demo: "",
                   institute: "",
                   course: "",
+                  enquiryType: "",
                 });
                 setSearchText("");
                 queryClient.invalidateQueries({
@@ -841,35 +901,44 @@ export default function EnquiryPage() {
                     placeholder="Enter comment"
                   />
                 </div>
-                {FORM_SELECTS.map(({ name, label, options }) => (
-                  <div key={name} className="space-y-1">
-                    <Label>{label}</Label>
-                    <Select
-                      value={form.watch(name) ?? ""}
-                      onValueChange={(v) => {
-                        form.setValue(name, v as never);
-                        if (
-                          name === "demoStatus" &&
-                          v === "DONE" &&
-                          !form.getValues("demo_date")
-                        ) {
-                          form.setValue("demo_date", todayStr());
-                        }
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {options.map((o) => (
-                          <SelectItem key={o.value} value={o.value}>
-                            {o.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                ))}
+                {FORM_SELECTS.map(({ name, label, options }) => {
+                  // Website enquiries are created by the public site; keep the
+                  // option visible when editing one so it is not overwritten.
+                  const selectOptions =
+                    name === "enquiryType" &&
+                    form.watch("enquiryType") === "WEBSITE"
+                      ? ENQUIRY_TYPES.map((t) => ({ ...t }))
+                      : options;
+                  return (
+                    <div key={name} className="space-y-1">
+                      <Label>{label}</Label>
+                      <Select
+                        value={form.watch(name) ?? ""}
+                        onValueChange={(v) => {
+                          form.setValue(name, v as never);
+                          if (
+                            name === "demoStatus" &&
+                            v === "DONE" &&
+                            !form.getValues("demo_date")
+                          ) {
+                            form.setValue("demo_date", todayStr());
+                          }
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {selectOptions.map((o) => (
+                            <SelectItem key={o.value} value={o.value}>
+                              {o.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  );
+                })}
                 <div className="space-y-1">
                   <Label>Demo Date</Label>
                   <Input type="date" {...form.register("demo_date")} />

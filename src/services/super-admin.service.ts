@@ -1,5 +1,6 @@
 import { api, extractData } from "./api";
 import type { AdminAccount, QrCode, Course } from "@/types/super-admin.types";
+import type { CourseType } from "@/types/common.types";
 
 export const superAdminService = {
   // Admin Management
@@ -81,12 +82,22 @@ export const superAdminService = {
   },
 
   // Course Management (Super Admin)
-  getCourses: async (filters: { isActive?: boolean; search?: string } = {}) => {
+  getCourses: async (
+    filters: {
+      isActive?: boolean;
+      search?: string;
+      type?: CourseType;
+    } = {},
+  ) => {
     const response = await api.get("/super-admin/courses", { params: filters });
     return extractData<Course[]>(response);
   },
 
-  createCourse: async (data: { name: string; isActive?: boolean }) => {
+  createCourse: async (data: {
+    name: string;
+    type?: CourseType;
+    isActive?: boolean;
+  }) => {
     const response = await api.post("/super-admin/courses", data);
     return extractData<Course>(response);
   },

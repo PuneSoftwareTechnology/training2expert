@@ -24,6 +24,7 @@ import { FilterActions } from "@/components/ui/filter-actions";
 import { adminService } from "@/services/admin.service";
 import {
   DEMO_STATUSES,
+  ENQUIRY_TYPES,
   INSTITUTES,
   LEAD_STATUSES,
   MONTHS,
@@ -39,6 +40,10 @@ const DEMO_STATUS_OPTIONS = [
   { value: "All", label: "All" },
   ...DEMO_STATUSES,
 ] as const;
+const ENQUIRY_TYPE_OPTIONS = [
+  { value: "All", label: "All" },
+  ...ENQUIRY_TYPES,
+] as const;
 
 export default function EnquiryFiguresPage() {
   const navigate = useNavigate();
@@ -47,6 +52,7 @@ export default function EnquiryFiguresPage() {
   const [year, setYear] = useState(currentYear);
   const [leadStatus, setLeadStatus] = useState<string>("All");
   const [demoStatus, setDemoStatus] = useState<string>("All");
+  const [enquiryType, setEnquiryType] = useState<string>("All");
 
   const drillDown = useCallback(
     (course: string | null, month: string | null) => {
@@ -55,6 +61,7 @@ export default function EnquiryFiguresPage() {
       if (course && course !== "Total") params.set("course", course);
       if (leadStatus !== "All") params.set("leadStatus", leadStatus);
       if (demoStatus !== "All") params.set("demoStatus", demoStatus);
+      if (enquiryType !== "All") params.set("enquiryType", enquiryType);
       if (month) {
         const monthIdx = MONTHS.indexOf(month as (typeof MONTHS)[number]);
         const lastDay = new Date(year, monthIdx + 1, 0).getDate();
@@ -70,7 +77,7 @@ export default function EnquiryFiguresPage() {
       }
       navigate(`${ROUTES.ADMIN_ENQUIRY}?${params.toString()}`);
     },
-    [navigate, institute, year, leadStatus, demoStatus],
+    [navigate, institute, year, leadStatus, demoStatus, enquiryType],
   );
 
   const { data, isLoading, isError, error, refetch } = useQuery({
@@ -82,9 +89,16 @@ export default function EnquiryFiguresPage() {
       year,
       leadStatus,
       demoStatus,
+      enquiryType,
     ],
     queryFn: () =>
-      adminService.getEnquiryFigures(institute, year, leadStatus, demoStatus),
+      adminService.getEnquiryFigures(
+        institute,
+        year,
+        leadStatus,
+        demoStatus,
+        enquiryType,
+      ),
   });
 
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
@@ -197,6 +211,7 @@ export default function EnquiryFiguresPage() {
               setYear(currentYear);
               setLeadStatus("All");
               setDemoStatus("All");
+              setEnquiryType("All");
             }}
             onRefresh={() => refetch()}
             isFetching={isLoading}
@@ -262,6 +277,21 @@ export default function EnquiryFiguresPage() {
                 {DEMO_STATUS_OPTIONS.map((s) => (
                   <SelectItem key={s.value} value={s.value}>
                     {s.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Enquiry Type</Label>
+            <Select value={enquiryType} onValueChange={setEnquiryType}>
+              <SelectTrigger className="w-36">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ENQUIRY_TYPE_OPTIONS.map((t) => (
+                  <SelectItem key={t.value} value={t.value}>
+                    {t.label}
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -28,6 +28,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DataTable, SortableHeader } from "@/components/ui/data-table";
 import { TableSkeleton } from "@/components/loaders/TableSkeleton";
 import { QueryError } from "@/components/errors/QueryError";
@@ -41,6 +42,8 @@ import {
 import { superAdminService } from "@/services/super-admin.service";
 import { getErrorMessage } from "@/services/api";
 import { formatDate } from "@/utils/format";
+import { COURSE_TYPES } from "@/constants/courses";
+import type { CourseType } from "@/types/common.types";
 import type { Course } from "@/types/super-admin.types";
 
 const QUERY_KEY = ["super-admin", "courses"];
@@ -51,23 +54,29 @@ export default function CoursesPage() {
   const [editing, setEditing] = useState<Course | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [searchText, setSearchText] = useState("");
+  const [courseType, setCourseType] = useState<CourseType>("ENQUIRY");
+
+  const typeLabel =
+    COURSE_TYPES.find((t) => t.value === courseType)?.label ?? courseType;
 
   const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
-    queryKey: QUERY_KEY,
-    queryFn: () => superAdminService.getCourses(),
+    queryKey: [...QUERY_KEY, courseType],
+    queryFn: () => superAdminService.getCourses({ type: courseType }),
   });
 
   const form = useForm<CourseFormValues>({
     resolver: zodResolver(courseSchema),
-    defaultValues: { name: "", isActive: true },
+    defaultValues: { name: "", type: "ENQUIRY", isActive: true },
   });
 
   const invalidateAndClose = () => {
     queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+    // Keep the enquiry/enrollment course dropdowns in sync with the master list.
+    queryClient.invalidateQueries({ queryKey: ["admin", "master-courses"] });
     refetch();
     setDialogOpen(false);
     setEditing(null);
-    form.reset({ name: "", isActive: true });
+    form.reset({ name: "", type: courseType, isActive: true });
   };
 
   const createMutation = useMutation({
@@ -80,8 +89,13 @@ export default function CoursesPage() {
   });
 
   const updateMutation = useMutation({
+    // The list a course belongs to is fixed at creation, so only name/status
+    // are editable.
     mutationFn: ({ id, data }: { id: string; data: CourseFormValues }) =>
-      superAdminService.updateCourse(id, data),
+      superAdminService.updateCourse(id, {
+        name: data.name,
+        isActive: data.isActive,
+      }),
     onSuccess: () => {
       invalidateAndClose();
       toast.success("Course updated");
@@ -93,6 +107,7 @@ export default function CoursesPage() {
     mutationFn: superAdminService.deleteCourse,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["admin", "master-courses"] });
       toast.success("Course deleted");
       setDeleteId(null);
     },
@@ -107,13 +122,17 @@ export default function CoursesPage() {
 
   const openCreate = () => {
     setEditing(null);
-    form.reset({ name: "", isActive: true });
+    form.reset({ name: "", type: courseType, isActive: true });
     setDialogOpen(true);
   };
 
   const openEdit = (course: Course) => {
     setEditing(course);
-    form.reset({ name: course.name, isActive: course.is_active });
+    form.reset({
+      name: course.name,
+      type: course.course_type,
+      isActive: course.is_active,
+    });
     setDialogOpen(true);
   };
 
@@ -206,7 +225,7 @@ export default function CoursesPage() {
             <div>
               <h2 className="text-2xl font-bold">Course Management</h2>
               <p className="text-sm text-muted-foreground">
-                Master list of courses available for enquiries
+                Master course lists for the enquiry and enrollment dropdowns
               </p>
             </div>
           </div>
@@ -219,17 +238,34 @@ export default function CoursesPage() {
               onClick={openCreate}
               className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-200/50 hover:from-emerald-600 hover:to-teal-700"
             >
-              <Plus className="mr-2" /> Add Course
+              <Plus className="mr-2" /> Add {typeLabel} Course
             </Button>
           </div>
         </div>
+
+        {/* Course list selector */}
+        <Tabs
+          value={courseType}
+          onValueChange={(v) => {
+            setCourseType(v as CourseType);
+            setSearchText("");
+          }}
+        >
+          <TabsList>
+            {COURSE_TYPES.map((t) => (
+              <TabsTrigger key={t.value} value={t.value}>
+                {t.label} Courses
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
 
         {/* Filters */}
         <Card className="border-emerald-200/60 bg-gradient-to-r from-emerald-100 to-teal-200">
           <CardContent className="pb-3">
             <div className="flex flex-wrap items-center gap-4">
               <span className="self-end pb-1.5 text-sm font-semibold mr-16 whitespace-nowrap">
-                Total: {filtered.length} courses
+                Total: {filtered.length} {typeLabel.toLowerCase()} courses
               </span>
               <div className="space-y-1">
                 <Label className="text-xs">Search</Label>
@@ -269,7 +305,9 @@ export default function CoursesPage() {
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>
-                {editing ? "Edit Course" : "Add Course"}
+                {editing
+                  ? `Edit ${typeLabel} Course`
+                  : `Add ${typeLabel} Course`}
               </DialogTitle>
             </DialogHeader>
             <form
@@ -331,8 +369,9 @@ export default function CoursesPage() {
             <AlertDialogHeader>
               <AlertDialogTitle>Delete Course?</AlertDialogTitle>
               <AlertDialogDescription>
-                This will permanently delete the course. Existing enquiries with
-                this course name will not be affected.
+                This will permanently delete the course from the{" "}
+                {typeLabel.toLowerCase()} list. Existing records already saved
+                with this course name will not be affected.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

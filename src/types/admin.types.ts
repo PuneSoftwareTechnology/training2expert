@@ -1,6 +1,7 @@
 import type {
   CompletionStatus,
   DemoStatus,
+  EnquiryType,
   EnrollmentStatus,
   Institute,
   LeadStatus,
@@ -16,6 +17,7 @@ export interface Enquiry {
   email?: string;
   course?: string;
   institute: Institute;
+  enquiry_type?: EnquiryType;
   leadStatus: LeadStatus;
   demoStatus: DemoStatus;
   demo_date?: string;

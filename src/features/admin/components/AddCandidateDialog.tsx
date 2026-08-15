@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { INSTITUTES } from "@/constants/courses";
+import { useCourseOptions } from "@/hooks/useCourseOptions";
 import type { Institute } from "@/types/common.types";
 import type { Enrollment } from "@/types/admin.types";
 
@@ -65,6 +66,8 @@ export function AddCandidateDialog({
   const [newCandidate, setNewCandidate] = useState<NewCandidateFields>(
     NEW_CANDIDATE_DEFAULTS,
   );
+  const { options: courseOptions, isLoading: coursesLoading } =
+    useCourseOptions("ENROLLMENT");
 
   const isValidEmail = (email: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -183,11 +186,31 @@ export function AddCandidateDialog({
           </div>
           <div className="space-y-1">
             <Label>Course</Label>
-            <Input
+            <Select
               value={newCandidate.course}
-              onChange={(e) => updateNewField("course", e.target.value)}
-              placeholder="Enter course"
-            />
+              onValueChange={(v) => updateNewField("course", v)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select course" />
+              </SelectTrigger>
+              <SelectContent>
+                {coursesLoading ? (
+                  <SelectItem value="__loading" disabled>
+                    Loading...
+                  </SelectItem>
+                ) : courseOptions.length === 0 ? (
+                  <SelectItem value="__empty" disabled>
+                    No courses available
+                  </SelectItem>
+                ) : (
+                  courseOptions.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-1">
             <Label>Batch</Label>

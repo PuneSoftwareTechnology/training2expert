@@ -20,6 +20,25 @@ export const LEAD_STATUSES = [
   { value: "ENROLLED", label: "Enrolled" },
 ] as const;
 
+// Master course lists are kept separately per module — the enrollment list can
+// use different course names from the enquiry list.
+export const COURSE_TYPES = [
+  { value: "ENQUIRY", label: "Enquiry" },
+  { value: "ENROLLMENT", label: "Enrollment" },
+] as const;
+
+export const ENQUIRY_TYPES = [
+  { value: "WALKIN", label: "Walk-in" },
+  { value: "PHONE", label: "Phone" },
+  { value: "WEBSITE", label: "Website" },
+] as const;
+
+// Website enquiries are created automatically by the public site, so only
+// these are offered when an admin adds an enquiry by hand.
+export const MANUAL_ENQUIRY_TYPES = ENQUIRY_TYPES.filter(
+  (t) => t.value !== "WEBSITE",
+);
+
 export const DEMO_STATUSES = [
   { value: "DONE", label: "Done" },
   { value: "PENDING", label: "Not done" },
