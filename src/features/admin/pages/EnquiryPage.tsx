@@ -24,7 +24,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Combobox } from "@/components/ui/combobox";
 import {
   Dialog,
   DialogContent,
@@ -303,6 +302,17 @@ export default function EnquiryPage() {
       .filter(Boolean);
     return [...new Set(names)].sort();
   }, [courseOptions, data?.courses]);
+
+  // The dropdown is select-only, so an enquiry saved before the master list
+  // existed would show blank and lose its course on the next save. Append the
+  // record's own value when it is missing rather than adding it to the master
+  // list, which stays managed from Course Management.
+  const formCourseOptions = useMemo(() => {
+    const current = editingEnquiry?.course?.trim();
+    return current && !courseOptions.includes(current)
+      ? [...courseOptions, current]
+      : courseOptions;
+  }, [courseOptions, editingEnquiry?.course]);
 
   const form = useForm<EnquiryFormValues>({
     resolver: zodResolver(enquirySchema),
@@ -879,13 +889,31 @@ export default function EnquiryPage() {
                 </div>
                 <div className="space-y-1">
                   <Label>Course</Label>
-                  <Combobox
+                  <Select
                     value={form.watch("course") || ""}
-                    onChange={(v) => form.setValue("course", v)}
-                    options={courseOptions}
-                    loading={coursesLoading}
-                    placeholder="Select or type a course"
-                  />
+                    onValueChange={(v) => form.setValue("course", v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select course" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {coursesLoading ? (
+                        <SelectItem value="__loading" disabled>
+                          Loading...
+                        </SelectItem>
+                      ) : formCourseOptions.length === 0 ? (
+                        <SelectItem value="__empty" disabled>
+                          No courses available
+                        </SelectItem>
+                      ) : (
+                        formCourseOptions.map((c) => (
+                          <SelectItem key={c} value={c}>
+                            {c}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="col-span-2 space-y-1">
                   <Label>Comment</Label>
