@@ -36,6 +36,13 @@ export interface TechScoreByCourse {
   avgTechnicalScore: number;
 }
 
+export interface TrainerPayoutByTrainer {
+  trainer: string;
+  payable: number;
+  settled: number;
+  balance: number;
+}
+
 export interface DashboardData {
   revenue: {
     totalCollected: number;
@@ -81,6 +88,23 @@ export interface DashboardData {
     technicalScoreByCourse: TechScoreByCourse[];
     avgCommunicationScore: number;
     testCompletionRate: number;
+  };
+  /**
+   * What we owe trainers. Present only for super admins — the backend omits the
+   * key entirely for other roles, so the section is absent rather than zeroed.
+   */
+  trainerPayout?: {
+    trackedStudents: number;
+    trainerCount: number;
+    totalPayable: number;
+    /** Paid within the selected period, like revenue collected. */
+    totalPaid: number;
+    totalTds: number;
+    /** Outstanding overall, like pending dues — not period-scoped. */
+    totalBalance: number;
+    /** Rows with no training fee entered yet. */
+    feeNotSet: number;
+    byTrainer: TrainerPayoutByTrainer[];
   };
 }
 

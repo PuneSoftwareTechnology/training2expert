@@ -24,6 +24,8 @@ import {
   PAYMENT_MODES,
 } from "@/constants/courses";
 import { useCourseOptions } from "@/hooks/useCourseOptions";
+import { TrainerSelect } from "./TrainerSelect";
+import { BatchInput } from "./BatchInput";
 import type {
   Institute,
   EnrollmentStatus,
@@ -48,7 +50,8 @@ interface EditFields {
   institute: string;
   course: string;
   batch: string;
-  trainer: string;
+  // Trainers are picked by id; the backend keeps the name snapshot in step.
+  trainer_id: string;
   start_date: string;
   end_date: string;
   completion_status: CompletionStatus;
@@ -75,7 +78,7 @@ function enrollmentToFields(e: Enrollment): EditFields {
     institute: e.institute || "TECHVAA",
     course: e.course || "",
     batch: e.batch || "",
-    trainer: e.trainer || "",
+    trainer_id: e.trainer_id || "",
     start_date: toDateInputValue(e.start_date),
     end_date: toDateInputValue(e.end_date),
     completion_status: e.completion_status || "IN_PROGRESS",
@@ -246,16 +249,17 @@ export function EditEnrollmentDialog({
               </div>
               <div className="space-y-1">
                 <Label>Batch</Label>
-                <Input
+                <BatchInput
                   value={fields.batch}
-                  onChange={(e) => updateField("batch", e.target.value)}
+                  onChange={(batch) => updateField("batch", batch)}
                 />
               </div>
               <div className="space-y-1">
                 <Label>Trainer</Label>
-                <Input
-                  value={fields.trainer}
-                  onChange={(e) => updateField("trainer", e.target.value)}
+                <TrainerSelect
+                  value={fields.trainer_id}
+                  onChange={(id) => updateField("trainer_id", id)}
+                  course={fields.course}
                 />
               </div>
               <div className="space-y-1">

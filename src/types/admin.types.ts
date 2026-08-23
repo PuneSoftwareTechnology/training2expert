@@ -34,7 +34,10 @@ export interface Enrollment {
   institute: Institute;
   course: string;
   batch: string;
+  /** Denormalized trainer name snapshot, kept in step with trainer_id. */
   trainer: string;
+  /** The real trainer reference — names are not unique. */
+  trainer_id?: string | null;
   start_date: string;
   end_date: string;
   completion_status: CompletionStatus;

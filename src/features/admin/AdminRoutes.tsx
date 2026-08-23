@@ -28,6 +28,8 @@ const TestManagementPage = lazy(() => import("./pages/TestManagementPage"));
 const ResumeTemplatesPage = lazy(() => import("./pages/ResumeTemplatesPage"));
 const QrManagementPage = lazy(() => import("./pages/QrManagementPage"));
 const CoursesPage = lazy(() => import("./pages/CoursesPage"));
+const TrainersPage = lazy(() => import("./pages/TrainersPage"));
+const TrainerPaymentsPage = lazy(() => import("./pages/TrainerPaymentsPage"));
 
 /**
  * Every admin screen is guarded by the same route/role map the sidebar filters
@@ -132,6 +134,17 @@ export default function AdminRoutes() {
           <Route
             path="courses"
             element={guard(ROUTES.ADMIN_COURSES, <CoursesPage />)}
+          />
+          <Route
+            path="trainers"
+            element={guard(ROUTES.ADMIN_TRAINERS, <TrainersPage />)}
+          />
+          <Route
+            path="trainer-payments"
+            element={guard(
+              ROUTES.ADMIN_TRAINER_PAYMENTS,
+              <TrainerPaymentsPage />,
+            )}
           />
         </Routes>
       </Suspense>

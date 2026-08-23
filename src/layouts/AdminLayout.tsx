@@ -21,6 +21,8 @@ import {
   ChevronLeft,
   Settings,
   BookOpen,
+  UserCog,
+  Wallet,
   X,
 } from "lucide-react";
 
@@ -101,6 +103,16 @@ const NAV_ITEMS: NavItem[] = [
     label: "Courses",
     path: ROUTES.ADMIN_COURSES,
     icon: <BookOpen className="h-4 w-4" />,
+  },
+  {
+    label: "Trainers",
+    path: ROUTES.ADMIN_TRAINERS,
+    icon: <UserCog className="h-4 w-4" />,
+  },
+  {
+    label: "Trainer Payments",
+    path: ROUTES.ADMIN_TRAINER_PAYMENTS,
+    icon: <Wallet className="h-4 w-4" />,
   },
   {
     type: "group",

@@ -19,6 +19,8 @@ import {
 import { toast } from "sonner";
 import { INSTITUTES } from "@/constants/courses";
 import { useCourseOptions } from "@/hooks/useCourseOptions";
+import { TrainerSelect } from "./TrainerSelect";
+import { BatchInput } from "./BatchInput";
 import type { Institute } from "@/types/common.types";
 import type { Enrollment } from "@/types/admin.types";
 
@@ -29,7 +31,8 @@ interface NewCandidateFields {
   institute: Institute;
   course: string;
   batch: string;
-  trainer: string;
+  // Trainers are picked by id, not typed — two people can share a name.
+  trainer_id: string;
   start_date: string;
   end_date: string;
   total_fee: number;
@@ -44,7 +47,7 @@ const NEW_CANDIDATE_DEFAULTS: NewCandidateFields = {
   institute: "TECHVAA",
   course: "",
   batch: "",
-  trainer: "",
+  trainer_id: "",
   start_date: todayStr(),
   end_date: "",
   total_fee: 0,
@@ -107,7 +110,7 @@ export function AddCandidateDialog({
       institute: newCandidate.institute,
       course: newCandidate.course,
       batch: newCandidate.batch,
-      trainer: newCandidate.trainer,
+      trainer_id: newCandidate.trainer_id || null,
       start_date: newCandidate.start_date,
       end_date: newCandidate.end_date,
       total_fee: newCandidate.total_fee,
@@ -218,16 +221,17 @@ export function AddCandidateDialog({
           </div>
           <div className="space-y-1">
             <Label>Batch</Label>
-            <Input
+            <BatchInput
               value={newCandidate.batch}
-              onChange={(e) => updateNewField("batch", e.target.value)}
+              onChange={(batch) => updateNewField("batch", batch)}
             />
           </div>
           <div className="space-y-1">
             <Label>Trainer</Label>
-            <Input
-              value={newCandidate.trainer}
-              onChange={(e) => updateNewField("trainer", e.target.value)}
+            <TrainerSelect
+              value={newCandidate.trainer_id}
+              onChange={(id) => updateNewField("trainer_id", id)}
+              course={newCandidate.course}
             />
           </div>
           <div className="space-y-1">

@@ -10,6 +10,7 @@ import { useAuthStore } from "@/store/auth.store";
 
 import { PeriodSelector } from "../components/dashboard/PeriodSelector";
 import { RevenueSection } from "../components/dashboard/sections/RevenueSection";
+import { TrainerPayoutSection } from "../components/dashboard/sections/TrainerPayoutSection";
 import { EnrollmentSection } from "../components/dashboard/sections/EnrollmentSection";
 import { EnquirySection } from "../components/dashboard/sections/EnquirySection";
 import { PlacementSection } from "../components/dashboard/sections/PlacementSection";
@@ -89,6 +90,13 @@ export default function DashboardPage() {
           <>
             <RevenueSection data={stats.revenue} />
             <hr className="border-border/50" />
+            {/* Super admin only: the backend omits the data for other roles. */}
+            {stats.trainerPayout && (
+              <>
+                <TrainerPayoutSection data={stats.trainerPayout} />
+                <hr className="border-border/50" />
+              </>
+            )}
             <EnrollmentSection data={stats.enrollment} />
             <hr className="border-border/50" />
             <EnquirySection data={stats.enquiry} />

@@ -26,6 +26,12 @@ export const ADMIN_ROUTE_ROLES: Record<string, Role[]> = {
   [ROUTES.ADMIN_RESUME_TEMPLATES]: ADMIN_AND_SUPER,
   [ROUTES.ADMIN_QR_MANAGEMENT]: [ROLES.SUPER_ADMIN],
   [ROUTES.ADMIN_COURSES]: [ROLES.SUPER_ADMIN],
+  // Only super admins create trainers; admins select them from the dropdown on
+  // the enrollment form, which needs no screen of its own.
+  [ROUTES.ADMIN_TRAINERS]: [ROLES.SUPER_ADMIN],
+  // Trainer payment figures are sensitive. Add ROLES.ADMIN here and to the
+  // matching authorizeRoles calls in the backend's admin.routes.js to open it up.
+  [ROUTES.ADMIN_TRAINER_PAYMENTS]: [ROLES.SUPER_ADMIN],
 
   // Reports
   [ROUTES.ADMIN_DASHBOARD]: ADMIN_AND_SUPER,

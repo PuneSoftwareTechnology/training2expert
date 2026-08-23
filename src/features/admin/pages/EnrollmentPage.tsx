@@ -315,6 +315,7 @@ export default function EnrollmentPage() {
       toast.success("Candidate enrolled successfully");
       setAddDialogOpen(false);
       queryClient.invalidateQueries({ queryKey: ["admin", "enrollments"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "enrollment-batches"] });
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
@@ -345,6 +346,7 @@ export default function EnrollmentPage() {
       toast.success("Enrollment updated successfully");
       setEditEnrollment(null);
       queryClient.invalidateQueries({ queryKey: ["admin", "enrollments"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "enrollment-batches"] });
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });

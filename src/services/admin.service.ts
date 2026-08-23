@@ -131,10 +131,10 @@ export const adminService = {
     const response = await api.get("/admin/enrollments", { params: filters });
     const result = extractData<
       | Enrollment[]
-      | { items: Enrollment[]; total: number; page: number; totalPages: number; courses?: string[] }
+      | { items: Enrollment[]; total: number; page: number; totalPages: number; courses?: string[]; batches?: string[] }
     >(response);
     if (Array.isArray(result)) {
-      return { items: result, total: result.length, page: 1, totalPages: 1, courses: [] as string[] };
+      return { items: result, total: result.length, page: 1, totalPages: 1, courses: [] as string[], batches: [] as string[] };
     }
     return result;
   },
@@ -143,6 +143,13 @@ export const adminService = {
     const response = await api.get("/admin/enrollments", { params: { limit: 1 } });
     const result = extractData<{ courses?: string[] }>(response);
     return result.courses ?? [];
+  },
+
+  /** Distinct batch names already used on enrollments — suggestions only. */
+  getBatches: async () => {
+    const response = await api.get("/admin/enrollments", { params: { limit: 1 } });
+    const result = extractData<{ batches?: string[] }>(response);
+    return result.batches ?? [];
   },
 
   getMasterCourses: async (activeOnly = true, type?: CourseType) => {
