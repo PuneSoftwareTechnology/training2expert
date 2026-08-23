@@ -70,6 +70,18 @@ const columns: ColumnDef<FeeDueRow>[] = [
   },
   { accessorKey: "course", header: "Course" },
   {
+    accessorKey: "batch",
+    header: "Batch",
+    cell: ({ getValue }) => {
+      const batch = getValue<string | null>();
+      return batch ? (
+        <span>{batch}</span>
+      ) : (
+        <span className="text-muted-foreground">—</span>
+      );
+    },
+  },
+  {
     accessorKey: "trainer",
     header: "Trainer",
     cell: ({ getValue }) => {
@@ -153,6 +165,7 @@ const columns: ColumnDef<FeeDueRow>[] = [
 export default function FeeDuesPage() {
   const [daysFilter, setDaysFilter] = useState<string | null>(null);
   const [trainerFilter, setTrainerFilter] = useState<string>("ALL");
+  const [batchFilter, setBatchFilter] = useState<string>("ALL");
   const [search, setSearch] = useState("");
 
   const { data, isLoading, isError, error, refetch } = useQuery({
@@ -172,6 +185,12 @@ export default function FeeDuesPage() {
     [allRows],
   );
 
+  const batches = useMemo(
+    () =>
+      [...new Set(allRows.map((r) => r.batch).filter(Boolean))].sort() as string[],
+    [allRows],
+  );
+
   const filteredData = useMemo(() => {
     if (!allRows.length) return [];
     let rows = allRows;
@@ -188,12 +207,15 @@ export default function FeeDuesPage() {
     if (trainerFilter !== "ALL") {
       rows = rows.filter((r) => r.trainer === trainerFilter);
     }
+    if (batchFilter !== "ALL") {
+      rows = rows.filter((r) => r.batch === batchFilter);
+    }
     if (search.trim()) {
       const term = search.trim().toLowerCase();
       rows = rows.filter((r) => r.name.toLowerCase().includes(term));
     }
     return rows;
-  }, [allRows, daysFilter, trainerFilter, search]);
+  }, [allRows, daysFilter, trainerFilter, batchFilter, search]);
 
   const summary = useMemo(() => {
     if (filteredData.length === 0) return { count: 0, totalPending: 0 };
@@ -211,6 +233,7 @@ export default function FeeDuesPage() {
       "Candidate",
       "Institute",
       "Course",
+      "Batch",
       "Trainer",
       "Phone No",
       "Total Fees",
@@ -223,6 +246,7 @@ export default function FeeDuesPage() {
       r.name,
       r.institute,
       r.course,
+      r.batch ?? "",
       r.trainer ?? "",
       r.phone,
       Number(r.totalFee),
@@ -267,6 +291,7 @@ export default function FeeDuesPage() {
             onReset={() => {
               setDaysFilter(null);
               setTrainerFilter("ALL");
+              setBatchFilter("ALL");
               setSearch("");
             }}
             onRefresh={() => refetch()}
@@ -312,6 +337,19 @@ export default function FeeDuesPage() {
                 ))}
               </SelectContent>
             </Select>
+            <Select value={batchFilter} onValueChange={setBatchFilter}>
+              <SelectTrigger className="h-9 w-[160px] ml-2 bg-white">
+                <SelectValue placeholder="Batch" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All Batches</SelectItem>
+                {batches.map((b) => (
+                  <SelectItem key={b} value={b}>
+                    {b}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <div className="relative ml-2">
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -341,7 +379,7 @@ export default function FeeDuesPage() {
         </div>
 
         {isLoading ? (
-          <TableSkeleton rows={6} columns={11} />
+          <TableSkeleton rows={6} columns={12} />
         ) : (
           <Card className="border-rose-200/60 overflow-hidden">
             <CardContent className="p-0">
