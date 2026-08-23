@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Search, Wallet } from "lucide-react";
+import { Search, Wallet, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -147,16 +149,33 @@ export default function TrainerPaymentsPage() {
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
 
+  // Drill-down params arrive from the Trainer Payment Figures report.
   const [filterTrainer, setFilterTrainer] = useState(
     () => searchParams.get("trainerId") ?? ALL,
   );
   const [filterInstitute, setFilterInstitute] = useState(ALL);
-  const [filterCourse, setFilterCourse] = useState(ALL);
-  const [filterBatch, setFilterBatch] = useState(ALL);
-  const [filterCompletion, setFilterCompletion] = useState(ALL);
+  const [filterCourse, setFilterCourse] = useState(
+    () => searchParams.get("course") ?? ALL,
+  );
+  const [filterBatch, setFilterBatch] = useState(
+    () => searchParams.get("batch") ?? ALL,
+  );
+  const [filterCompletion, setFilterCompletion] = useState(
+    () => searchParams.get("completionStatus") ?? ALL,
+  );
   const [filterStatus, setFilterStatus] = useState(ALL);
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  // Payment dates, distinct from the enrollment-date range above. Held as
+  // state rather than a visible control because only the report sets them, but
+  // surfaced as a removable chip so a narrowed list is never unexplained.
+  const [paidFrom, setPaidFrom] = useState(
+    () => searchParams.get("paidFrom") ?? "",
+  );
+  const [paidTo, setPaidTo] = useState(() => searchParams.get("paidTo") ?? "");
+  const [paymentSeq, setPaymentSeq] = useState(
+    () => searchParams.get("paymentSeq") ?? "BOTH",
+  );
   const [search, setSearch] = useState("");
   const [editRow, setEditRow] = useState<Row | null>(null);
   const [clearRow, setClearRow] = useState<Row | null>(null);
@@ -183,6 +202,9 @@ export default function TrainerPaymentsPage() {
       filterStatus,
       fromDate,
       toDate,
+      paidFrom,
+      paidTo,
+      paymentSeq,
       search,
     ],
     queryFn: () =>
@@ -196,6 +218,9 @@ export default function TrainerPaymentsPage() {
         paymentStatus: filterStatus === ALL ? undefined : filterStatus,
         fromDate: fromDate || undefined,
         toDate: toDate || undefined,
+        paidFrom: paidFrom || undefined,
+        paidTo: paidTo || undefined,
+        paymentSeq: paymentSeq === "BOTH" ? undefined : paymentSeq,
         search: search.trim() || undefined,
         limit: 100,
       }),
@@ -309,7 +334,39 @@ export default function TrainerPaymentsPage() {
     setFilterStatus(ALL);
     setFromDate("");
     setToDate("");
+    setPaidFrom("");
+    setPaidTo("");
+    setPaymentSeq("BOTH");
     setSearch("");
+  };
+
+  // Explains a list narrowed by the report's drill-down, and lets it be undone.
+  const paidChip = (() => {
+    if (!paidFrom && !paidTo) return null;
+    const fmt = (d: string) =>
+      new Date(d).toLocaleDateString("en-IN", {
+        month: "short",
+        year: "numeric",
+      });
+    const window =
+      paidFrom && paidTo && fmt(paidFrom) === fmt(paidTo)
+        ? fmt(paidFrom)
+        : [paidFrom && formatDate(paidFrom), paidTo && formatDate(paidTo)]
+            .filter(Boolean)
+            .join(" – ");
+    const seqLabel =
+      paymentSeq === "FIRST"
+        ? ", 1st payment"
+        : paymentSeq === "SECOND"
+          ? ", 2nd payment"
+          : "";
+    return `Paid in ${window}${seqLabel}`;
+  })();
+
+  const clearPaidFilter = () => {
+    setPaidFrom("");
+    setPaidTo("");
+    setPaymentSeq("BOTH");
   };
 
   if (isError) return <QueryError error={error} onRetry={refetch} />;
@@ -400,6 +457,29 @@ export default function TrainerPaymentsPage() {
             }
           />
         </div>
+
+        {paidChip && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">
+              Showing rows from the figures report:
+            </span>
+            <Badge
+              variant="secondary"
+              className="gap-1 border border-violet-300 bg-violet-100 text-violet-800"
+            >
+              {paidChip}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="-mr-1 h-4 w-4 hover:bg-violet-200"
+                onClick={clearPaidFilter}
+                title="Show all payments"
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </Badge>
+          </div>
+        )}
 
         {/* Filters */}
         <div className="flex flex-wrap items-end gap-2 rounded-lg border border-violet-200/60 bg-gradient-to-r from-violet-100 to-indigo-100 p-3">

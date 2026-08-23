@@ -1,5 +1,7 @@
 import { api, extractData } from "./api";
 import type {
+  PaymentSequence,
+  TrainerPaymentFiguresResult,
   Trainer,
   TrainerWithStats,
   TrainerDetailResult,
@@ -18,6 +20,10 @@ export interface TrainerPayoutFilters {
   paymentStatus?: string;
   fromDate?: string;
   toDate?: string;
+  /** Payment dates, not enrollment dates — used by the report's drill-down. */
+  paidFrom?: string;
+  paidTo?: string;
+  paymentSeq?: string;
   search?: string;
 }
 
@@ -117,6 +123,20 @@ export const trainerService = {
       `/admin/trainer-payouts/${enrollmentId}`,
     );
     return extractData<{ cleared: boolean; enrollmentId: string }>(response);
+  },
+
+  /** Trainer Payment Figures report — a trainer x month matrix of amounts paid. */
+  getTrainerPaymentFigures: async (filters: {
+    financialYear: number;
+    batch?: string;
+    course?: string;
+    completionStatus?: string;
+    paymentSeq?: PaymentSequence;
+  }) => {
+    const response = await api.get("/admin/reports/trainer-payment-figures", {
+      params: filters,
+    });
+    return extractData<TrainerPaymentFiguresResult>(response);
   },
 
   getTrainerDetail: async (

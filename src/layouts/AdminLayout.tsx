@@ -140,6 +140,11 @@ const NAV_ITEMS: NavItem[] = [
         icon: <DollarSign className="h-4 w-4" />,
       },
       {
+        label: "Trainer Payment Figures",
+        path: ROUTES.ADMIN_TRAINER_PAYMENT_FIGURES,
+        icon: <Wallet className="h-4 w-4" />,
+      },
+      {
         label: "Recruiter Shortlist",
         path: ROUTES.ADMIN_RECRUITER_SHORTLIST,
         icon: <ListChecks className="h-4 w-4" />,

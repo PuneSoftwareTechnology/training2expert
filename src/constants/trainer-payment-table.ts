@@ -134,3 +134,57 @@ export const TRAINER_PAYOUT_MODES = [
   { value: "UPI", label: "UPI" },
   { value: "CASH", label: "Cash" },
 ] as const;
+
+// ─── Trainer Payment Figures report ─────────────────────────────────────────
+// Indian financial year runs April to March, so the report's columns are in
+// that order rather than Jan-Dec like the enrollment/enquiry figures reports.
+export const FINANCIAL_MONTHS = [
+  { month: 4, label: "Apr" },
+  { month: 5, label: "May" },
+  { month: 6, label: "Jun" },
+  { month: 7, label: "Jul" },
+  { month: 8, label: "Aug" },
+  { month: 9, label: "Sep" },
+  { month: 10, label: "Oct" },
+  { month: 11, label: "Nov" },
+  { month: 12, label: "Dec" },
+  { month: 1, label: "Jan" },
+  { month: 2, label: "Feb" },
+  { month: 3, label: "Mar" },
+] as const;
+
+export const PAYMENT_SEQUENCES = [
+  { value: "BOTH", label: "Both (default)" },
+  { value: "FIRST", label: "1st payment" },
+  { value: "SECOND", label: "2nd payment" },
+] as const;
+
+/** Start year of the financial year containing `date` (Apr-Mar). */
+export function financialYearStart(date = new Date()): number {
+  // getMonth() is zero-based, so >= 3 means April onwards.
+  return date.getMonth() >= 3 ? date.getFullYear() : date.getFullYear() - 1;
+}
+
+/** 2026 -> "26-27". */
+export function financialYearLabel(startYear: number): string {
+  const end = (startYear + 1) % 100;
+  return `${startYear % 100}-${String(end).padStart(2, "0")}`;
+}
+
+/** Inclusive date bounds for one financial year, or one month within it. */
+export function financialYearRange(
+  startYear: number,
+  month?: number,
+): { from: string; to: string } {
+  if (month === undefined) {
+    return { from: `${startYear}-04-01`, to: `${startYear + 1}-03-31` };
+  }
+  // Jan-Mar of a financial year fall in the following calendar year.
+  const year = month >= 4 ? startYear : startYear + 1;
+  const lastDay = new Date(year, month, 0).getDate();
+  const mm = String(month).padStart(2, "0");
+  return {
+    from: `${year}-${mm}-01`,
+    to: `${year}-${mm}-${String(lastDay).padStart(2, "0")}`,
+  };
+}

@@ -118,3 +118,30 @@ export interface TrainerPayoutUpdate {
   comment?: string | null;
   payment_status?: Exclude<TrainerPaymentStatus, "NOT_SET"> | null;
 }
+
+export type PaymentSequence = "BOTH" | "FIRST" | "SECOND";
+
+/**
+ * One row of the Trainer Payment Figures report: amounts paid to a trainer,
+ * bucketed by the calendar month of the payment.
+ */
+export interface TrainerPaymentFigureRow {
+  trainerId: string;
+  trainerCode: string;
+  trainerName: string;
+  trainerCourses: string[];
+  trainerNote: string | null;
+  /** Keyed by calendar month number (1-12). Missing months mean nothing paid. */
+  monthly: Record<number, number>;
+  /** Scoped to the selected financial year and payment sequence. */
+  totalPaid: number;
+  totalTds: number;
+  /** Outstanding across all time — deliberately NOT year-scoped. */
+  balanceToPay: number;
+}
+
+export interface TrainerPaymentFiguresResult {
+  rows: TrainerPaymentFigureRow[];
+  courses: string[];
+  batches: string[];
+}
