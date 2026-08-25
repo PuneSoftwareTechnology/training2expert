@@ -114,6 +114,11 @@ export function MergeTrainersDialog({
                 lost.
               </li>
               <li>
+                PAN, bank details and fees already on the kept trainer are
+                left alone; any the kept trainer is missing are taken from the
+                records being merged in.
+              </li>
+              <li>
                 {losers.length} trainer record
                 {losers.length === 1 ? "" : "s"} will be deleted.
               </li>

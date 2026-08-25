@@ -140,7 +140,7 @@ const NAV_ITEMS: NavItem[] = [
         icon: <DollarSign className="h-4 w-4" />,
       },
       {
-        label: "Trainer Payment Figures",
+        label: "Trainer Payments",
         path: ROUTES.ADMIN_TRAINER_PAYMENT_FIGURES,
         icon: <Wallet className="h-4 w-4" />,
       },
@@ -315,7 +315,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
   const sidebarContent = (
     <>
-      <div className="flex h-14 items-center justify-between px-4">
+      <div className="flex h-14 shrink-0 items-center justify-between px-4">
         {(isMobile || !sidebarCollapsed) && (
           <h1 className="text-lg font-bold text-sidebar-primary">
             Training2Expert {roleLabel}
@@ -346,19 +346,22 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         )}
       </div>
 
-      <Separator className="bg-sidebar-border" />
+      <Separator className="shrink-0 bg-sidebar-border" />
 
-      <ScrollArea className="flex-1 px-2 py-2">
-        <nav className="flex flex-col gap-1">
+      <ScrollArea
+        type="auto"
+        className="min-h-0 flex-1 px-2 py-2 [&_[data-slot=scroll-area-thumb]]:bg-sidebar-border"
+      >
+        <nav className="flex flex-col gap-1 pb-2">
           {filteredItems.map((item) =>
             item.type === "group" ? renderGroup(item) : renderLeaf(item),
           )}
         </nav>
       </ScrollArea>
 
-      <Separator className="bg-sidebar-border" />
+      <Separator className="shrink-0 bg-sidebar-border" />
 
-      <div className="p-2">
+      <div className="shrink-0 p-2">
         {(isMobile || !sidebarCollapsed) && user && (
           <p className="mb-2 truncate px-3 text-xs text-sidebar-foreground/60">
             {user.name} (
@@ -393,7 +396,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         <motion.aside
           animate={{ width: sidebarCollapsed ? 64 : 256 }}
           transition={{ duration: 0.2, ease: "easeInOut" }}
-          className="hidden md:flex flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground"
+          className="hidden md:flex h-full min-h-0 flex-col overflow-hidden border-r border-sidebar-border bg-sidebar text-sidebar-foreground"
         >
           {sidebarContent}
         </motion.aside>
@@ -432,7 +435,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               animate={{ x: 0 }}
               exit={{ x: -256 }}
               transition={{ duration: 0.2, ease: "easeInOut" }}
-              className="fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-sidebar text-sidebar-foreground shadow-xl"
+              className="fixed inset-y-0 left-0 z-50 flex w-64 min-h-0 flex-col overflow-hidden bg-sidebar text-sidebar-foreground shadow-xl"
             >
               {sidebarContent}
             </motion.aside>

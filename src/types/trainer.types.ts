@@ -16,8 +16,35 @@ export interface Trainer {
   courses: string[];
   /** Only worth filling in to tell two same-named trainers apart. */
   note: string | null;
+
+  /**
+   * Record-keeping only — PAN, bank details, standing fee and a free-text
+   * comment. Nothing outside the Trainers page reads these. `fees` in
+   * particular is NOT the payout figure: what we owe for a given student lives
+   * on the payout row (`TrainerPayoutRow.trainingFee`) and is edited there.
+   */
+  panNumber: string | null;
+  beneficiaryName: string | null;
+  bankName: string | null;
+  ifscCode: string | null;
+  accountNumber: string | null;
+  /** null means "not recorded" — distinct from a recorded 0. */
+  fees: number | null;
+  comment: string | null;
+
   isActive: boolean;
   createdAt: string;
+}
+
+/** The write payload for the record-keeping fields — same shape on create and edit. */
+export interface TrainerDetailInput {
+  panNumber?: string | null;
+  beneficiaryName?: string | null;
+  bankName?: string | null;
+  ifscCode?: string | null;
+  accountNumber?: string | null;
+  fees?: number | null;
+  comment?: string | null;
 }
 
 export interface TrainerWithStats extends Trainer {

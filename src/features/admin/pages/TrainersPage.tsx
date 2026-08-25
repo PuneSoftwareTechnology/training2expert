@@ -30,9 +30,13 @@ import { FilterActions } from "@/components/ui/filter-actions";
 import { trainerService } from "@/services/trainer.service";
 import { getErrorMessage } from "@/services/api";
 import { normalizeTrainerName } from "@/utils/trainer";
+import { formatCurrency } from "@/utils/format";
 import { ROUTES } from "@/constants/routes";
 import type { TrainerWithStats } from "@/types/trainer.types";
-import type { TrainerFormValues } from "../schemas/trainer.schema";
+import {
+  toTrainerDetailPayload,
+  type TrainerFormValues,
+} from "../schemas/trainer.schema";
 
 import { AddTrainerDialog } from "../components/AddTrainerDialog";
 import { MergeTrainersDialog } from "../components/MergeTrainersDialog";
@@ -49,6 +53,42 @@ function CourseBadges({ courses }: { courses: string[] }) {
         <Badge key={c} variant="secondary" className="text-xs font-normal">
           {c}
         </Badge>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * The record-keeping fields are frequently blank, and four sparse columns of
+ * "—" read as noise. Bank details therefore share one cell, labelled, so a
+ * partially filled record still says which part is missing.
+ */
+function BankDetailsCell({ trainer }: { trainer: TrainerWithStats }) {
+  const lines: [string, string | null][] = [
+    ["Beneficiary", trainer.beneficiaryName],
+    ["Bank", trainer.bankName],
+    ["IFSC", trainer.ifscCode],
+    ["A/c", trainer.accountNumber],
+  ];
+  const filled = lines.filter(([, value]) => value);
+
+  if (filled.length === 0) {
+    return <span className="text-muted-foreground">—</span>;
+  }
+
+  return (
+    <div className="space-y-0.5 text-xs whitespace-nowrap">
+      {filled.map(([label, value]) => (
+        <div key={label}>
+          <span className="text-muted-foreground">{label}: </span>
+          <span
+            className={
+              label === "IFSC" || label === "A/c" ? "font-mono" : undefined
+            }
+          >
+            {value}
+          </span>
+        </div>
       ))}
     </div>
   );
@@ -92,6 +132,7 @@ export default function TrainersPage() {
         note: values.note || null,
         isActive: values.isActive,
         confirmDuplicate,
+        ...toTrainerDetailPayload(values),
       }),
     onSuccess: (trainer) => {
       invalidateAll();
@@ -108,6 +149,7 @@ export default function TrainersPage() {
         courses: values.courses,
         note: values.note || null,
         isActive: values.isActive,
+        ...toTrainerDetailPayload(values),
       }),
     onSuccess: () => {
       invalidateAll();
@@ -262,6 +304,63 @@ export default function TrainersPage() {
       cell: ({ getValue }) => <CourseBadges courses={getValue<string[]>()} />,
     },
     {
+      accessorKey: "panNumber",
+      header: "PAN",
+      enableSorting: false,
+      cell: ({ getValue }) => {
+        const pan = getValue<string | null>();
+        return pan ? (
+          <span className="font-mono text-xs whitespace-nowrap">{pan}</span>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        );
+      },
+    },
+    {
+      id: "bankDetails",
+      header: "Bank Details",
+      enableSorting: false,
+      cell: ({ row }) => <BankDetailsCell trainer={row.original} />,
+    },
+    {
+      accessorKey: "fees",
+      header: ({ column }) => (
+        <div className="text-right">
+          <SortableHeader column={column} title="Fees" />
+        </div>
+      ),
+      cell: ({ getValue }) => {
+        const fees = getValue<number | null>();
+        // null is "not recorded"; a recorded 0 still shows as ₹0.
+        return fees === null || fees === undefined ? (
+          <span className="block text-right text-muted-foreground">—</span>
+        ) : (
+          <span className="block text-right whitespace-nowrap">
+            {formatCurrency(fees)}
+          </span>
+        );
+      },
+    },
+    {
+      accessorKey: "comment",
+      header: "Comment",
+      enableSorting: false,
+      cell: ({ getValue }) => {
+        const comment = getValue<string | null>();
+        if (!comment) return <span className="text-muted-foreground">—</span>;
+        // Truncated rather than wrapped: one long comment must not set the
+        // height of every other row. The full text is on hover.
+        return (
+          <span
+            className="block max-w-[16rem] truncate text-xs"
+            title={comment}
+          >
+            {comment}
+          </span>
+        );
+      },
+    },
+    {
       accessorKey: "enrollmentCount",
       header: ({ column }) => (
         <div className="text-right">
@@ -386,7 +485,7 @@ export default function TrainersPage() {
         </Card>
 
         {isLoading ? (
-          <TableSkeleton rows={8} columns={8} />
+          <TableSkeleton rows={8} columns={12} />
         ) : (
           <Card className="overflow-hidden border-amber-200/60">
             <CardContent className="p-0">

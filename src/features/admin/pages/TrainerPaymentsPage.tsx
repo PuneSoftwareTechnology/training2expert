@@ -176,6 +176,11 @@ export default function TrainerPaymentsPage() {
   const [paymentSeq, setPaymentSeq] = useState(
     () => searchParams.get("paymentSeq") ?? "BOTH",
   );
+  // Set by the report's Balance to Pay drill-down: only rows that still carry a
+  // non-zero balance. Not year-scoped, so it arrives without paidFrom/paidTo.
+  const [hasBalance, setHasBalance] = useState(
+    () => searchParams.get("hasBalance") === "true",
+  );
   const [search, setSearch] = useState("");
   const [editRow, setEditRow] = useState<Row | null>(null);
   const [clearRow, setClearRow] = useState<Row | null>(null);
@@ -205,6 +210,7 @@ export default function TrainerPaymentsPage() {
       paidFrom,
       paidTo,
       paymentSeq,
+      hasBalance,
       search,
     ],
     queryFn: () =>
@@ -221,6 +227,7 @@ export default function TrainerPaymentsPage() {
         paidFrom: paidFrom || undefined,
         paidTo: paidTo || undefined,
         paymentSeq: paymentSeq === "BOTH" ? undefined : paymentSeq,
+        hasBalance: hasBalance || undefined,
         search: search.trim() || undefined,
         limit: 100,
       }),
@@ -337,12 +344,16 @@ export default function TrainerPaymentsPage() {
     setPaidFrom("");
     setPaidTo("");
     setPaymentSeq("BOTH");
+    setHasBalance(false);
     setSearch("");
   };
 
   // Explains a list narrowed by the report's drill-down, and lets it be undone.
-  const paidChip = (() => {
-    if (!paidFrom && !paidTo) return null;
+  // One chip per invisible filter that arrived — a paid-date window from a month
+  // or Total Paid figure, an outstanding-only list from a Balance to Pay figure.
+  const drillChips: { key: string; label: string; onClear: () => void }[] = [];
+
+  if (paidFrom || paidTo) {
     const fmt = (d: string) =>
       new Date(d).toLocaleDateString("en-IN", {
         month: "short",
@@ -360,14 +371,24 @@ export default function TrainerPaymentsPage() {
         : paymentSeq === "SECOND"
           ? ", 2nd payment"
           : "";
-    return `Paid in ${window}${seqLabel}`;
-  })();
+    drillChips.push({
+      key: "paid",
+      label: `Paid in ${window}${seqLabel}`,
+      onClear: () => {
+        setPaidFrom("");
+        setPaidTo("");
+        setPaymentSeq("BOTH");
+      },
+    });
+  }
 
-  const clearPaidFilter = () => {
-    setPaidFrom("");
-    setPaidTo("");
-    setPaymentSeq("BOTH");
-  };
+  if (hasBalance) {
+    drillChips.push({
+      key: "balance",
+      label: "Balance still to pay",
+      onClear: () => setHasBalance(false),
+    });
+  }
 
   if (isError) return <QueryError error={error} onRetry={refetch} />;
 
@@ -458,26 +479,29 @@ export default function TrainerPaymentsPage() {
           />
         </div>
 
-        {paidChip && (
-          <div className="flex items-center gap-2">
+        {drillChips.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs text-muted-foreground">
               Showing rows from the figures report:
             </span>
-            <Badge
-              variant="secondary"
-              className="gap-1 border border-violet-300 bg-violet-100 text-violet-800"
-            >
-              {paidChip}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="-mr-1 h-4 w-4 hover:bg-violet-200"
-                onClick={clearPaidFilter}
-                title="Show all payments"
+            {drillChips.map((chip) => (
+              <Badge
+                key={chip.key}
+                variant="secondary"
+                className="gap-1 border border-violet-300 bg-violet-100 text-violet-800"
               >
-                <X className="h-3 w-3" />
-              </Button>
-            </Badge>
+                {chip.label}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="-mr-1 h-4 w-4 hover:bg-violet-200"
+                  onClick={chip.onClear}
+                  title="Remove this filter"
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </Badge>
+            ))}
           </div>
         )}
 

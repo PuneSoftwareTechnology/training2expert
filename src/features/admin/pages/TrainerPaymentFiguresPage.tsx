@@ -44,11 +44,12 @@ import type {
 
 const ALL = "ALL";
 
-/** Compact money for the month grid — the full figure lives in the tooltip. */
-function shortMoney(value: number): string {
-  if (value >= 100000) return `${(value / 100000).toFixed(2)}L`;
-  if (value >= 1000) return `${(value / 1000).toFixed(1)}k`;
-  return String(value);
+/**
+ * Full rupee amount for the grid — no k/L shortening, so 12000 reads as 12000.
+ * Rounded to whole rupees; paise never occur in payouts.
+ */
+function fullMoney(value: number): string {
+  return String(Math.round(value));
 }
 
 export default function TrainerPaymentFiguresPage() {
@@ -98,6 +99,20 @@ export default function TrainerPaymentFiguresPage() {
     [rows],
   );
 
+  /** The roster filters every figure on this page shares. */
+  const rosterParams = useCallback(
+    (trainerId: string | null) => {
+      const params = new URLSearchParams();
+      if (trainerId) params.set("trainerId", trainerId);
+      if (batch !== ALL) params.set("batch", batch);
+      if (course !== ALL) params.set("course", course);
+      if (completionStatus !== ALL)
+        params.set("completionStatus", completionStatus);
+      return params;
+    },
+    [batch, course, completionStatus],
+  );
+
   /**
    * Jumps to the tracker carrying the filters that produced the clicked figure.
    * A month cell passes paidFrom/paidTo — payment dates, not enrollment dates,
@@ -105,12 +120,7 @@ export default function TrainerPaymentFiguresPage() {
    */
   const drillDown = useCallback(
     (trainerId: string | null, month?: number) => {
-      const params = new URLSearchParams();
-      if (trainerId) params.set("trainerId", trainerId);
-      if (batch !== ALL) params.set("batch", batch);
-      if (course !== ALL) params.set("course", course);
-      if (completionStatus !== ALL)
-        params.set("completionStatus", completionStatus);
+      const params = rosterParams(trainerId);
       if (paymentSeq !== "BOTH") params.set("paymentSeq", paymentSeq);
 
       const { from, to } = financialYearRange(financialYear, month);
@@ -119,7 +129,22 @@ export default function TrainerPaymentFiguresPage() {
 
       navigate(`${ROUTES.ADMIN_TRAINER_PAYMENTS}?${params.toString()}`);
     },
-    [navigate, batch, course, completionStatus, paymentSeq, financialYear],
+    [navigate, rosterParams, paymentSeq, financialYear],
+  );
+
+  /**
+   * Balance to Pay drill-down. Deliberately unlike the one above: the balance is
+   * outstanding across all time, so it passes no paid-date window and no payment
+   * sequence — either would hide rows that make up the figure. hasBalance keeps
+   * the list to the rows that actually carry a balance, so it adds up.
+   */
+  const drillDownBalance = useCallback(
+    (trainerId: string | null) => {
+      const params = rosterParams(trainerId);
+      params.set("hasBalance", "true");
+      navigate(`${ROUTES.ADMIN_TRAINER_PAYMENTS}?${params.toString()}`);
+    },
+    [navigate, rosterParams],
   );
 
   const totals = useMemo(() => {
@@ -144,25 +169,35 @@ export default function TrainerPaymentFiguresPage() {
     value,
     onClick,
     bold,
+    /** Overrides the default violet — the balance column colours by sign. */
+    tone = "text-violet-700",
+    /** Rendered instead of a blank when the figure is zero. */
+    zeroTone,
   }: {
     value: number;
     onClick?: () => void;
     bold?: boolean;
+    tone?: string;
+    zeroTone?: string;
   }) => {
     if (!value) {
       return (
-        <span className="block text-right text-muted-foreground">
-          {bold ? "0" : ""}
+        <span
+          className={`block whitespace-nowrap text-right ${
+            zeroTone ?? "text-muted-foreground"
+          }`}
+        >
+          {bold || zeroTone ? "0" : ""}
         </span>
       );
     }
-    const text = shortMoney(value);
+    const text = fullMoney(value);
     return onClick ? (
       <button
         type="button"
         onClick={onClick}
         title={`${formatCurrency(value)} — open in the tracker`}
-        className={`block w-full text-right text-violet-700 hover:underline ${
+        className={`block w-full whitespace-nowrap text-right ${tone} hover:underline ${
           bold ? "font-bold" : ""
         }`}
       >
@@ -170,7 +205,7 @@ export default function TrainerPaymentFiguresPage() {
       </button>
     ) : (
       <span
-        className={`block text-right ${bold ? "font-bold" : ""}`}
+        className={`block whitespace-nowrap text-right ${bold ? "font-bold" : ""}`}
         title={formatCurrency(value)}
       >
         {text}
@@ -293,7 +328,7 @@ export default function TrainerPaymentFiguresPage() {
         ) : (
           <Card className="overflow-hidden border-violet-200/60">
             <CardContent className="overflow-x-auto p-0">
-              <Table className="min-w-[1200px]">
+              <Table className="min-w-[1500px] tabular-nums">
                 <TableHeader>
                   <TableRow className="border-0 bg-gradient-to-r from-violet-500 to-indigo-600 hover:bg-transparent">
                     <TableHead className="sticky left-0 z-10 bg-violet-600 text-xs font-bold uppercase tracking-wider text-white">
@@ -356,27 +391,23 @@ export default function TrainerPaymentFiguresPage() {
                         </TableCell>
                         <TableCell>
                           <span
-                            className="block text-right text-orange-600"
+                            className="block whitespace-nowrap text-right text-orange-600"
                             title={formatCurrency(row.totalTds)}
                           >
-                            {row.totalTds ? shortMoney(row.totalTds) : "0"}
+                            {row.totalTds ? fullMoney(row.totalTds) : "0"}
                           </span>
                         </TableCell>
                         <TableCell>
-                          <span
-                            className={`block text-right font-semibold ${
+                          <MoneyCell
+                            value={row.balanceToPay}
+                            onClick={() => drillDownBalance(row.trainerId)}
+                            tone={`font-semibold ${
                               row.balanceToPay > 0
                                 ? "text-destructive"
-                                : row.balanceToPay < 0
-                                  ? "text-orange-600"
-                                  : "text-green-600"
+                                : "text-orange-600"
                             }`}
-                            title={formatCurrency(row.balanceToPay)}
-                          >
-                            {row.balanceToPay
-                              ? shortMoney(row.balanceToPay)
-                              : "0"}
-                          </span>
+                            zeroTone="font-semibold text-green-600"
+                          />
                         </TableCell>
                       </TableRow>
                     ))
@@ -405,19 +436,20 @@ export default function TrainerPaymentFiguresPage() {
                       </TableCell>
                       <TableCell>
                         <span
-                          className="block text-right font-bold text-orange-600"
+                          className="block whitespace-nowrap text-right font-bold text-orange-600"
                           title={formatCurrency(totals.tds)}
                         >
-                          {shortMoney(totals.tds)}
+                          {fullMoney(totals.tds)}
                         </span>
                       </TableCell>
                       <TableCell>
-                        <span
-                          className="block text-right font-bold text-destructive"
-                          title={formatCurrency(totals.balance)}
-                        >
-                          {shortMoney(totals.balance)}
-                        </span>
+                        <MoneyCell
+                          value={totals.balance}
+                          onClick={() => drillDownBalance(null)}
+                          tone="text-destructive"
+                          zeroTone="font-bold text-green-600"
+                          bold
+                        />
                       </TableCell>
                     </TableRow>
                   )}
@@ -428,11 +460,12 @@ export default function TrainerPaymentFiguresPage() {
         )}
 
         <p className="text-xs text-muted-foreground">
-          Figures are shown short (12.5k = ₹12,500) — hover any figure for the
-          exact amount. Month columns and Total Paid count what was actually paid
+          Figures are full rupee amounts — hover any figure for the formatted
+          value. Month columns and Total Paid count what was actually paid
           in FY {financialYearLabel(financialYear)};{" "}
           <span className="font-medium">Balance to Pay*</span> is the outstanding
-          amount across all time and does not change with the year filter.
+          amount across all time and does not change with the year filter —
+          clicking it opens every unsettled row, not just this year's.
         </p>
       </div>
     </PageTransition>

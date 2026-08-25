@@ -1,6 +1,7 @@
 import { api, extractData } from "./api";
 import type {
   PaymentSequence,
+  TrainerDetailInput,
   TrainerPaymentFiguresResult,
   Trainer,
   TrainerWithStats,
@@ -24,6 +25,8 @@ export interface TrainerPayoutFilters {
   paidFrom?: string;
   paidTo?: string;
   paymentSeq?: string;
+  /** Only rows whose balance is non-zero — the report's balance drill-down. */
+  hasBalance?: boolean;
   search?: string;
 }
 
@@ -51,21 +54,23 @@ export const trainerService = {
     return extractData<TrainerWithStats[]>(response);
   },
 
-  createTrainer: async (data: {
-    name: string;
-    courses?: string[];
-    note?: string | null;
-    isActive?: boolean;
-    /** Set once the user confirms a same-name trainer is a different person. */
-    confirmDuplicate?: boolean;
-  }) => {
+  createTrainer: async (
+    data: TrainerDetailInput & {
+      name: string;
+      courses?: string[];
+      note?: string | null;
+      isActive?: boolean;
+      /** Set once the user confirms a same-name trainer is a different person. */
+      confirmDuplicate?: boolean;
+    },
+  ) => {
     const response = await api.post("/super-admin/trainers", data);
     return extractData<Trainer>(response);
   },
 
   updateTrainer: async (
     id: string,
-    data: {
+    data: TrainerDetailInput & {
       name?: string;
       courses?: string[];
       note?: string | null;

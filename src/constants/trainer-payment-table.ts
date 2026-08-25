@@ -102,8 +102,10 @@ export const SUB_COLUMNS: { label: string; bg: string; extra?: string }[] = [
 ];
 
 /**
- * TDS on professional fees (s.194J) — used only to pre-fill the TDS input when
- * an amount is entered. What gets stored is always the explicit rupee figure the
+ * TDS on professional fees (s.194J) — used only to pre-fill the TDS input once
+ * an amount has been entered. The rate applies to the gross fee, and the amount
+ * typed in is the net already reduced by it, so the pre-fill grosses up first:
+ * net / 0.9 * 0.1. What gets stored is always the explicit rupee figure the
  * user leaves in the box, never a rate, so an override survives.
  */
 export const DEFAULT_TDS_PERCENT = 10;
@@ -129,11 +131,20 @@ export const TRAINER_PAYMENT_STATUS_LABELS: Record<string, string> =
     TRAINER_PAYMENT_STATUS_FILTERS.map((s) => [s.value, s.label]),
   );
 
+/**
+ * Accounts the payout can go out of, mirroring the list kept on the accounts
+ * sheet. Stored as the plain uppercase value, which is also what the CSV export
+ * carries, so the value doubles as the label for the banks.
+ */
 export const TRAINER_PAYOUT_MODES = [
-  { value: "BANK", label: "Bank Transfer" },
-  { value: "UPI", label: "UPI" },
+  { value: "HDFC", label: "HDFC" },
+  { value: "ICICI", label: "ICICI" },
+  { value: "INDUSIND", label: "IndusInd" },
   { value: "CASH", label: "Cash" },
 ] as const;
+
+export const TRAINER_PAYOUT_MODE_LABELS: Record<string, string> =
+  Object.fromEntries(TRAINER_PAYOUT_MODES.map((m) => [m.value, m.label]));
 
 // ─── Trainer Payment Figures report ─────────────────────────────────────────
 // Indian financial year runs April to March, so the report's columns are in

@@ -6,6 +6,7 @@ import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -20,6 +21,8 @@ import {
 import { useCourseOptions } from "@/hooks/useCourseOptions";
 import { findSameNameTrainers } from "@/utils/trainer";
 import {
+  IFSC_PATTERN,
+  PAN_PATTERN,
   trainerSchema,
   type TrainerFormValues,
 } from "../schemas/trainer.schema";
@@ -34,6 +37,25 @@ interface AddTrainerDialogProps {
   onSubmit: (values: TrainerFormValues, confirmDuplicate: boolean) => void;
   isPending: boolean;
 }
+
+/**
+ * Every field blank rather than absent: react-hook-form keeps an uncontrolled
+ * input's old text when a reset omits its key, which would leak one trainer's
+ * bank details into the next one added.
+ */
+const BLANK: TrainerFormValues = {
+  name: "",
+  courses: [],
+  note: "",
+  panNumber: "",
+  beneficiaryName: "",
+  bankName: "",
+  ifscCode: "",
+  accountNumber: "",
+  fees: "",
+  comment: "",
+  isActive: true,
+};
 
 export function AddTrainerDialog({
   open,
@@ -50,7 +72,7 @@ export function AddTrainerDialog({
 
   const form = useForm<TrainerFormValues>({
     resolver: zodResolver(trainerSchema),
-    defaultValues: { name: "", courses: [], note: "", isActive: true },
+    defaultValues: BLANK,
   });
 
   useEffect(() => {
@@ -62,15 +84,31 @@ export function AddTrainerDialog({
             name: editing.name,
             courses: editing.courses ?? [],
             note: editing.note ?? "",
+            panNumber: editing.panNumber ?? "",
+            beneficiaryName: editing.beneficiaryName ?? "",
+            bankName: editing.bankName ?? "",
+            ifscCode: editing.ifscCode ?? "",
+            accountNumber: editing.accountNumber ?? "",
+            fees: editing.fees === null ? "" : String(editing.fees),
+            comment: editing.comment ?? "",
             isActive: editing.isActive,
           }
-        : { name: "", courses: [], note: "", isActive: true },
+        : BLANK,
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, editing]);
 
   const selectedCourses = form.watch("courses") ?? [];
   const nameValue = form.watch("name") ?? "";
+
+  // A hint, not a validation error: these are copied off documents, and a value
+  // that does not match the usual shape is still worth recording. Saving is
+  // never blocked on them.
+  const panValue = (form.watch("panNumber") ?? "").trim();
+  const ifscValue = (form.watch("ifscCode") ?? "").trim();
+  const panLooksOff = panValue !== "" && !PAN_PATTERN.test(panValue.toUpperCase());
+  const ifscLooksOff =
+    ifscValue !== "" && !IFSC_PATTERN.test(ifscValue.toUpperCase());
 
   // Courses already saved on this trainer that are no longer in the master list
   // must stay visible, or editing an older trainer would silently drop them.
@@ -106,7 +144,7 @@ export function AddTrainerDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{editing ? "Edit Trainer" : "Add Trainer"}</DialogTitle>
         </DialogHeader>
@@ -212,6 +250,122 @@ export function AddTrainerDialog({
                 {form.formState.errors.note.message}
               </p>
             )}
+          </div>
+
+          <div className="space-y-3 rounded-md border border-slate-200 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-900/30">
+            <div>
+              <Label className="text-sm font-medium">For our records</Label>
+              <p className="text-xs text-muted-foreground">
+                Kept on the trainer for reference only — none of it appears on
+                enrollments, receipts or reports, and the fee here is not the
+                payout figure (that is per student, on Trainer Payments).
+              </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label>PAN Number</Label>
+                <Input
+                  {...form.register("panNumber")}
+                  placeholder="ABCDE1234F"
+                  className="font-mono uppercase"
+                />
+                {form.formState.errors.panNumber ? (
+                  <p className="text-xs text-destructive">
+                    {form.formState.errors.panNumber.message}
+                  </p>
+                ) : (
+                  panLooksOff && (
+                    <p className="text-xs text-amber-600">
+                      Not the usual 5 letters, 4 digits, 1 letter — saving it
+                      anyway.
+                    </p>
+                  )
+                )}
+              </div>
+
+              <div className="space-y-1">
+                <Label>Fees</Label>
+                <Input
+                  {...form.register("fees")}
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="Leave blank if not agreed yet"
+                />
+                {form.formState.errors.fees && (
+                  <p className="text-xs text-destructive">
+                    {form.formState.errors.fees.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2 rounded-md border bg-background p-3">
+              <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Bank Details
+              </Label>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label>Beneficiary Name</Label>
+                  <Input
+                    {...form.register("beneficiaryName")}
+                    placeholder="Name exactly as on the account"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>Bank Name</Label>
+                  <Input
+                    {...form.register("bankName")}
+                    placeholder="e.g. HDFC Bank"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>IFSC Code</Label>
+                  <Input
+                    {...form.register("ifscCode")}
+                    placeholder="HDFC0001234"
+                    className="font-mono uppercase"
+                  />
+                  {form.formState.errors.ifscCode ? (
+                    <p className="text-xs text-destructive">
+                      {form.formState.errors.ifscCode.message}
+                    </p>
+                  ) : (
+                    ifscLooksOff && (
+                      <p className="text-xs text-amber-600">
+                        Not the usual 11 characters — saving it anyway.
+                      </p>
+                    )
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <Label>Account Number</Label>
+                  {/* Not type="number": account numbers carry leading zeros
+                      and are identifiers, never arithmetic. */}
+                  <Input
+                    {...form.register("accountNumber")}
+                    inputMode="numeric"
+                    placeholder="Account number"
+                    className="font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label>Comment</Label>
+              <Textarea
+                {...form.register("comment")}
+                rows={2}
+                placeholder="Anything worth remembering about this trainer"
+              />
+              {form.formState.errors.comment && (
+                <p className="text-xs text-destructive">
+                  {form.formState.errors.comment.message}
+                </p>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center justify-between rounded-md border p-3">
