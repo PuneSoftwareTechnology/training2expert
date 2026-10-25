@@ -89,7 +89,7 @@ export function AddTrainerDialog({
             bankName: editing.bankName ?? "",
             ifscCode: editing.ifscCode ?? "",
             accountNumber: editing.accountNumber ?? "",
-            fees: editing.fees === null ? "" : String(editing.fees),
+            fees: editing.fees ?? "",
             comment: editing.comment ?? "",
             isActive: editing.isActive,
           }
@@ -288,10 +288,7 @@ export function AddTrainerDialog({
                 <Label>Fees</Label>
                 <Input
                   {...form.register("fees")}
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="Leave blank if not agreed yet"
+                  placeholder="e.g. 40% of course fees"
                 />
                 {form.formState.errors.fees && (
                   <p className="text-xs text-destructive">

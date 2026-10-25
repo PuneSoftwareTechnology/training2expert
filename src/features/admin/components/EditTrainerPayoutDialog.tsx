@@ -104,6 +104,29 @@ function rowToFields(row: TrainerPayoutRow): Fields {
   };
 }
 
+interface InstallmentErrors {
+  date?: string;
+  mode?: string;
+}
+
+/**
+ * A recorded payment has to say when it happened and which account it went
+ * through, otherwise it cannot be reconciled against the bank later.
+ */
+function installmentErrors(
+  amount: string,
+  date: string,
+  mode: string,
+): InstallmentErrors {
+  if (num(amount) <= 0) return {};
+  return {
+    date: date ? undefined : "Payment date is required",
+    mode: mode ? undefined : "Select a payment mode",
+  };
+}
+
+const hasErrors = (e: InstallmentErrors) => Boolean(e.date || e.mode);
+
 interface InstallmentBlockProps {
   label: string;
   tone: SectionTone;
@@ -113,6 +136,7 @@ interface InstallmentBlockProps {
   date: string;
   tds: string;
   mode: string;
+  errors: InstallmentErrors;
   onAmountChange: (value: string) => void;
   onAmountBlur: () => void;
   onDateChange: (value: string) => void;
@@ -134,6 +158,7 @@ function InstallmentBlock({
   date,
   tds,
   mode,
+  errors,
   onAmountChange,
   onAmountBlur,
   onDateChange,
@@ -166,7 +191,11 @@ function InstallmentBlock({
             type="date"
             value={date}
             onChange={(e) => onDateChange(e.target.value)}
+            aria-invalid={Boolean(errors.date)}
           />
+          {errors.date && (
+            <p className="text-xs text-destructive">{errors.date}</p>
+          )}
         </div>
         <div className="space-y-1">
           <Label className="text-xs">TDS Deducted</Label>
@@ -184,7 +213,7 @@ function InstallmentBlock({
             value={mode || NO_MODE}
             onValueChange={(v) => onModeChange(v === NO_MODE ? "" : v)}
           >
-            <SelectTrigger>
+            <SelectTrigger aria-invalid={Boolean(errors.mode)}>
               <SelectValue placeholder="Mode" />
             </SelectTrigger>
             <SelectContent>
@@ -203,6 +232,9 @@ function InstallmentBlock({
               )}
             </SelectContent>
           </Select>
+          {errors.mode && (
+            <p className="text-xs text-destructive">{errors.mode}</p>
+          )}
         </div>
       </div>
       <p className="text-xs text-muted-foreground">
@@ -239,6 +271,8 @@ export function EditTrainerPayoutDialog({
   const [fields, setFields] = useState<Fields | null>(null);
   // Once TDS is edited by hand, the auto-fill stops touching it.
   const [tdsTouched, setTdsTouched] = useState({ first: false, second: false });
+  // Errors stay hidden until the first save attempt, then track live edits.
+  const [showErrors, setShowErrors] = useState(false);
 
   useEffect(() => {
     if (!open || !row) return;
@@ -247,6 +281,7 @@ export function EditTrainerPayoutDialog({
       first: row.installment1Tds !== null,
       second: row.installment2Tds !== null,
     });
+    setShowErrors(false);
   }, [open, row]);
 
   const update = (key: keyof Fields, value: string) =>
@@ -317,8 +352,31 @@ export function EditTrainerPayoutDialog({
     };
   }, [fields]);
 
+  const errors = useMemo(
+    () =>
+      fields
+        ? {
+            first: installmentErrors(
+              fields.installment1_amount,
+              fields.installment1_date,
+              fields.installment1_mode,
+            ),
+            second: installmentErrors(
+              fields.installment2_amount,
+              fields.installment2_date,
+              fields.installment2_mode,
+            ),
+          }
+        : null,
+    [fields],
+  );
+
   const submit = () => {
-    if (!row || !fields) return;
+    if (!row || !fields || !errors) return;
+    if (hasErrors(errors.first) || hasErrors(errors.second)) {
+      setShowErrors(true);
+      return;
+    }
     onSubmit(row.id, {
       training_fee: num(fields.training_fee),
       split1_percent: num(fields.split1_percent),
@@ -338,7 +396,7 @@ export function EditTrainerPayoutDialog({
     });
   };
 
-  if (!row || !fields || !computed) return null;
+  if (!row || !fields || !computed || !errors) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -420,6 +478,7 @@ export function EditTrainerPayoutDialog({
             date={fields.installment1_date}
             tds={fields.installment1_tds}
             mode={fields.installment1_mode}
+            errors={showErrors ? errors.first : {}}
             onAmountChange={(v) => updateAmount("first", v)}
             onAmountBlur={() => fillTdsFromAmount("first")}
             onDateChange={(v) => update("installment1_date", v)}
@@ -435,6 +494,7 @@ export function EditTrainerPayoutDialog({
             date={fields.installment2_date}
             tds={fields.installment2_tds}
             mode={fields.installment2_mode}
+            errors={showErrors ? errors.second : {}}
             onAmountChange={(v) => updateAmount("second", v)}
             onAmountBlur={() => fillTdsFromAmount("second")}
             onDateChange={(v) => update("installment2_date", v)}

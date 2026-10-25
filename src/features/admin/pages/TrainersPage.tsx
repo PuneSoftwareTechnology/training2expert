@@ -30,9 +30,8 @@ import { FilterActions } from "@/components/ui/filter-actions";
 import { trainerService } from "@/services/trainer.service";
 import { getErrorMessage } from "@/services/api";
 import { normalizeTrainerName } from "@/utils/trainer";
-import { formatCurrency } from "@/utils/format";
 import { ROUTES } from "@/constants/routes";
-import type { TrainerWithStats } from "@/types/trainer.types";
+import type { Trainer, TrainerWithStats } from "@/types/trainer.types";
 import {
   toTrainerDetailPayload,
   type TrainerFormValues,
@@ -42,6 +41,16 @@ import { AddTrainerDialog } from "../components/AddTrainerDialog";
 import { MergeTrainersDialog } from "../components/MergeTrainersDialog";
 
 const QUERY_KEY = ["super-admin", "trainers"];
+
+/**
+ * A backend that predates the record-keeping fields strips them from the
+ * request and still answers 200, so the save "succeeds" with nothing stored.
+ * Its response leaves the keys out entirely (a current one sends null), which
+ * is the only way to tell — say so instead of reporting success.
+ */
+const DETAILS_NOT_SAVED =
+  "Saved, but the server did not store PAN, bank details, fees or comment — the backend needs redeploying.";
+const detailsDropped = (trainer: Trainer) => !("panNumber" in trainer);
 
 function CourseBadges({ courses }: { courses: string[] }) {
   if (!courses || courses.length === 0) {
@@ -137,7 +146,8 @@ export default function TrainersPage() {
     onSuccess: (trainer) => {
       invalidateAll();
       setDialogOpen(false);
-      toast.success(`Trainer created as ${trainer.code}`);
+      if (detailsDropped(trainer)) toast.error(DETAILS_NOT_SAVED);
+      else toast.success(`Trainer created as ${trainer.code}`);
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
@@ -151,11 +161,12 @@ export default function TrainersPage() {
         isActive: values.isActive,
         ...toTrainerDetailPayload(values),
       }),
-    onSuccess: () => {
+    onSuccess: (trainer) => {
       invalidateAll();
       setDialogOpen(false);
       setEditing(null);
-      toast.success("Trainer updated");
+      if (detailsDropped(trainer)) toast.error(DETAILS_NOT_SAVED);
+      else toast.success("Trainer updated");
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
@@ -324,19 +335,16 @@ export default function TrainersPage() {
     },
     {
       accessorKey: "fees",
-      header: ({ column }) => (
-        <div className="text-right">
-          <SortableHeader column={column} title="Fees" />
-        </div>
-      ),
+      header: "Fees",
+      enableSorting: false,
       cell: ({ getValue }) => {
-        const fees = getValue<number | null>();
-        // null is "not recorded"; a recorded 0 still shows as ₹0.
-        return fees === null || fees === undefined ? (
-          <span className="block text-right text-muted-foreground">—</span>
-        ) : (
-          <span className="block text-right whitespace-nowrap">
-            {formatCurrency(fees)}
+        const fees = getValue<string | null>();
+        if (!fees) return <span className="text-muted-foreground">—</span>;
+        // Free text like "15k for Agentic AI, 12k for Python" — truncated
+        // the same way as Comment, full text on hover.
+        return (
+          <span className="block max-w-[16rem] truncate text-xs" title={fees}>
+            {fees}
           </span>
         );
       },

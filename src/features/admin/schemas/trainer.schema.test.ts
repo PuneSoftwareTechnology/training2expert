@@ -43,8 +43,11 @@ describe("toTrainerDetailPayload", () => {
       .accountNumber).toBe("0012345678");
   });
 
-  it("distinguishes a recorded fee of 0 from no fee at all", () => {
-    expect(toTrainerDetailPayload(values({ fees: "0" })).fees).toBe(0);
+  it("keeps fees as free text, and blank as null", () => {
+    expect(
+      toTrainerDetailPayload(values({ fees: " 40% of course fees " })).fees,
+    ).toBe("40% of course fees");
+    expect(toTrainerDetailPayload(values({ fees: "0" })).fees).toBe("0");
     expect(toTrainerDetailPayload(values({ fees: "" })).fees).toBeNull();
     expect(toTrainerDetailPayload(values({ fees: undefined })).fees).toBeNull();
   });
@@ -58,9 +61,12 @@ describe("trainerSchema fees", () => {
     expect(parse("").success).toBe(true);
   });
 
-  it("rejects a negative or non-numeric fee", () => {
-    expect(parse("-1").success).toBe(false);
-    expect(parse("abc").success).toBe(false);
+  it("accepts fees written as text", () => {
+    expect(parse("40% of course fees").success).toBe(true);
+    expect(
+      parse("15k for Agentic AI, 12K for Python full stack, 10k for DSA python")
+        .success,
+    ).toBe(true);
   });
 
   it("does not reject an oddly shaped PAN — the form only warns", () => {

@@ -28,8 +28,8 @@ export interface Trainer {
   bankName: string | null;
   ifscCode: string | null;
   accountNumber: string | null;
-  /** null means "not recorded" — distinct from a recorded 0. */
-  fees: number | null;
+  /** Free text, e.g. "40% of course fees". null means "not recorded". */
+  fees: string | null;
   comment: string | null;
 
   isActive: boolean;
@@ -43,7 +43,7 @@ export interface TrainerDetailInput {
   bankName?: string | null;
   ifscCode?: string | null;
   accountNumber?: string | null;
-  fees?: number | null;
+  fees?: string | null;
   comment?: string | null;
 }
 

@@ -1,17 +1,5 @@
 import { z } from "zod";
 
-/**
- * A fee typed into a text input. Blank is allowed and means "not recorded" —
- * z.coerce.number() would turn it into 0, which reads as "works for free".
- */
-const optionalMoney = z
-  .string()
-  .trim()
-  .refine((v) => v === "" || (Number.isFinite(Number(v)) && Number(v) >= 0), {
-    message: "Enter an amount, or leave it blank",
-  })
-  .optional();
-
 export const trainerSchema = z.object({
   name: z.string().trim().min(1, "Trainer name is required").max(150),
   /**
@@ -36,7 +24,11 @@ export const trainerSchema = z.object({
   bankName: z.string().trim().max(150).optional(),
   ifscCode: z.string().trim().max(20, "IFSC is 11 characters").optional(),
   accountNumber: z.string().trim().max(40).optional(),
-  fees: optionalMoney,
+  /**
+   * Free text, not an amount: rates are agreed as "40% of course fees" or
+   * "15k for Agentic AI, 12k for Python full stack" as often as a flat figure.
+   */
+  fees: z.string().trim().max(500, "Keep the fees under 500 characters").optional(),
   comment: z.string().trim().max(1000).optional(),
 
   isActive: z.boolean().optional(),
@@ -56,7 +48,6 @@ export const IFSC_PATTERN = /^[A-Z]{4}0[A-Z0-9]{6}$/;
 export function toTrainerDetailPayload(values: TrainerFormValues) {
   const text = (v: string | undefined) => v?.trim() || null;
   const upper = (v: string | undefined) => v?.trim().toUpperCase() || null;
-  const fee = values.fees?.trim();
 
   return {
     panNumber: upper(values.panNumber),
@@ -64,7 +55,7 @@ export function toTrainerDetailPayload(values: TrainerFormValues) {
     bankName: text(values.bankName),
     ifscCode: upper(values.ifscCode),
     accountNumber: text(values.accountNumber),
-    fees: fee ? Number(fee) : null,
+    fees: text(values.fees),
     comment: text(values.comment),
   };
 }
