@@ -16,6 +16,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -161,10 +162,18 @@ const DEMO_EMAIL_BODY = `<p style="margin:0 0 16px;font-size:15px;line-height:1.
 
 // Wrap text into lines of at most `limit` chars, breaking on word
 // boundaries (falls back to a hard break for words longer than the limit).
+// Existing line breaks are preserved so each follow-up stays on its own line.
 function wrapText(text: string, limit = 100): string {
+  return text
+    .split(/\r?\n/)
+    .map((paragraph) => wrapLine(paragraph, limit))
+    .join("\n");
+}
+
+function wrapLine(text: string, limit: number): string {
   const lines: string[] = [];
   let line = "";
-  for (const word of text.split(/\s+/)) {
+  for (const word of text.split(/[^\S\n]+/).filter(Boolean)) {
     if (!line) {
       line = word;
     } else if (line.length + 1 + word.length <= limit) {
@@ -917,9 +926,10 @@ export default function EnquiryPage() {
                 </div>
                 <div className="col-span-2 space-y-1">
                   <Label>Comment</Label>
-                  <Input
+                  <Textarea
                     {...form.register("comment")}
-                    placeholder="Enter comment"
+                    rows={3}
+                    placeholder="Enter comment (press Enter to add a follow-up on a new line)"
                   />
                 </div>
                 {FORM_SELECTS.map(({ name, label, options }) => (

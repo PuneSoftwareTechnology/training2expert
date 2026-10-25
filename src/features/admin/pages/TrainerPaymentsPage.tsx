@@ -51,6 +51,7 @@ import {
   TOTAL_COLUMNS,
   TRAINER_PAYMENT_STATUS_FILTERS,
   TRAINER_PAYMENT_STATUS_LABELS,
+  TRAINER_PAYOUT_MODE_LABELS,
 } from "@/constants/trainer-payment-table";
 import type {
   TrainerPayoutRow as Row,
@@ -176,6 +177,9 @@ export default function TrainerPaymentsPage() {
   const [paymentSeq, setPaymentSeq] = useState(
     () => searchParams.get("paymentSeq") ?? "BOTH",
   );
+  const [paymentMode, setPaymentMode] = useState(
+    () => searchParams.get("paymentMode") ?? "",
+  );
   // Set by the report's Balance to Pay drill-down: only rows that still carry a
   // non-zero balance. Not year-scoped, so it arrives without paidFrom/paidTo.
   const [hasBalance, setHasBalance] = useState(
@@ -210,6 +214,7 @@ export default function TrainerPaymentsPage() {
       paidFrom,
       paidTo,
       paymentSeq,
+      paymentMode,
       hasBalance,
       search,
     ],
@@ -227,6 +232,7 @@ export default function TrainerPaymentsPage() {
         paidFrom: paidFrom || undefined,
         paidTo: paidTo || undefined,
         paymentSeq: paymentSeq === "BOTH" ? undefined : paymentSeq,
+        paymentMode: paymentMode || undefined,
         hasBalance: hasBalance || undefined,
         search: search.trim() || undefined,
         limit: 100,
@@ -344,6 +350,7 @@ export default function TrainerPaymentsPage() {
     setPaidFrom("");
     setPaidTo("");
     setPaymentSeq("BOTH");
+    setPaymentMode("");
     setHasBalance(false);
     setSearch("");
   };
@@ -371,13 +378,17 @@ export default function TrainerPaymentsPage() {
         : paymentSeq === "SECOND"
           ? ", 2nd payment"
           : "";
+    const modeLabel = paymentMode
+      ? `, via ${TRAINER_PAYOUT_MODE_LABELS[paymentMode] ?? paymentMode}`
+      : "";
     drillChips.push({
       key: "paid",
-      label: `Paid in ${window}${seqLabel}`,
+      label: `Paid in ${window}${seqLabel}${modeLabel}`,
       onClear: () => {
         setPaidFrom("");
         setPaidTo("");
         setPaymentSeq("BOTH");
+        setPaymentMode("");
       },
     });
   }

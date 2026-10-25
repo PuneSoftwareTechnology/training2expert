@@ -128,3 +128,70 @@ describe("EditTrainerPayoutDialog number entry", () => {
     expect(fee.value).toBe("12000");
   });
 });
+
+describe("EditTrainerPayoutDialog save rules", () => {
+  function openWith(overrides: Partial<TrainerPayoutRow>) {
+    const calls: unknown[] = [];
+    render(
+      <EditTrainerPayoutDialog
+        row={{ ...row, ...overrides }}
+        open
+        onOpenChange={noop}
+        onSubmit={(...args) => calls.push(args)}
+        isPending={false}
+      />,
+    );
+    return calls;
+  }
+
+  const save = () =>
+    fireEvent.click(
+      Array.from(document.querySelectorAll("button")).find(
+        (b) => b.textContent === "Save",
+      )!,
+    );
+
+  it.each([
+    ["1st", { installment1Amount: 5400 }],
+    ["2nd", { installment2Amount: 5400 }],
+  ])(
+    "blocks saving a %s payment amount without a date or mode",
+    (_, overrides) => {
+      const calls = openWith(overrides);
+      save();
+      expect(calls).toHaveLength(0);
+      expect(document.body.textContent).toContain("Payment date is required");
+      expect(document.body.textContent).toContain("Select a payment mode");
+    },
+  );
+
+  it("blocks saving when only the mode is missing", () => {
+    const calls = openWith({
+      installment1Amount: 5400,
+      installment1Date: "2026-10-01",
+    });
+    save();
+    expect(calls).toHaveLength(0);
+    expect(document.body.textContent).not.toContain("Payment date is required");
+    expect(document.body.textContent).toContain("Select a payment mode");
+  });
+
+  it("saves once both payments carry a date and mode", () => {
+    const calls = openWith({
+      installment1Amount: 5400,
+      installment1Date: "2026-10-01",
+      installment1Mode: "HDFC",
+      installment2Amount: 5400,
+      installment2Date: "2026-10-20",
+      installment2Mode: "CASH",
+    });
+    save();
+    expect(calls).toHaveLength(1);
+  });
+
+  it("saves with no payments recorded", () => {
+    const calls = openWith({});
+    save();
+    expect(calls).toHaveLength(1);
+  });
+});

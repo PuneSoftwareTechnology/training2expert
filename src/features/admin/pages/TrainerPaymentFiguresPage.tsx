@@ -33,6 +33,7 @@ import { ROUTES } from "@/constants/routes";
 import {
   FINANCIAL_MONTHS,
   PAYMENT_SEQUENCES,
+  TRAINER_PAYOUT_MODES,
   financialYearLabel,
   financialYearRange,
   financialYearStart,
@@ -61,6 +62,7 @@ export default function TrainerPaymentFiguresPage() {
   const [course, setCourse] = useState(ALL);
   const [completionStatus, setCompletionStatus] = useState(ALL);
   const [paymentSeq, setPaymentSeq] = useState<PaymentSequence>("BOTH");
+  const [paymentMode, setPaymentMode] = useState(ALL);
 
   const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
     queryKey: [
@@ -72,6 +74,7 @@ export default function TrainerPaymentFiguresPage() {
       course,
       completionStatus,
       paymentSeq,
+      paymentMode,
     ],
     queryFn: () =>
       trainerService.getTrainerPaymentFigures({
@@ -81,6 +84,7 @@ export default function TrainerPaymentFiguresPage() {
         completionStatus:
           completionStatus === ALL ? undefined : completionStatus,
         paymentSeq,
+        paymentMode: paymentMode === ALL ? undefined : paymentMode,
       }),
   });
 
@@ -122,6 +126,7 @@ export default function TrainerPaymentFiguresPage() {
     (trainerId: string | null, month?: number) => {
       const params = rosterParams(trainerId);
       if (paymentSeq !== "BOTH") params.set("paymentSeq", paymentSeq);
+      if (paymentMode !== ALL) params.set("paymentMode", paymentMode);
 
       const { from, to } = financialYearRange(financialYear, month);
       params.set("paidFrom", from);
@@ -129,13 +134,13 @@ export default function TrainerPaymentFiguresPage() {
 
       navigate(`${ROUTES.ADMIN_TRAINER_PAYMENTS}?${params.toString()}`);
     },
-    [navigate, rosterParams, paymentSeq, financialYear],
+    [navigate, rosterParams, paymentSeq, paymentMode, financialYear],
   );
 
   /**
    * Balance to Pay drill-down. Deliberately unlike the one above: the balance is
-   * outstanding across all time, so it passes no paid-date window and no payment
-   * sequence — either would hide rows that make up the figure. hasBalance keeps
+   * outstanding across all time, so it passes no paid-date window, payment
+   * sequence or mode — any would hide rows that make up the figure. hasBalance keeps
    * the list to the rows that actually carry a balance, so it adds up.
    */
   const drillDownBalance = useCallback(
@@ -268,6 +273,18 @@ export default function TrainerPaymentFiguresPage() {
         label: p.label,
       })),
     },
+    {
+      key: "mode",
+      label: "Payment Mode",
+      width: "w-36",
+      value: paymentMode,
+      onChange: setPaymentMode,
+      allLabel: "All Modes",
+      options: TRAINER_PAYOUT_MODES.map((m) => ({
+        value: m.value,
+        label: m.label,
+      })),
+    },
   ];
 
   return (
@@ -294,6 +311,7 @@ export default function TrainerPaymentFiguresPage() {
               setCourse(ALL);
               setCompletionStatus(ALL);
               setPaymentSeq("BOTH");
+              setPaymentMode(ALL);
             }}
             onRefresh={() => refetch()}
             isFetching={isFetching}
@@ -462,7 +480,8 @@ export default function TrainerPaymentFiguresPage() {
         <p className="text-xs text-muted-foreground">
           Figures are full rupee amounts — hover any figure for the formatted
           value. Month columns and Total Paid count what was actually paid
-          in FY {financialYearLabel(financialYear)};{" "}
+          in FY {financialYearLabel(financialYear)}, narrowed by Payment Seq
+          and Payment Mode;{" "}
           <span className="font-medium">Balance to Pay*</span> is the outstanding
           amount across all time and does not change with the year filter —
           clicking it opens every unsettled row, not just this year's.

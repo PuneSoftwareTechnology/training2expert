@@ -35,7 +35,6 @@ import type {
 
 /** "Auto" means store null and let the backend derive the status. */
 const AUTO_STATUS = "__auto";
-const NO_MODE = "__none";
 
 /**
  * Each editable section gets its own light tint so the two installments never
@@ -209,17 +208,13 @@ function InstallmentBlock({
         </div>
         <div className="space-y-1">
           <Label className="text-xs">Mode</Label>
-          <Select
-            value={mode || NO_MODE}
-            onValueChange={(v) => onModeChange(v === NO_MODE ? "" : v)}
-          >
+          {/* No "Not set" item: once picked, a mode can only be swapped for
+              another real account, never cleared back to blank. */}
+          <Select value={mode} onValueChange={onModeChange}>
             <SelectTrigger aria-invalid={Boolean(errors.mode)}>
-              <SelectValue placeholder="Mode" />
+              <SelectValue placeholder="Select mode" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={NO_MODE}>
-                <span className="text-muted-foreground">Not set</span>
-              </SelectItem>
               {TRAINER_PAYOUT_MODES.map((m) => (
                 <SelectItem key={m.value} value={m.value}>
                   {m.label}

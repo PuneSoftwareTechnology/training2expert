@@ -25,6 +25,8 @@ export interface TrainerPayoutFilters {
   paidFrom?: string;
   paidTo?: string;
   paymentSeq?: string;
+  /** Account the instalment went out of — narrows the paid-date filter. */
+  paymentMode?: string;
   /** Only rows whose balance is non-zero — the report's balance drill-down. */
   hasBalance?: boolean;
   search?: string;
@@ -137,6 +139,7 @@ export const trainerService = {
     course?: string;
     completionStatus?: string;
     paymentSeq?: PaymentSequence;
+    paymentMode?: string;
   }) => {
     const response = await api.get("/admin/reports/trainer-payment-figures", {
       params: filters,
