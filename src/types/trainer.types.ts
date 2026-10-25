@@ -160,6 +160,8 @@ export interface TrainerPaymentFigureRow {
   trainerNote: string | null;
   /** Keyed by calendar month number (1-12). Missing months mean nothing paid. */
   monthly: Record<number, number>;
+  /** TDS deducted on those same instalments, keyed the same way. */
+  monthlyTds: Record<number, number>;
   /** Scoped to the selected financial year and payment sequence. */
   totalPaid: number;
   totalTds: number;

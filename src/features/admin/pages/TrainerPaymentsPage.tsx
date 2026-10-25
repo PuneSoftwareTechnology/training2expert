@@ -185,6 +185,11 @@ export default function TrainerPaymentsPage() {
   const [hasBalance, setHasBalance] = useState(
     () => searchParams.get("hasBalance") === "true",
   );
+  // Set by the TDS report's drill-down: narrows the paid-date window to
+  // instalments that actually had TDS deducted, so the rows add up to the figure.
+  const [hasTds, setHasTds] = useState(
+    () => searchParams.get("hasTds") === "true",
+  );
   const [search, setSearch] = useState("");
   const [editRow, setEditRow] = useState<Row | null>(null);
   const [clearRow, setClearRow] = useState<Row | null>(null);
@@ -216,6 +221,7 @@ export default function TrainerPaymentsPage() {
       paymentSeq,
       paymentMode,
       hasBalance,
+      hasTds,
       search,
     ],
     queryFn: () =>
@@ -234,6 +240,7 @@ export default function TrainerPaymentsPage() {
         paymentSeq: paymentSeq === "BOTH" ? undefined : paymentSeq,
         paymentMode: paymentMode || undefined,
         hasBalance: hasBalance || undefined,
+        hasTds: hasTds || undefined,
         search: search.trim() || undefined,
         limit: 100,
       }),
@@ -279,7 +286,6 @@ export default function TrainerPaymentsPage() {
   // Labels come from the full trainer list, not just the rows on screen, so a
   // name shared with a trainer who happens to be filtered out is still marked.
   const labels = useMemo(() => buildTrainerLabels(trainers), [trainers]);
-
 
   // ── Drag-to-scroll, matching the enrollment table ────────────────────────
   const tableScrollRef = useRef<HTMLDivElement>(null);
@@ -352,6 +358,7 @@ export default function TrainerPaymentsPage() {
     setPaymentSeq("BOTH");
     setPaymentMode("");
     setHasBalance(false);
+    setHasTds(false);
     setSearch("");
   };
 
@@ -360,7 +367,7 @@ export default function TrainerPaymentsPage() {
   // or Total Paid figure, an outstanding-only list from a Balance to Pay figure.
   const drillChips: { key: string; label: string; onClear: () => void }[] = [];
 
-  if (paidFrom || paidTo) {
+  if (paidFrom || paidTo || hasTds) {
     const fmt = (d: string) =>
       new Date(d).toLocaleDateString("en-IN", {
         month: "short",
@@ -383,12 +390,13 @@ export default function TrainerPaymentsPage() {
       : "";
     drillChips.push({
       key: "paid",
-      label: `Paid in ${window}${seqLabel}${modeLabel}`,
+      label: `${hasTds ? "TDS deducted" : "Paid"} in ${window}${seqLabel}${modeLabel}`,
       onClear: () => {
         setPaidFrom("");
         setPaidTo("");
         setPaymentSeq("BOTH");
         setPaymentMode("");
+        setHasTds(false);
       },
     });
   }

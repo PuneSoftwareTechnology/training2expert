@@ -20,6 +20,7 @@ export const ROUTES = {
   ADMIN_ENQUIRY_FIGURES: "/admin/reports/enquiry-figures",
   ADMIN_PLACEMENT_REPORTS: "/admin/reports/placement",
   ADMIN_TRAINER_PAYMENT_FIGURES: "/admin/reports/trainer-payment-figures",
+  ADMIN_TRAINER_TDS_FIGURES: "/admin/reports/trainer-tds-figures",
   ADMIN_QR_CODE: "/admin/qr-code",
   ADMIN_RECRUITER_SHORTLIST: "/admin/recruiter-shortlist",
   ADMIN_ACCESS_MANAGEMENT: "/admin/access-management",

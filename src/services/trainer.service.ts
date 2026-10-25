@@ -29,6 +29,8 @@ export interface TrainerPayoutFilters {
   paymentMode?: string;
   /** Only rows whose balance is non-zero — the report's balance drill-down. */
   hasBalance?: boolean;
+  /** Only instalments that had TDS deducted — the TDS report's drill-down. */
+  hasTds?: boolean;
   search?: string;
 }
 

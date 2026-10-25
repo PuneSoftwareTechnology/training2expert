@@ -150,6 +150,13 @@ export default function AdminRoutes() {
             )}
           />
           <Route
+            path="reports/trainer-tds-figures"
+            element={guard(
+              ROUTES.ADMIN_TRAINER_TDS_FIGURES,
+              <TrainerPaymentFiguresPage variant="tds" />,
+            )}
+          />
+          <Route
             path="trainer-payments"
             element={guard(
               ROUTES.ADMIN_TRAINER_PAYMENTS,

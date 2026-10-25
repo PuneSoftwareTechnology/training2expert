@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Wallet } from "lucide-react";
+import { Receipt, Wallet } from "lucide-react";
 
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
@@ -53,7 +53,18 @@ function fullMoney(value: number): string {
   return String(Math.round(value));
 }
 
-export default function TrainerPaymentFiguresPage() {
+/**
+ * The same trainer x month matrix serves two reports. "payments" shows amounts
+ * paid with Total Paid / Total TDS / Balance to Pay; "tds" shows the TDS
+ * deducted on those instalments with only a Total TDS column. Both read one
+ * endpoint with the same filters, so they share a query cache.
+ */
+export default function TrainerPaymentFiguresPage({
+  variant = "payments",
+}: {
+  variant?: "payments" | "tds";
+}) {
+  const isTds = variant === "tds";
   const navigate = useNavigate();
   const currentFy = financialYearStart();
 
@@ -120,13 +131,15 @@ export default function TrainerPaymentFiguresPage() {
   /**
    * Jumps to the tracker carrying the filters that produced the clicked figure.
    * A month cell passes paidFrom/paidTo — payment dates, not enrollment dates,
-   * which is what these columns are counting.
+   * which is what these columns are counting. The TDS report adds hasTds so the
+   * tracker lists only the instalments the TDS figure is made of.
    */
   const drillDown = useCallback(
     (trainerId: string | null, month?: number) => {
       const params = rosterParams(trainerId);
       if (paymentSeq !== "BOTH") params.set("paymentSeq", paymentSeq);
       if (paymentMode !== ALL) params.set("paymentMode", paymentMode);
+      if (isTds) params.set("hasTds", "true");
 
       const { from, to } = financialYearRange(financialYear, month);
       params.set("paidFrom", from);
@@ -134,7 +147,7 @@ export default function TrainerPaymentFiguresPage() {
 
       navigate(`${ROUTES.ADMIN_TRAINER_PAYMENTS}?${params.toString()}`);
     },
-    [navigate, rosterParams, paymentSeq, paymentMode, financialYear],
+    [navigate, rosterParams, paymentSeq, paymentMode, financialYear, isTds],
   );
 
   /**
@@ -154,18 +167,21 @@ export default function TrainerPaymentFiguresPage() {
 
   const totals = useMemo(() => {
     const monthly: Record<number, number> = {};
+    const monthlyTds: Record<number, number> = {};
     let paid = 0;
     let tds = 0;
     let balance = 0;
     for (const row of rows) {
       for (const { month } of FINANCIAL_MONTHS) {
         monthly[month] = (monthly[month] ?? 0) + (row.monthly[month] ?? 0);
+        monthlyTds[month] =
+          (monthlyTds[month] ?? 0) + (row.monthlyTds?.[month] ?? 0);
       }
       paid += row.totalPaid;
       tds += row.totalTds;
       balance += row.balanceToPay;
     }
-    return { monthly, paid, tds, balance };
+    return { monthly, monthlyTds, paid, tds, balance };
   }, [rows]);
 
   const years = Array.from({ length: 5 }, (_, i) => currentFy - i);
@@ -293,14 +309,20 @@ export default function TrainerPaymentFiguresPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 p-2.5 shadow-md shadow-violet-200/50">
-              <Wallet className="h-5 w-5 text-white" />
+              {isTds ? (
+                <Receipt className="h-5 w-5 text-white" />
+              ) : (
+                <Wallet className="h-5 w-5 text-white" />
+              )}
             </div>
             <div>
-              <h2 className="text-2xl font-bold">Trainer Payment Figures</h2>
+              <h2 className="text-2xl font-bold">
+                {isTds ? "Trainer TDS Report" : "Trainer Payment Figures"}
+              </h2>
               <p className="text-sm text-muted-foreground">
-                Amount paid to each trainer by month, FY{" "}
-                {financialYearLabel(financialYear)}. Click any figure to open it
-                in the tracker.
+                {isTds ? "TDS deducted" : "Amount paid"} to each trainer by
+                month, FY {financialYearLabel(financialYear)}. Click any figure
+                to open it in the tracker.
               </p>
             </div>
           </div>
@@ -342,11 +364,13 @@ export default function TrainerPaymentFiguresPage() {
         </div>
 
         {isLoading ? (
-          <TableSkeleton rows={8} columns={16} />
+          <TableSkeleton rows={8} columns={isTds ? 14 : 16} />
         ) : (
           <Card className="overflow-hidden border-violet-200/60">
             <CardContent className="overflow-x-auto p-0">
-              <Table className="min-w-[1500px] tabular-nums">
+              <Table
+                className={`${isTds ? "min-w-[1200px]" : "min-w-[1500px]"} tabular-nums`}
+              >
                 <TableHeader>
                   <TableRow className="border-0 bg-gradient-to-r from-violet-500 to-indigo-600 hover:bg-transparent">
                     <TableHead className="sticky left-0 z-10 bg-violet-600 text-xs font-bold uppercase tracking-wider text-white">
@@ -360,19 +384,27 @@ export default function TrainerPaymentFiguresPage() {
                         {label}
                       </TableHead>
                     ))}
-                    <TableHead className="border-l border-white/30 text-right text-xs font-bold uppercase text-white">
-                      Total Paid
-                    </TableHead>
-                    <TableHead className="text-right text-xs font-bold uppercase text-white">
-                      Total TDS
-                    </TableHead>
-                    {/* Outstanding overall, so it ignores the year filter. */}
-                    <TableHead
-                      className="text-right text-xs font-bold uppercase text-white"
-                      title="Outstanding across all time — not affected by the Payment Year filter"
-                    >
-                      Balance to Pay*
-                    </TableHead>
+                    {isTds ? (
+                      <TableHead className="border-l border-white/30 text-right text-xs font-bold uppercase text-white">
+                        Total TDS
+                      </TableHead>
+                    ) : (
+                      <>
+                        <TableHead className="border-l border-white/30 text-right text-xs font-bold uppercase text-white">
+                          Total Paid
+                        </TableHead>
+                        <TableHead className="text-right text-xs font-bold uppercase text-white">
+                          Total TDS
+                        </TableHead>
+                        {/* Outstanding overall, so it ignores the year filter. */}
+                        <TableHead
+                          className="text-right text-xs font-bold uppercase text-white"
+                          title="Outstanding across all time — not affected by the Payment Year filter"
+                        >
+                          Balance to Pay*
+                        </TableHead>
+                      </>
+                    )}
                   </TableRow>
                 </TableHeader>
 
@@ -380,7 +412,7 @@ export default function TrainerPaymentFiguresPage() {
                   {rows.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={FINANCIAL_MONTHS.length + 4}
+                        colSpan={FINANCIAL_MONTHS.length + (isTds ? 2 : 4)}
                         className="py-12 text-center text-muted-foreground"
                       >
                         No trainers match these filters.
@@ -388,45 +420,65 @@ export default function TrainerPaymentFiguresPage() {
                     </TableRow>
                   ) : (
                     rows.map((row: TrainerPaymentFigureRow) => (
-                      <TableRow key={row.trainerId} className="hover:bg-muted/40">
+                      <TableRow
+                        key={row.trainerId}
+                        className="hover:bg-muted/40"
+                      >
                         <TableCell className="sticky left-0 z-10 bg-background font-medium">
                           {labels.get(row.trainerId) ?? row.trainerName}
                         </TableCell>
                         {FINANCIAL_MONTHS.map(({ month, label }) => (
                           <TableCell key={label}>
                             <MoneyCell
-                              value={row.monthly[month] ?? 0}
+                              value={
+                                (isTds
+                                  ? row.monthlyTds?.[month]
+                                  : row.monthly[month]) ?? 0
+                              }
                               onClick={() => drillDown(row.trainerId, month)}
                             />
                           </TableCell>
                         ))}
-                        <TableCell className="border-l border-border">
-                          <MoneyCell
-                            value={row.totalPaid}
-                            onClick={() => drillDown(row.trainerId)}
-                            bold
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <span
-                            className="block whitespace-nowrap text-right text-orange-600"
-                            title={formatCurrency(row.totalTds)}
-                          >
-                            {row.totalTds ? fullMoney(row.totalTds) : "0"}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <MoneyCell
-                            value={row.balanceToPay}
-                            onClick={() => drillDownBalance(row.trainerId)}
-                            tone={`font-semibold ${
-                              row.balanceToPay > 0
-                                ? "text-destructive"
-                                : "text-orange-600"
-                            }`}
-                            zeroTone="font-semibold text-green-600"
-                          />
-                        </TableCell>
+                        {isTds ? (
+                          <TableCell className="border-l border-border">
+                            <MoneyCell
+                              value={row.totalTds}
+                              onClick={() => drillDown(row.trainerId)}
+                              tone="font-semibold text-orange-600"
+                              zeroTone="text-orange-600"
+                            />
+                          </TableCell>
+                        ) : (
+                          <>
+                            <TableCell className="border-l border-border">
+                              <MoneyCell
+                                value={row.totalPaid}
+                                onClick={() => drillDown(row.trainerId)}
+                                bold
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <span
+                                className="block whitespace-nowrap text-right text-orange-600"
+                                title={formatCurrency(row.totalTds)}
+                              >
+                                {row.totalTds ? fullMoney(row.totalTds) : "0"}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <MoneyCell
+                                value={row.balanceToPay}
+                                onClick={() => drillDownBalance(row.trainerId)}
+                                tone={`font-semibold ${
+                                  row.balanceToPay > 0
+                                    ? "text-destructive"
+                                    : "text-orange-600"
+                                }`}
+                                zeroTone="font-semibold text-green-600"
+                              />
+                            </TableCell>
+                          </>
+                        )}
                       </TableRow>
                     ))
                   )}
@@ -439,36 +491,54 @@ export default function TrainerPaymentFiguresPage() {
                       {FINANCIAL_MONTHS.map(({ month, label }) => (
                         <TableCell key={label}>
                           <MoneyCell
-                            value={totals.monthly[month] ?? 0}
+                            value={
+                              (isTds ? totals.monthlyTds : totals.monthly)[
+                                month
+                              ] ?? 0
+                            }
                             onClick={() => drillDown(null, month)}
                             bold
                           />
                         </TableCell>
                       ))}
-                      <TableCell className="border-l border-border">
-                        <MoneyCell
-                          value={totals.paid}
-                          onClick={() => drillDown(null)}
-                          bold
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <span
-                          className="block whitespace-nowrap text-right font-bold text-orange-600"
-                          title={formatCurrency(totals.tds)}
-                        >
-                          {fullMoney(totals.tds)}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <MoneyCell
-                          value={totals.balance}
-                          onClick={() => drillDownBalance(null)}
-                          tone="text-destructive"
-                          zeroTone="font-bold text-green-600"
-                          bold
-                        />
-                      </TableCell>
+                      {isTds ? (
+                        <TableCell className="border-l border-border">
+                          <MoneyCell
+                            value={totals.tds}
+                            onClick={() => drillDown(null)}
+                            tone="text-orange-600"
+                            zeroTone="font-bold text-orange-600"
+                            bold
+                          />
+                        </TableCell>
+                      ) : (
+                        <>
+                          <TableCell className="border-l border-border">
+                            <MoneyCell
+                              value={totals.paid}
+                              onClick={() => drillDown(null)}
+                              bold
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <span
+                              className="block whitespace-nowrap text-right font-bold text-orange-600"
+                              title={formatCurrency(totals.tds)}
+                            >
+                              {fullMoney(totals.tds)}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <MoneyCell
+                              value={totals.balance}
+                              onClick={() => drillDownBalance(null)}
+                              tone="text-destructive"
+                              zeroTone="font-bold text-green-600"
+                              bold
+                            />
+                          </TableCell>
+                        </>
+                      )}
                     </TableRow>
                   )}
                 </TableBody>
@@ -477,15 +547,24 @@ export default function TrainerPaymentFiguresPage() {
           </Card>
         )}
 
-        <p className="text-xs text-muted-foreground">
-          Figures are full rupee amounts — hover any figure for the formatted
-          value. Month columns and Total Paid count what was actually paid
-          in FY {financialYearLabel(financialYear)}, narrowed by Payment Seq
-          and Payment Mode;{" "}
-          <span className="font-medium">Balance to Pay*</span> is the outstanding
-          amount across all time and does not change with the year filter —
-          clicking it opens every unsettled row, not just this year's.
-        </p>
+        {isTds ? (
+          <p className="text-xs text-muted-foreground">
+            Figures are full rupee amounts — hover any figure for the formatted
+            value. Month columns and Total TDS count the TDS deducted on
+            instalments paid in FY {financialYearLabel(financialYear)}, bucketed
+            by payment date and narrowed by Payment Seq and Payment Mode.
+          </p>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            Figures are full rupee amounts — hover any figure for the formatted
+            value. Month columns and Total Paid count what was actually paid in
+            FY {financialYearLabel(financialYear)}, narrowed by Payment Seq and
+            Payment Mode; <span className="font-medium">Balance to Pay*</span>{" "}
+            is the outstanding amount across all time and does not change with
+            the year filter — clicking it opens every unsettled row, not just
+            this year's.
+          </p>
+        )}
       </div>
     </PageTransition>
   );
