@@ -44,6 +44,10 @@ const ENQUIRY_TYPE_OPTIONS = [
   { value: "All", label: "All" },
   ...ENQUIRY_TYPES,
 ] as const;
+const STARRED_OPTIONS = [
+  { value: "All", label: "All" },
+  { value: "true", label: "Starred only" },
+] as const;
 
 export default function EnquiryFiguresPage() {
   const navigate = useNavigate();
@@ -53,6 +57,7 @@ export default function EnquiryFiguresPage() {
   const [leadStatus, setLeadStatus] = useState<string>("All");
   const [demoStatus, setDemoStatus] = useState<string>("All");
   const [enquiryType, setEnquiryType] = useState<string>("All");
+  const [starred, setStarred] = useState<string>("All");
 
   const drillDown = useCallback(
     (course: string | null, month: string | null) => {
@@ -62,6 +67,7 @@ export default function EnquiryFiguresPage() {
       if (leadStatus !== "All") params.set("leadStatus", leadStatus);
       if (demoStatus !== "All") params.set("demoStatus", demoStatus);
       if (enquiryType !== "All") params.set("enquiryType", enquiryType);
+      if (starred === "true") params.set("starred", "true");
       if (month) {
         const monthIdx = MONTHS.indexOf(month as (typeof MONTHS)[number]);
         const lastDay = new Date(year, monthIdx + 1, 0).getDate();
@@ -77,7 +83,7 @@ export default function EnquiryFiguresPage() {
       }
       navigate(`${ROUTES.ADMIN_ENQUIRY}?${params.toString()}`);
     },
-    [navigate, institute, year, leadStatus, demoStatus, enquiryType],
+    [navigate, institute, year, leadStatus, demoStatus, enquiryType, starred],
   );
 
   const { data, isLoading, isError, error, refetch } = useQuery({
@@ -90,6 +96,7 @@ export default function EnquiryFiguresPage() {
       leadStatus,
       demoStatus,
       enquiryType,
+      starred,
     ],
     queryFn: () =>
       adminService.getEnquiryFigures(
@@ -98,6 +105,7 @@ export default function EnquiryFiguresPage() {
         leadStatus,
         demoStatus,
         enquiryType,
+        starred === "true",
       ),
   });
 
@@ -212,6 +220,7 @@ export default function EnquiryFiguresPage() {
               setLeadStatus("All");
               setDemoStatus("All");
               setEnquiryType("All");
+              setStarred("All");
             }}
             onRefresh={() => refetch()}
             isFetching={isLoading}
@@ -292,6 +301,21 @@ export default function EnquiryFiguresPage() {
                 {ENQUIRY_TYPE_OPTIONS.map((t) => (
                   <SelectItem key={t.value} value={t.value}>
                     {t.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Starred</Label>
+            <Select value={starred} onValueChange={setStarred}>
+              <SelectTrigger className="w-36">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {STARRED_OPTIONS.map((s) => (
+                  <SelectItem key={s.value} value={s.value}>
+                    {s.label}
                   </SelectItem>
                 ))}
               </SelectContent>

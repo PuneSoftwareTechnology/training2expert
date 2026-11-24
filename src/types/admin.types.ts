@@ -22,6 +22,7 @@ export interface Enquiry {
   demoStatus: DemoStatus;
   demo_date?: string;
   comment?: string;
+  is_starred?: boolean;
 }
 
 export interface Enrollment {

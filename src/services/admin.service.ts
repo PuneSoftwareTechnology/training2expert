@@ -33,6 +33,7 @@ interface EnquiryFilters {
   institute?: Institute;
   course?: string;
   enquiryType?: EnquiryType;
+  starred?: "true" | "false";
   page?: number;
   limit?: number;
 }
@@ -103,6 +104,11 @@ export const adminService = {
 
   updateEnquiry: async (id: string, data: Partial<Enquiry>) => {
     const response = await api.put(`/admin/enquiries/${id}`, data);
+    return extractData<Enquiry>(response);
+  },
+
+  setEnquiryStarred: async (id: string, starred: boolean) => {
+    const response = await api.patch(`/admin/enquiries/${id}/star`, { starred });
     return extractData<Enquiry>(response);
   },
 
@@ -328,6 +334,7 @@ export const adminService = {
     leadStatus: string,
     demoStatus: string,
     enquiryType: string,
+    starredOnly = false,
   ) => {
     const response = await api.get("/admin/reports/enquiry-figures", {
       params: {
@@ -336,6 +343,7 @@ export const adminService = {
         lead_status: leadStatus,
         demo_status: demoStatus,
         enquiry_type: enquiryType,
+        starred: starredOnly ? "true" : undefined,
       },
     });
     return extractData<EnrollmentFigureRow[]>(response);

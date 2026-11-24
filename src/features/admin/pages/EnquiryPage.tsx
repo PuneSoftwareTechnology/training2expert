@@ -10,6 +10,7 @@ import {
   Trash2,
   ClipboardList,
   Mail,
+  Star,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -134,6 +135,14 @@ const FILTER_SELECTS = [
     label: "Enquiry Type",
     key: "enquiryType" as const,
     options: ENQUIRY_TYPES.map((t) => ({ ...t })),
+  },
+  {
+    label: "Starred",
+    key: "starred" as const,
+    options: [
+      { value: "true", label: "Starred" },
+      { value: "false", label: "Not starred" },
+    ],
   },
 ];
 
@@ -264,6 +273,7 @@ export default function EnquiryPage() {
     institute: searchParams.get("institute") ?? "",
     course: searchParams.get("course") ?? "",
     enquiryType: searchParams.get("enquiryType") ?? "",
+    starred: searchParams.get("starred") ?? "",
   }));
 
   useEffect(() => {
@@ -290,6 +300,7 @@ export default function EnquiryPage() {
         institute: (filters.institute as Institute) || undefined,
         course: filters.course || undefined,
         enquiryType: (filters.enquiryType as EnquiryType) || undefined,
+        starred: (filters.starred as "true" | "false") || undefined,
       }),
   });
 
@@ -375,6 +386,39 @@ export default function EnquiryPage() {
       setDeleteId(null);
     },
     onError: (err) => toast.error(getErrorMessage(err)),
+  });
+
+  // Star flips instantly in the table; the server call follows. On failure the
+  // list is refetched so the row snaps back to its real state.
+  const enquiriesKey = ["admin", "enquiries", filters];
+  const starMutation = useMutation({
+    mutationFn: ({ id, starred }: { id: string; starred: boolean }) =>
+      adminService.setEnquiryStarred(id, starred),
+    onMutate: ({ id, starred }) => {
+      queryClient.setQueryData<typeof data>(enquiriesKey, (old) =>
+        old
+          ? {
+              ...old,
+              items: old.items.map((e) =>
+                e.id === id ? { ...e, is_starred: starred } : e,
+              ),
+            }
+          : old,
+      );
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err));
+      queryClient.invalidateQueries({ queryKey: ["admin", "enquiries"] });
+    },
+    onSuccess: () => {
+      // A starred filter means the row may no longer belong in this list.
+      if (filters.starred) {
+        queryClient.invalidateQueries({ queryKey: ["admin", "enquiries"] });
+      }
+      queryClient.invalidateQueries({
+        queryKey: ["admin", "reports", "enquiry-figures"],
+      });
+    },
   });
 
   const sendEmailMutation = useMutation({
@@ -496,6 +540,35 @@ export default function EnquiryPage() {
   }, [data?.items, searchText]);
 
   const columns: ColumnDef<Enquiry>[] = [
+    {
+      id: "star",
+      header: () => (
+        <Star className="h-4 w-4 text-muted-foreground" aria-label="Starred" />
+      ),
+      cell: ({ row }) => {
+        const e = row.original;
+        const starred = !!e.is_starred;
+        return (
+          <button
+            type="button"
+            onClick={() => starMutation.mutate({ id: e.id, starred: !starred })}
+            title={starred ? "Unstar" : "Star"}
+            aria-label={starred ? "Unstar enquiry" : "Star enquiry"}
+            aria-pressed={starred}
+            className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-amber-50"
+          >
+            <Star
+              className={`h-4 w-4 ${
+                starred
+                  ? "fill-amber-400 text-amber-500"
+                  : "text-muted-foreground/50 hover:text-amber-500"
+              }`}
+            />
+          </button>
+        );
+      },
+      enableSorting: false,
+    },
     {
       id: "select",
       header: () => (
@@ -692,6 +765,7 @@ export default function EnquiryPage() {
                   institute: "",
                   course: "",
                   enquiryType: "",
+                  starred: "",
                 });
                 setSearchText("");
                 queryClient.invalidateQueries({
