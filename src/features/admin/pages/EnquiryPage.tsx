@@ -1,8 +1,6 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Plus,
   Search,
@@ -17,7 +15,6 @@ import type { ColumnDef } from "@tanstack/react-table";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -52,13 +49,11 @@ import { QueryError } from "@/components/errors/QueryError";
 import { PageTransition } from "@/components/animations/PageTransition";
 import { FilterActions } from "@/components/ui/filter-actions";
 
-import {
-  enquirySchema,
-  type EnquiryFormValues,
-} from "../schemas/enquiry.schema";
+import type { EnquiryFormValues } from "../schemas/enquiry.schema";
+import { EnquiryFormDialog } from "../components/EnquiryFormDialog";
 import { adminService } from "@/services/admin.service";
 import { getErrorMessage } from "@/services/api";
-import { formatDate, todayStr } from "@/utils/format";
+import { formatDate } from "@/utils/format";
 import {
   INSTITUTES,
   LEAD_STATUSES,
@@ -99,29 +94,6 @@ const ENQUIRY_TYPE_BADGE: Record<string, "default" | "secondary" | "outline"> =
     PHONE: "secondary",
     WEBSITE: "outline",
   };
-
-const FORM_SELECTS = [
-  {
-    name: "institute" as const,
-    label: "Institute",
-    options: INSTITUTES.map((i) => ({ value: i, label: i })),
-  },
-  {
-    name: "enquiryType" as const,
-    label: "Enquiry Type",
-    options: ENQUIRY_TYPES.map((t) => ({ ...t })),
-  },
-  {
-    name: "leadStatus" as const,
-    label: "Lead Status",
-    options: LEAD_STATUSES.map((s) => ({ ...s })),
-  },
-  {
-    name: "demoStatus" as const,
-    label: "Demo Status",
-    options: DEMO_STATUSES.map((s) => ({ ...s })),
-  },
-];
 
 const FILTER_SELECTS = [
   { label: "Lead Status", key: "lead" as const, options: LEAD_STATUSES },
@@ -283,7 +255,9 @@ export default function EnquiryPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [searchText, setSearchText] = useState("");
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(
+    () => new Set(),
+  );
   const [emailDialog, setEmailDialog] = useState(false);
   const [emailTargetIds, setEmailTargetIds] = useState<string[]>([]);
   const [emailSubject, setEmailSubject] = useState("");
@@ -323,34 +297,12 @@ export default function EnquiryPage() {
     return [...new Set(names)].sort();
   }, [courseOptions, data?.courses]);
 
-  // The dropdown is select-only, so an enquiry saved before the master list
-  // existed would show blank and lose its course on the next save. Append the
-  // record's own value when it is missing rather than adding it to the master
-  // list, which stays managed from Course Management.
-  const formCourseOptions = useMemo(() => {
-    const current = editingEnquiry?.course?.trim();
-    return current && !courseOptions.includes(current)
-      ? [...courseOptions, current]
-      : courseOptions;
-  }, [courseOptions, editingEnquiry?.course]);
-
-  const form = useForm<EnquiryFormValues>({
-    resolver: zodResolver(enquirySchema),
-    defaultValues: {
-      enquiry_date: todayStr(),
-      institute: "TECHVAA",
-      enquiryType: "WALKIN",
-      leadStatus: "NEW",
-      demoStatus: "PENDING",
-    },
-  });
-
   const invalidateAndClose = () => {
     queryClient.invalidateQueries({ queryKey: ["admin", "enquiries"] });
     refetch();
+    // editingEnquiry is left as-is so the dialog title doesn't flip to
+    // "Add Enquiry" during the close animation; openEdit/openCreate set it.
     setDialogOpen(false);
-    setEditingEnquiry(null);
-    form.reset();
   };
 
   const createMutation = useMutation({
@@ -437,37 +389,40 @@ export default function EnquiryPage() {
       setEmailTargetIds([]);
       setEmailSubject("");
       setEmailBody("");
-      setSelectedIds([]);
+      setSelectedIds(new Set());
     },
     onError: (err) => toast.error(getErrorMessage(err)),
   });
 
-  const openEmailDialog = (ids: string[]) => {
+  // Handlers below are memoized so the table's `columns` stay stable and the
+  // table doesn't re-render when unrelated page state (e.g. a dialog) changes.
+  const openEmailDialog = useCallback((ids: string[]) => {
     setEmailTargetIds(ids);
     setEmailSubject(DEMO_EMAIL_SUBJECT);
     setEmailBody(DEMO_EMAIL_BODY);
     setEmailDialog(true);
-  };
+  }, []);
 
-  const toggleSelect = (id: string) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
-    );
-  };
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
 
   const selectableIds = useMemo(
     () => (data?.items ?? []).filter((e) => !!e.email).map((e) => e.id),
     [data?.items],
   );
 
-  const toggleAll = () => {
+  const toggleAll = useCallback(() => {
     if (!selectableIds.length) return;
-    if (selectedIds.length === selectableIds.length) {
-      setSelectedIds([]);
-    } else {
-      setSelectedIds(selectableIds);
-    }
-  };
+    setSelectedIds((prev) =>
+      prev.size === selectableIds.length ? new Set() : new Set(selectableIds),
+    );
+  }, [selectableIds]);
 
   const onSubmit = (values: EnquiryFormValues) => {
     const { enquiry_date, demo_date, comment, ...rest } = values;
@@ -485,40 +440,17 @@ export default function EnquiryPage() {
       : createMutation.mutate(payload as unknown as EnquiryFormValues);
   };
 
-  const openEdit = (enquiry: Enquiry) => {
+  const openEdit = useCallback((enquiry: Enquiry) => {
     setEditingEnquiry(enquiry);
-    const raw = enquiry as unknown as Record<string, string>;
-    form.reset({
-      enquiry_date: (raw.enquiry_date ?? "").split("T")[0],
-      name: enquiry.name,
-      phone: enquiry.phone,
-      email: enquiry.email ?? "",
-      course: enquiry.course ?? "",
-      institute: enquiry.institute,
-      enquiryType: (raw.enquiry_type ??
-        enquiry.enquiry_type ??
-        "WALKIN") as EnquiryFormValues["enquiryType"],
-      leadStatus: (raw.lead_status ??
-        enquiry.leadStatus) as EnquiryFormValues["leadStatus"],
-      demoStatus: (raw.demo_status ??
-        enquiry.demoStatus) as EnquiryFormValues["demoStatus"],
-      demo_date: (raw.demo_date ?? enquiry.demo_date ?? "").split("T")[0],
-      comment: enquiry.comment ?? "",
-    });
     setDialogOpen(true);
-  };
+  }, []);
 
   const openCreate = () => {
     setEditingEnquiry(null);
-    form.reset({
-      enquiry_date: todayStr(),
-      institute: "TECHVAA",
-      enquiryType: "WALKIN",
-      leadStatus: "NEW",
-      demoStatus: "PENDING",
-    });
     setDialogOpen(true);
   };
+
+  const toggleStar = starMutation.mutate;
 
   const filteredData = useMemo(() => {
     const items = data?.items ?? [];
@@ -539,7 +471,7 @@ export default function EnquiryPage() {
     );
   }, [data?.items, searchText]);
 
-  const columns: ColumnDef<Enquiry>[] = [
+  const columns = useMemo<ColumnDef<Enquiry>[]>(() => [
     {
       id: "star",
       header: () => (
@@ -551,7 +483,7 @@ export default function EnquiryPage() {
         return (
           <button
             type="button"
-            onClick={() => starMutation.mutate({ id: e.id, starred: !starred })}
+            onClick={() => toggleStar({ id: e.id, starred: !starred })}
             title={starred ? "Unstar" : "Star"}
             aria-label={starred ? "Unstar enquiry" : "Star enquiry"}
             aria-pressed={starred}
@@ -575,7 +507,7 @@ export default function EnquiryPage() {
         <Checkbox
           checked={
             selectableIds.length > 0 &&
-            selectedIds.length === selectableIds.length
+            selectedIds.size === selectableIds.length
           }
           onCheckedChange={toggleAll}
           aria-label="Select all"
@@ -586,7 +518,7 @@ export default function EnquiryPage() {
         if (!e.email) return null;
         return (
           <Checkbox
-            checked={selectedIds.includes(e.id)}
+            checked={selectedIds.has(e.id)}
             onCheckedChange={() => toggleSelect(e.id)}
             aria-label="Select row"
           />
@@ -732,7 +664,15 @@ export default function EnquiryPage() {
         );
       },
     },
-  ];
+  ], [
+    selectedIds,
+    selectableIds,
+    toggleAll,
+    toggleSelect,
+    toggleStar,
+    openEdit,
+    openEmailDialog,
+  ]);
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
@@ -875,22 +815,22 @@ export default function EnquiryPage() {
         </Card>
 
         {/* Bulk actions bar */}
-        {selectedIds.length > 0 && (
+        {selectedIds.size > 0 && (
           <div className="flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50/60 p-3">
             <span className="text-sm font-semibold text-emerald-800">
-              {selectedIds.length} selected
+              {selectedIds.size} selected
             </span>
             <Button
               size="sm"
               className="bg-emerald-600 text-white hover:bg-emerald-700"
-              onClick={() => openEmailDialog(selectedIds)}
+              onClick={() => openEmailDialog([...selectedIds])}
             >
               <Mail className="mr-1 h-3.5 w-3.5" /> Send Email
             </Button>
             <Button
               size="sm"
               variant="outline"
-              onClick={() => setSelectedIds([])}
+              onClick={() => setSelectedIds(new Set())}
             >
               Clear
             </Button>
@@ -906,7 +846,8 @@ export default function EnquiryPage() {
               <DataTable
                 columns={columns}
                 data={filteredData}
-                pageSize={filteredData.length || 1}
+                pageSize={50}
+                resetPageKey={`${JSON.stringify(filters)}|${searchText}`}
                 emptyMessage="No enquiries found"
                 headerClassName="bg-gradient-to-r from-amber-500 to-orange-600"
               />
@@ -915,152 +856,15 @@ export default function EnquiryPage() {
         )}
 
         {/* Create / Edit Dialog */}
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>
-                {editingEnquiry ? "Edit Enquiry" : "Add Enquiry"}
-              </DialogTitle>
-            </DialogHeader>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                form.handleSubmit(onSubmit)(e);
-              }}
-              className="space-y-4"
-            >
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <Label>Date</Label>
-                  <Input type="date" {...form.register("enquiry_date")} />
-                </div>
-                <div className="space-y-1">
-                  <Label>Name *</Label>
-                  <Input {...form.register("name")} />
-                  {form.formState.errors.name && (
-                    <p className="text-xs text-destructive">
-                      {form.formState.errors.name.message}
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-1">
-                  <Label>Phone *</Label>
-                  <Input
-                    maxLength={10}
-                    onInput={(e) => {
-                      e.currentTarget.value = e.currentTarget.value.replace(
-                        /\D/g,
-                        "",
-                      );
-                    }}
-                    {...form.register("phone")}
-                  />
-                  {form.formState.errors.phone && (
-                    <p className="text-xs text-destructive">
-                      {form.formState.errors.phone.message}
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-1">
-                  <Label>Email</Label>
-                  <Input type="email" {...form.register("email")} />
-                  {form.formState.errors.email && (
-                    <p className="text-xs text-destructive">
-                      {form.formState.errors.email.message}
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-1">
-                  <Label>Course</Label>
-                  <Select
-                    value={form.watch("course") || ""}
-                    onValueChange={(v) => form.setValue("course", v)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select course" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {coursesLoading ? (
-                        <SelectItem value="__loading" disabled>
-                          Loading...
-                        </SelectItem>
-                      ) : formCourseOptions.length === 0 ? (
-                        <SelectItem value="__empty" disabled>
-                          No courses available
-                        </SelectItem>
-                      ) : (
-                        formCourseOptions.map((c) => (
-                          <SelectItem key={c} value={c}>
-                            {c}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="col-span-2 space-y-1">
-                  <Label>Comment</Label>
-                  <Textarea
-                    {...form.register("comment")}
-                    rows={3}
-                    placeholder="Enter comment (press Enter to add a follow-up on a new line)"
-                  />
-                </div>
-                {FORM_SELECTS.map(({ name, label, options }) => (
-                  <div key={name} className="space-y-1">
-                    <Label>{label}</Label>
-                    <Select
-                      value={form.watch(name) ?? ""}
-                      onValueChange={(v) => {
-                        form.setValue(name, v as never);
-                        if (
-                          name === "demoStatus" &&
-                          v === "DONE" &&
-                          !form.getValues("demo_date")
-                        ) {
-                          form.setValue("demo_date", todayStr());
-                        }
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {options.map((o) => (
-                          <SelectItem key={o.value} value={o.value}>
-                            {o.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                ))}
-                <div className="space-y-1">
-                  <Label>Demo Date</Label>
-                  <Input type="date" {...form.register("demo_date")} />
-                </div>
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" loading={isSaving}>
-                  {editingEnquiry
-                    ? updateMutation.isPending
-                      ? "Updating..."
-                      : "Update"
-                    : createMutation.isPending
-                      ? "Creating..."
-                      : "Create"}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <EnquiryFormDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          enquiry={editingEnquiry}
+          courseOptions={courseOptions}
+          coursesLoading={coursesLoading}
+          onSubmit={onSubmit}
+          isPending={isSaving}
+        />
 
         {/* Send Email Dialog */}
         <Dialog open={emailDialog} onOpenChange={setEmailDialog}>

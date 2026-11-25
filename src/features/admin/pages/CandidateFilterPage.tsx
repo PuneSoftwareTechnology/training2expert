@@ -14,6 +14,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
+import { TablePagination } from "@/components/ui/table-pagination";
+import { usePagination } from "@/hooks/usePagination";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
@@ -164,6 +166,13 @@ export default function CandidateFilterPage() {
         (row.remarks && row.remarks.toLowerCase().includes(q)),
     );
   }, [data?.items, searchQuery]);
+
+  // Only one page of rows is mounted, so dialogs, the inline remark editor
+  // and typing in the email form don't re-render the whole candidate list.
+  const pagination = usePagination(
+    filteredItems,
+    `${course}|${city}|${expRange}|${minTech}|${minComm}|${searchQuery}`,
+  );
 
   const downloadBulkMutation = useMutation({
     mutationFn: () => adminService.downloadBulkCvs(selectedIds),
@@ -437,6 +446,7 @@ export default function CandidateFilterPage() {
         {isLoading ? (
           <TableSkeleton rows={6} columns={12} />
         ) : (
+          <>
           <Card className="border-emerald-200/60 overflow-hidden">
             <CardContent className="p-0">
               <Table>
@@ -490,8 +500,8 @@ export default function CandidateFilterPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredItems.length > 0 ? (
-                    filteredItems.map((row, index) => (
+                  {pagination.pageItems.length > 0 ? (
+                    pagination.pageItems.map((row, index) => (
                       <TableRow key={row.enrollmentId}>
                         <TableCell>
                           <Checkbox
@@ -500,7 +510,7 @@ export default function CandidateFilterPage() {
                           />
                         </TableCell>
                         <TableCell className="text-muted-foreground text-sm">
-                          {index + 1}
+                          {pagination.pageStart + index + 1}
                         </TableCell>
                         <TableCell className="font-medium">{row.name}</TableCell>
                         <TableCell>{row.course}</TableCell>
@@ -654,6 +664,8 @@ export default function CandidateFilterPage() {
               </Table>
             </CardContent>
           </Card>
+          <TablePagination {...pagination} />
+          </>
         )}
 
         {/* Email Dialog */}

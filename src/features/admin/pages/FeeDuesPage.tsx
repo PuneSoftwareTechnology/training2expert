@@ -386,7 +386,8 @@ export default function FeeDuesPage() {
               <DataTable
                 columns={columns}
                 data={filteredData}
-                pageSize={filteredData.length || 10}
+                pageSize={50}
+                resetPageKey={`${daysFilter}|${trainerFilter}|${batchFilter}|${search}`}
                 emptyMessage="No fee dues found."
                 headerClassName="bg-gradient-to-r from-rose-500 to-red-600"
               />

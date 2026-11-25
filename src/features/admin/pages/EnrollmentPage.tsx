@@ -120,6 +120,8 @@ function exportEnrollmentsCsv(items: Enrollment[]) {
   URL.revokeObjectURL(url);
 }
 
+import { TablePagination } from "@/components/ui/table-pagination";
+import { usePagination } from "@/hooks/usePagination";
 import { AddCandidateDialog } from "../components/AddCandidateDialog";
 import { EditEnrollmentDialog } from "../components/EditEnrollmentDialog";
 import { EnrollmentTableRow } from "../components/EnrollmentTableRow";
@@ -371,20 +373,28 @@ export default function EnrollmentPage() {
     return [...new Set(names)].sort();
   }, [masterCourses, data?.courses]);
 
-  const allItems = data?.items ?? [];
-  const years = [
-    ...new Set(
-      allItems
-        .map((e) =>
-          e.start_date ? new Date(e.start_date).getFullYear().toString() : "",
-        )
-        .filter(Boolean),
-    ),
-  ]
-    .sort()
-    .reverse();
+  const allItems = useMemo(() => data?.items ?? [], [data?.items]);
+  const years = useMemo(
+    () =>
+      [
+        ...new Set(
+          allItems
+            .map((e) =>
+              e.start_date
+                ? new Date(e.start_date).getFullYear().toString()
+                : "",
+            )
+            .filter(Boolean),
+        ),
+      ]
+        .sort()
+        .reverse(),
+    [allItems],
+  );
 
-  const { filteredItems, trainers } = (() => {
+  // Memoized so opening a dialog (or any other state change) doesn't
+  // re-filter every enrollment on each render.
+  const { filteredItems, trainers } = useMemo(() => {
     let items = allItems;
 
     // Filter by completion status ("ACTIVE" includes both ACTIVE and IN_PROGRESS)
@@ -441,7 +451,32 @@ export default function EnrollmentPage() {
     }
 
     return { filteredItems: items, trainers };
-  })();
+  }, [allItems, filterCompletion, filterYear, filterTrainer, searchQuery]);
+
+  // Client-side pagination: only one page of rows is mounted at a time.
+  // CSV export and the "Total" count still use the full filteredItems.
+  const pagination = usePagination(
+    filteredItems,
+    [
+      filterStatus,
+      filterInstitute,
+      filterCourse,
+      filterCompletion,
+      filterTrainer,
+      filterYear,
+      fromDate,
+      toDate,
+      searchQuery,
+    ].join("|"),
+  );
+  const { pageItems: pagedItems, pageStart } = pagination;
+
+  // Stable reference so memoized EnrollmentTableRow rows skip re-rendering
+  const deleteEnrollment = deleteMutation.mutate;
+  const handleDelete = useCallback(
+    (id: string) => deleteEnrollment(id),
+    [deleteEnrollment],
+  );
 
   // Build filter configs for data-driven rendering
   const filters: FilterConfig[] = [
@@ -705,14 +740,14 @@ export default function EnrollmentPage() {
                     </TableHeader>
 
                     <TableBody>
-                      {filteredItems.length > 0 ? (
-                        filteredItems.map((enrollment, index) => (
+                      {pagedItems.length > 0 ? (
+                        pagedItems.map((enrollment, index) => (
                           <EnrollmentTableRow
                             key={enrollment.id}
                             enrollment={enrollment}
-                            index={index}
+                            index={pageStart + index}
                             onEdit={setEditEnrollment}
-                            onDelete={(id) => deleteMutation.mutate(id)}
+                            onDelete={handleDelete}
                             onViewProfile={setProfileStudentId}
                             onViewEvaluation={setEvaluationStudentId}
                           />
@@ -732,6 +767,8 @@ export default function EnrollmentPage() {
                 </div>
               </CardContent>
             </Card>
+
+            <TablePagination {...pagination} />
           </>
         )}
 

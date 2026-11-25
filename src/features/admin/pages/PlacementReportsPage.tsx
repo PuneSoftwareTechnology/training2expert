@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from "react";
+import { Fragment, useMemo, useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Download,
@@ -29,6 +29,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
+import { TablePagination } from "@/components/ui/table-pagination";
+import { usePagination } from "@/hooks/usePagination";
 import { Badge } from "@/components/ui/badge";
 import { DataTable, SortableHeader } from "@/components/ui/data-table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -210,6 +212,15 @@ export default function PlacementReportsPage() {
       list = list.filter((r) => r.placementStatus === filters.status);
     return list;
   }, [contacted, filters.course, filters.status]);
+
+  /* ─── Pagination ───
+     Only one page of rows is mounted. The desktop table and mobile cards are
+     both in the DOM (CSS hides one), and typing in an expanded row's edit
+     fields re-renders the page, so mounting every row made this slow. */
+  const filtersKey = JSON.stringify(filters);
+  const notContactedPage = usePagination(notContacted, filtersKey);
+  // Desktop "Contacted" uses DataTable's own pagination; this is for mobile cards
+  const contactedMobilePage = usePagination(filteredContacted, filtersKey);
 
   /* ─── Quick mark as contacted mutation ─── */
   const contactMutation = useMutation({
@@ -573,13 +584,12 @@ export default function PlacementReportsPage() {
                                 </tr>
                               </thead>
                               <tbody>
-                                {notContacted.map((row) => {
+                                {notContactedPage.pageItems.map((row) => {
                                   const isExpanded = expandedRows.has(row.id);
                                   const edit = getEdit(row);
                                   return (
-                                    <>
+                                    <Fragment key={row.id}>
                                       <tr
-                                        key={row.id}
                                         className="border-b last:border-0 hover:bg-muted/30 transition-colors"
                                       >
                                         <td className="px-4 py-3 font-medium">
@@ -718,7 +728,7 @@ export default function PlacementReportsPage() {
                                           </td>
                                         </tr>
                                       )}
-                                    </>
+                                    </Fragment>
                                   );
                                 })}
                               </tbody>
@@ -730,7 +740,7 @@ export default function PlacementReportsPage() {
 
                     {/* Mobile cards */}
                     <div className="space-y-2 md:hidden">
-                      {notContacted.map((row) => {
+                      {notContactedPage.pageItems.map((row) => {
                         const isExpanded = expandedRows.has(row.id);
                         const edit = getEdit(row);
                         return (
@@ -853,6 +863,7 @@ export default function PlacementReportsPage() {
                         );
                       })}
                     </div>
+                    <TablePagination {...notContactedPage} />
                   </>
                 )}
               </TabsContent>
@@ -895,7 +906,7 @@ export default function PlacementReportsPage() {
 
                     {/* Mobile cards */}
                     <div className="space-y-2 md:hidden">
-                      {filteredContacted.map((row) => (
+                      {contactedMobilePage.pageItems.map((row) => (
                         <Card
                           key={row.id}
                           className={
@@ -973,6 +984,7 @@ export default function PlacementReportsPage() {
                           </CardContent>
                         </Card>
                       ))}
+                      <TablePagination {...contactedMobilePage} />
                     </div>
                   </>
                 )}

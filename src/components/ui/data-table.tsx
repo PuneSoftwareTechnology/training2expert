@@ -1,5 +1,6 @@
 import {
   type ColumnDef,
+  type PaginationState,
   type SortingState,
   type ColumnFiltersState,
   flexRender,
@@ -9,10 +10,12 @@ import {
   getPaginationRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ArrowUpDown } from "lucide-react";
+import { memo, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { TablePagination } from "@/components/ui/table-pagination";
+import { resolvePageSize, type PageSizeChoice } from "@/hooks/usePagination";
 import {
   Table,
   TableBody,
@@ -27,12 +30,19 @@ interface DataTableProps<TData, TValue> {
   data: TData[];
   searchKey?: string;
   searchValue?: string;
-  pageSize?: number;
+  /** Initial rows per page; the user can change it (incl. "All") from the footer */
+  pageSize?: PageSizeChoice;
   emptyMessage?: string;
   headerClassName?: string;
+  /**
+   * Jump back to the first page whenever this value changes. Pass something
+   * derived from the page's filters/search so a new filter never lands the
+   * user on an empty page. Data refreshes (star, edit) keep the current page.
+   */
+  resetPageKey?: unknown;
 }
 
-export function DataTable<TData, TValue>({
+function DataTableInner<TData, TValue>({
   columns,
   data,
   searchKey,
@@ -40,22 +50,45 @@ export function DataTable<TData, TValue>({
   pageSize = 10,
   emptyMessage = "No results found",
   headerClassName,
+  resetPageKey,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSizeChoice, setPageSizeChoice] = useState<PageSizeChoice>(pageSize);
+  // "All" = one page holding every row (sized to the full data set)
+  const effectivePageSize = resolvePageSize(pageSizeChoice, data.length);
+  const pagination: PaginationState = { pageIndex, pageSize: effectivePageSize };
 
   const table = useReactTable({
     data,
     columns,
-    state: { sorting, columnFilters },
+    state: { sorting, columnFilters, pagination },
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
+    onPaginationChange: (updater) => {
+      const next = typeof updater === "function" ? updater(pagination) : updater;
+      setPageIndex(next.pageIndex);
+    },
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    initialState: { pagination: { pageSize } },
+    // Don't jump to page 1 every time the data array changes (e.g. after
+    // starring or editing a row); filters reset the page via resetPageKey.
+    autoResetPageIndex: false,
   });
+
+  // Reset to the first page when the caller's filters change
+  useEffect(() => {
+    setPageIndex(0);
+  }, [resetPageKey]);
+
+  // If rows were removed and the current page no longer exists, clamp to the last page
+  const pageCount = Math.max(1, table.getPageCount());
+  useEffect(() => {
+    if (pageIndex > pageCount - 1) setPageIndex(pageCount - 1);
+  }, [pageIndex, pageCount]);
 
   // Apply external search filter
   useEffect(() => {
@@ -63,11 +96,6 @@ export function DataTable<TData, TValue>({
       table.getColumn(searchKey)?.setFilterValue(searchValue || undefined);
     }
   }, [searchKey, searchValue, table]);
-
-  // Keep table page size in sync when the prop changes (e.g. when data length changes)
-  useEffect(() => {
-    table.setPageSize(pageSize);
-  }, [pageSize, table]);
 
   return (
     <div className="space-y-2">
@@ -132,38 +160,30 @@ export function DataTable<TData, TValue>({
         </TableBody>
       </Table>
 
-      {/* Pagination */}
-      {table.getPageCount() > 1 && (
-        <div className="flex items-center justify-between px-2">
-          <p className="text-sm text-muted-foreground">
-            Page {table.getState().pagination.pageIndex + 1} of{" "}
-            {table.getPageCount()} ({data.length} total)
-          </p>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      )}
+      <TablePagination
+        page={pageIndex}
+        pageCount={pageCount}
+        total={table.getFilteredRowModel().rows.length}
+        canPrev={table.getCanPreviousPage()}
+        canNext={table.getCanNextPage()}
+        prev={() => table.previousPage()}
+        next={() => table.nextPage()}
+        pageSize={pageSizeChoice}
+        setPageSize={(choice) => {
+          setPageSizeChoice(choice);
+          setPageIndex(0);
+        }}
+      />
     </div>
   );
 }
+
+/**
+ * Memoized: when the parent re-renders for unrelated reasons (opening a
+ * dialog, typing in a form) and `columns`/`data` are referentially stable,
+ * the whole table is skipped. Callers should memoize `columns`.
+ */
+export const DataTable = memo(DataTableInner) as typeof DataTableInner;
 
 // Helper to create a sortable header
 export function SortableHeader({

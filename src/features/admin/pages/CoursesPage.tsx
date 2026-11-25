@@ -292,7 +292,8 @@ export default function CoursesPage() {
               <DataTable
                 columns={columns}
                 data={filtered}
-                pageSize={filtered.length || 1}
+                pageSize={50}
+                resetPageKey={`${courseType}|${searchText}`}
                 emptyMessage="No courses found"
                 headerClassName="bg-gradient-to-r from-emerald-500 to-teal-600"
               />

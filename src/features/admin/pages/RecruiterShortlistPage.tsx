@@ -14,6 +14,8 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { TablePagination } from "@/components/ui/table-pagination";
+import { usePagination } from "@/hooks/usePagination";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -135,6 +137,13 @@ export default function RecruiterShortlistPage() {
         row.studentName.toLowerCase().includes(q),
     );
   }, [items, searchQuery]);
+
+  // Only one page is mounted (desktop table + mobile cards are both in the
+  // DOM), so dialogs and typing in the email form stay fast on big lists.
+  const pagination = usePagination(
+    filteredItems,
+    `${recruiterFilter}|${courseFilter}|${yearFilter}|${searchQuery}`,
+  );
 
   // Generate year options from data
   const yearOptions = useMemo(() => {
@@ -416,7 +425,7 @@ export default function RecruiterShortlistPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredItems.map((item, index) => (
+                      {pagination.pageItems.map((item, index) => (
                         <TableRow key={item.id}>
                           <TableCell>
                             <Checkbox
@@ -427,7 +436,7 @@ export default function RecruiterShortlistPage() {
                             />
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground">
-                            {index + 1}
+                            {pagination.pageStart + index + 1}
                           </TableCell>
                           <TableCell className="font-medium">
                             {item.recruiterName}
@@ -480,7 +489,7 @@ export default function RecruiterShortlistPage() {
 
             {/* Mobile cards */}
             <div className="space-y-3 md:hidden">
-              {filteredItems.map((item) => (
+              {pagination.pageItems.map((item) => (
                 <Card key={item.id}>
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between gap-2">
@@ -547,6 +556,7 @@ export default function RecruiterShortlistPage() {
                 </Card>
               ))}
             </div>
+            <TablePagination {...pagination} />
           </>
         )}
 

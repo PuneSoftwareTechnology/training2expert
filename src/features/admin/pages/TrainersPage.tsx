@@ -500,7 +500,8 @@ export default function TrainersPage() {
               <DataTable
                 columns={columns}
                 data={filtered}
-                pageSize={filtered.length || 1}
+                pageSize={50}
+                resetPageKey={searchText}
                 emptyMessage="No trainers yet. Add one to make it selectable on the enrollment form."
                 headerClassName="bg-gradient-to-r from-amber-500 to-orange-600"
               />
